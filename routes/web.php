@@ -77,6 +77,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/ai/analyze/{blockId}', 'generateAnalysis')->name('ai.analyze');
             Route::get('/ai/recommendation/{blockId}', 'getPrescriptiveRecommendation')->name('ai.recommendation');
             Route::post('/ai/config/update', 'updateConfig')->name('ai.config.update');
+            Route::post('/monitoring/analyze-block', 'analyzeBlock')->name('monitoring.analyze-block');
+            Route::post('/monitoring/analyze-block', 'analyzeBlock')->name('monitoring.analyze-block');
         });
 
         Route::prefix('reports')->name('reports.')->group(function () {

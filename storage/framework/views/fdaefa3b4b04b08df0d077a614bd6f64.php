@@ -1,19 +1,14 @@
-<x-layout.default>
-    {{-- 
-        ==========================================================================
-        LOGIKA BACKEND INTEGRATION (DITIDURKAN):
-        ==========================================================================
-        1. DATA KPI: 
-           - Mengambil dari variabel $kpi['total_luas'], $kpi['total_pokok'], $kpi['avg_health']
-        
-        2. LOOPING TABEL:
-           - Menggunakan @forelse($kebuns as $kebun)
-           - Detail button mengarah ke route('monitoring.detail', $kebun->id)
-
-        3. FILTER & SEARCH:
-           - Dropdown Distrik mengambil data dari @json($distrikList)
-           - Input search mengirimkan query string ?search=...
-    --}}
+<?php if (isset($component)) { $__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layout.default','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('layout.default'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+    
 
     <div x-data="monitoringData()" class="space-y-5">
         <!-- 1. Breadcrumbs & Header -->
@@ -44,7 +39,7 @@
                     <div class="text-[10px] font-black text-white/70 tracking-widest mb-3">Total Luas Areal
                     </div>
                     <div class="flex items-end gap-2">
-                        {{-- Logika Backend: {{ number_format($kpi['total_luas'] ?? 2450) }} --}}
+                        
                         <span class="text-4xl font-black">2.450</span>
                         <span class="text-lg font-bold text-white/80 mb-1">Ha</span>
                     </div>
@@ -63,7 +58,7 @@
                     <div class="text-[10px] font-black text-white/70 tracking-widest mb-3">Total Jumlah Pokok
                     </div>
                     <div class="flex items-end gap-2">
-                        {{-- Logika Backend: {{ number_format($kpi['total_pokok'] ?? 342300) }} --}}
+                        
                         <span class="text-4xl font-black">342.300</span>
                     </div>
                     <div
@@ -81,7 +76,7 @@
                     <div class="text-[10px] font-black text-white/70 tracking-widest mb-3">Rata-rata Kesehatan
                     </div>
                     <div class="flex items-end gap-2">
-                        {{-- Logika Backend: {{ $kpi['avg_health'] ?? 82.8 }} --}}
+                        
                         <span class="text-4xl font-black">82.8</span>
                         <span class="text-lg font-bold text-white/80 mb-1">%</span>
                     </div>
@@ -101,7 +96,7 @@
 
                 <!-- Input Search -->
                 <div class="relative w-full md:w-[400px]">
-                    <form action="#" method="GET"> {{-- Logika Backend: action="{{ route('monitoring.data-kebun') }}" --}}
+                    <form action="#" method="GET"> 
                         <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -134,7 +129,7 @@
                     <div x-show="openDropdown" x-transition x-cloak
                         class="absolute right-0 z-[999] w-full md:w-max min-w-full mt-2 bg-white dark:bg-[#191e3a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2">
                         <template x-for="item in distrikList" :key="item">
-                            <button @click="selectedDistrik = item; openDropdown = false" {{-- Logika: window.location.href='?distrik='+item --}}
+                            <button @click="selectedDistrik = item; openDropdown = false" 
                                 class="w-full text-left px-5 py-3 hover:bg-gray-100 dark:hover:bg-primary/10 flex items-center justify-between gap-4 transition-colors">
                                 <span x-text="item"
                                     class="text-xs font-bold tracking-widest text-gray-700 dark:text-gray-200"></span>
@@ -161,26 +156,7 @@
                     </thead>
                     <tbody class="text-gray-700 dark:text-gray-300 font-semibold text-sm">
 
-                        {{-- 
-                        ==========================================================================
-                        BACKEND LOOP 
-                        ==========================================================================
-                        @forelse($kebuns as $index => $kebun)
-                        <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <td class="py-4 px-6">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
-                            <td class="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ $kebun->distrik }}</td>
-                            <td class="py-4 px-6 font-bold text-gray-900 dark:text-white">{{ $kebun->nama_kebun }}</td>
-                            <td class="py-4 px-6">{{ $kebun->total_blok }} <span class="text-[10px] text-gray-400 ml-1">Blok</span></td>
-                            <td class="py-4 px-6 font-bold">{{ number_format($kebun->total_luas, 0) }}</td>
-                            <td class="py-4 px-6">
-                                <span class="badge {{ $kebun->status_color }} !text-white rounded-full px-4 py-1 text-[10px] font-black shadow-sm">{{ $kebun->status_label }}</span>
-                            </td>
-                            <td class="py-4 px-6 text-center">
-                                <a href="{{ route('monitoring.detail', $kebun->id) }}" class="btn btn-sm btn-outline-primary rounded-lg text-[10px] font-black tracking-widest">Detail</a>
-                            </td>
-                        </tr>
-                        @empty
-                        --}}
+                        
 
                         <!-- DATA DUMMY (Akan Muncul Selama DB Belum Diaktifkan) -->
                         <tr
@@ -233,14 +209,14 @@
                                     class="btn btn-sm btn-outline-primary rounded-lg text-[10px] font-black tracking-widest">Detail</button>
                             </td>
                         </tr>
-                        {{-- @endforelse --}}
+                        
                     </tbody>
                 </table>
             </div>
 
             <div class="p-6 bg-gray-50 dark:bg-black/10 border-t border-gray-100 dark:border-gray-800 text-center">
                 <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 tracking-widest">
-                    {{-- Logika Backend: Menampilkan {{ $kebuns->count() }} dari total {{ $kpi['total_count'] }} kebun aktif --}}
+                    
                     Menampilkan 3 dari total 8 kebun aktif dalam database SIMTAN
                 </p>
             </div>
@@ -252,7 +228,7 @@
         document.addEventListener("alpine:init", () => {
             Alpine.data("monitoringData", () => ({
                 distrikList: [
-                    {{-- Logika Backend: @json($distrikList ?? ['Semua Distrik']) --}} 'Semua Distrik',
+                     'Semua Distrik',
                     'Distrik Labuhan Batu I',
                     'Distrik Labuhan Batu II',
                     'Distrik Labuhan Batu III',
@@ -262,4 +238,14 @@
             }));
         });
     </script>
-</x-layout.default>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6)): ?>
+<?php $attributes = $__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6; ?>
+<?php unset($__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6)): ?>
+<?php $component = $__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6; ?>
+<?php unset($__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6); ?>
+<?php endif; ?>
+<?php /**PATH C:\simtan-monitoring-palm-oil\resources\views/apps/monitoring/data-kebun.blade.php ENDPATH**/ ?>

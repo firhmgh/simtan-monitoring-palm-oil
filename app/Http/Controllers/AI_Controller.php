@@ -23,7 +23,7 @@ class AI_Controller extends Controller
     }
 
     /**
-     * 1. EKSEKUSI ANALISIS DASHBOARD (Real-time Inference)
+     * EKSEKUSI ANALISIS DASHBOARD (Real-time Inference)
      * Mengubah data mentah menjadi narasi preskriptif.
      */
     public function analyzeDashboard(Request $request)
@@ -76,7 +76,27 @@ class AI_Controller extends Controller
     }
 
     /**
-     * 2. UPDATE KONFIGURASI MESIN NEURAL (Failover & Threshold)
+     * API: Inferensi AI Spesifik per Blok
+     * Melayani request dari halaman Detail Kebun Spasial
+     */
+    public function analyzeBlock(Request $request)
+    {
+        $request->validate([
+            'blok_id' => 'required|string',
+            'kebun'   => 'required|string'
+        ]);
+
+        $result = $this->aiService->analyzeSpecificBlok($request->kebun, $request->blok_id);
+
+        if (!$result) {
+            return response()->json(['status' => 'error', 'message' => 'Data blok tidak ditemukan'], 404);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * UPDATE KONFIGURASI MESIN NEURAL (Failover & Threshold)
      */
     public function updateConfig(Request $request)
     {

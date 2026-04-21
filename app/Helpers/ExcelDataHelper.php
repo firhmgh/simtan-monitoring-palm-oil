@@ -9,7 +9,8 @@ use Illuminate\Support\Str;
 class ExcelDataHelper
 {
     /**
-     * Mengembalikan info nama kebun dan distrik berdasarkan kode
+     * Mengembalikan info nama kebun dan distrik berdasarkan kode standar PTPN.
+     * Digunakan untuk mengubah kode teknis (misal: 1KSD) menjadi nama manusiawi.
      */
     public static function getInfoKebun($kodeKebun, $kodeDistrik, $luas)
     {
@@ -57,22 +58,22 @@ class ExcelDataHelper
         return [
             'nama' => $namaKebun[$kodeKebun] ?? $kodeKebun,
             'distrik' => $namaDistrik[$kodeDistrik] ?? $kodeDistrik,
-            'luas' => $luas,
+            'luas' => (float) $luas,
             'kode_kebun' => $kodeKebun,
         ];
     }
 
     /**
-     * Data peringkat kondisi pohon (chart peringkatKondisiPohonChart)
+     * Memformat data peringkat kondisi pohon untuk chart global.
      */
     public static function formatKondisiPohonData(Collection $data): array
     {
         $formatted = $data->map(function ($item) {
             return [
                 'kebun' => $item->kebun,
-                'normal' => $item->persen_pkk_normal,
-                'non_valuer' => $item->persen_pkk_non_valuer,
-                'mati' => $item->persen_pkk_mati,
+                'normal' => (float) $item->persen_pkk_normal,
+                'non_valuer' => (float) $item->persen_pkk_non_valuer,
+                'mati' => (float) $item->persen_pkk_mati,
             ];
         })->values();
 
@@ -82,7 +83,7 @@ class ExcelDataHelper
     }
 
     /**
-     * Data peringkat pemeliharaan (chart peringkatPemeliharaanChart)
+     * Memformat data peringkat pemeliharaan untuk chart global.
      */
     public static function formatPemeliharaanData(Collection $data): array
     {
@@ -102,7 +103,8 @@ class ExcelDataHelper
     }
 
     /**
-     * Data korelasi vegetatif (chart korelasiVegetatif) dengan Outlier Detection
+     * Memformat data vegetatif dengan Logika Outlier Detection.
+     * Mencegah grafik "rusak" akibat salah input angka yang tidak masuk akal (TBM III).
      */
     public static function formatKorelasiVegetatifData(Collection $data): array
     {
@@ -111,57 +113,30 @@ class ExcelDataHelper
         $jumlahPelepah = [];
         $panjangPelepah = [];
 
-        /** 
-         * THRESHOLD DEFINITION (Standar Agronomi Kelapa Sawit TBM)
-         * Data yang melebihi angka ini akan dianggap outlier/salah input.
-         */
-        $MAX_LINGKAR_BATANG = 250.0; // cm (Jika > 2.5 meter, data tidak wajar untuk TBM)
-        $MAX_JUMLAH_PELEPAH = 120.0; // pcs (Normal TBM III berkisar 30-50 pelepah)
-        $MAX_PANJANG_PELEPAH = 10.0;  // meter (Pelepah sawit TBM jarang melebihi 10m)
+        // Threshold Agronomi TBM III
+        $MAX_LINGKAR_BATANG = 250.0; // cm
+        $MAX_JUMLAH_PELEPAH = 120.0; // pcs
+        $MAX_PANJANG_PELEPAH = 10.0;  // meter
 
         foreach ($data as $item) {
+            if ($item->lingkar_batang === null && $item->jumlah_pelepah === null) continue;
+
+            $isOutlier = false;
             if (
-                $item->lingkar_batang === null &&
-                $item->jumlah_pelepah === null &&
-                $item->panjang_pelepah === null
+                (float)$item->lingkar_batang > $MAX_LINGKAR_BATANG ||
+                (float)$item->jumlah_pelepah > $MAX_JUMLAH_PELEPAH ||
+                (float)$item->panjang_pelepah > $MAX_PANJANG_PELEPAH
             ) {
+                $isOutlier = true;
+            }
+
+            if ($isOutlier) {
+                Log::warning("Outlier diabaikan pada Kebun {$item->kebun} Blok {$item->blok}");
                 continue;
             }
 
-            // --- LOGIKA OUTLIER DETECTION ---
-            $isOutlier = false;
-            $violationReason = "";
-
-            if ((float)$item->lingkar_batang > $MAX_LINGKAR_BATANG) {
-                $isOutlier = true;
-                $violationReason .= "Lingkar Batang: {$item->lingkar_batang}cm; ";
-            }
-            if ((float)$item->jumlah_pelepah > $MAX_JUMLAH_PELEPAH) {
-                $isOutlier = true;
-                $violationReason .= "Jml Pelepah: {$item->jumlah_pelepah}; ";
-            }
-            if ((float)$item->panjang_pelepah > $MAX_PANJANG_PELEPAH) {
-                $isOutlier = true;
-                $violationReason .= "Panjang Pelepah: {$item->panjang_pelepah}m; ";
-            }
-
-            // Jika dideteksi outlier, catat ke log sistem dan jangan masukkan ke grafik
-            if ($isOutlier) {
-                Log::warning("Data Integritas: Outlier terdeteksi pada Kebun {$item->kebun} Blok {$item->blok}. Alasan: {$violationReason}");
-                continue; // Lewati baris ini agar grafik tidak rusak (skewed)
-            }
-            // --------------------------------
-
-            // Bentuk label sesuai format yang diinginkan
-            $labelParts = [];
-            if (!empty($item->tahun)) $labelParts[] = $item->tahun;
-            if (!empty($item->tbm)) $labelParts[] = $item->tbm;
-            if (!empty($item->kebun)) $labelParts[] = $item->kebun;
-            if (!empty($item->topografi)) $labelParts[] = $item->topografi;
-            if (!empty($item->blok)) $labelParts[] = $item->blok;
-
+            $labelParts = array_filter([$item->tahun, $item->kebun, $item->blok]);
             $labels[] = implode(' - ', $labelParts);
-
             $lingkarBatang[] = (float) $item->lingkar_batang;
             $jumlahPelepah[] = (float) $item->jumlah_pelepah;
             $panjangPelepah[] = (float) $item->panjang_pelepah;
@@ -176,7 +151,7 @@ class ExcelDataHelper
     }
 
     /**
-     * Data kondisi pohon (chart kondisiPohonChart)
+     * Format Pie Chart Kondisi Pohon (Halaman Detail Kebun)
      */
     public static function getKondisiPohonData(Collection $collection)
     {
@@ -185,13 +160,13 @@ class ExcelDataHelper
 
         return [
             'PKK NORMAL' => (float) ($totalRow['persen_pkk_normal'] ?? 0),
-            'PKK NON VALUER/ KERDIL' => (float) ($totalRow['persen_pkk_non_valuer'] ?? 0),
+            'PKK NON VALUER' => (float) ($totalRow['persen_pkk_non_valuer'] ?? 0),
             'PKK MATI' => (float) ($totalRow['persen_pkk_mati'] ?? 0),
         ];
     }
 
     /**
-     * Data areal tanaman (chart arealTanamanChart)
+     * Format Pie Chart Areal Tanaman (Halaman Detail Kebun)
      */
     public static function getArealTanamanData(Collection $collection)
     {
@@ -200,59 +175,45 @@ class ExcelDataHelper
 
         return [
             'Kacangan' => (float) ($totalRow['persen_tutupan_kacangan'] ?? 0),
-            'Pemeliharaan yang Kurang Baik' => (float) ($totalRow['persen_pir_pkk_kurang_baik'] ?? 0),
+            'Pemeliharaan Kurang Baik' => (float) ($totalRow['persen_pir_pkk_kurang_baik'] ?? 0),
             'Areal Tergenang' => (float) ($totalRow['persen_area_tergenang'] ?? 0),
             'Anak Kayu' => (float) ($totalRow['kondisi_anak_kayu'] ?? 0),
         ];
     }
 
     /**
-     * Lokasi Kebun
+     * Memproses Koordinat Lokasi Kebun untuk Leaflet JS / Google Maps.
      */
     public static function getLokasiKebun(Collection $collection)
     {
-        if ($collection->isEmpty()) {
-            return [];
-        }
+        if ($collection->isEmpty()) return [];
 
-        return $collection
-            ->groupBy('kebun')
-            ->map(function ($items, $kebun) {
-                return [
-                    'kebun' => $kebun,
-                    'lokasi' => $items->filter(function ($item) {
-                        return !empty($item->latitude) && !empty($item->longitude);
-                    })
-                        ->map(function ($item) {
-                            $namaLokasi = $item->nama_lokasi;
-                            $jenisLokasi = strtoupper($item->jenis_lokasi);
+        return $collection->groupBy('kebun')->map(function ($items, $kebun) {
+            return [
+                'kebun' => $kebun,
+                'lokasi' => $items->filter(fn($i) => !empty($i->latitude))
+                    ->map(function ($item) {
+                        $jenis = strtoupper($item->jenis_lokasi);
+                        $kategori = match (true) {
+                            str_contains($item->nama_lokasi, 'AFD') && $jenis === 'KANTOR AFDELING' => 'kantor-afdeling',
+                            $jenis === 'KANTOR KEBUN' => 'kantor-kebun',
+                            default => 'lainnya',
+                        };
 
-                            $isAfd = str_contains($namaLokasi, 'AFD') && $jenisLokasi === 'KANTOR AFDELING';
-                            $label = $isAfd ? "{$jenisLokasi} - {$namaLokasi}" : $namaLokasi;
-
-                            if ($isAfd) {
-                                $kategori = 'kantor-afdeling';
-                            } elseif ($jenisLokasi === 'KANTOR KEBUN') {
-                                $kategori = 'kantor-kebun';
-                            } else {
-                                $kategori = 'lainnya';
-                            }
-
-                            return [
-                                'label' => $label,
-                                'kategori' => $kategori,
-                                'latitude' => (float) $item->latitude,
-                                'longitude' => (float) $item->longitude,
-                            ];
-                        })
-                        ->values()
-                ];
-            })
-            ->values();
+                        return [
+                            'label' => $item->nama_lokasi,
+                            'kategori' => $kategori,
+                            'latitude' => (float) $item->latitude,
+                            'longitude' => (float) $item->longitude,
+                        ];
+                    })->values()
+            ];
+        })->values();
     }
 
     /**
-     * Normalisasi key untuk collection Excel
+     * Utility: Membersihkan Header Excel agar bisa dibaca Database.
+     * Contoh: "Luas (Ha)" -> "luas_ha"
      */
     public static function normalizeKeys(Collection $row)
     {

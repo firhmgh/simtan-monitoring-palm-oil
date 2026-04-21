@@ -1,14 +1,14 @@
-<x-layout.default>
-    {{-- 
-        ==========================================================================
-        LOGIKA BACKEND INTEGRATION (DITIDURKAN):
-        ==========================================================================
-        1. DATA HEADER: {{ $infoKebun['nama'] ?? 'Sei Dadap' }}
-        2. DATA SIDEBAR: $statusCounts (Dihitung dari DetailRekaps per blok)
-        3. DATA MAP: @json($blockStatuses) -> Untuk mewarnai peta SVG secara otomatis
-        4. DATA CHART: @json($kondisiPohon) dan @json($arealTanaman)
-        5. AI ENDPOINT: {{ route('monitoring.analyze-block') }}
-    --}}
+<?php if (isset($component)) { $__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layout.default','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('layout.default'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+    
 
     <div x-data="detailKebun()">
         <!-- 1. Breadcrumbs & Header -->
@@ -21,14 +21,14 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-bold text-gray-900 dark:text-white-light">
-                            {{-- Backend: {{ $infoKebun['nama'] ?? 'Kebun Sei Dadap' }} ({{ $infoKebun['kode_kebun'] ?? '1KDP' }}) --}}
+                            
                             Kebun Sei Dadap (1KDP)
                         </h1>
                         <span
                             class="badge bg-emerald-500 !text-white text-[10px] px-3 py-1 font-black rounded-full tracking-widest shadow-sm">CONNECTED</span>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium italic">
-                        {{-- Backend: {{ $infoKebun['distrik'] ?? 'Distrik Asahan' }} • 24 Blok Aktif • {{ $infoKebun['luas'] ?? '1.450' }} Ha Total Areal --}}
+                        
                         Distrik Labuhan Batu I • 24 Blok Aktif • 1.450 Ha Total Areal
                     </p>
                 </div>
@@ -89,7 +89,7 @@
                                 <span class="text-[11px] font-bold text-gray-600 dark:text-gray-400">Healthy</span>
                             </div>
                             <span class="text-[11px] font-black italic text-gray-800 dark:text-gray-200">
-                                {{-- Backend: {{ $statusCounts['healthy'] ?? 18 }} Blok --}}
+                                
                                 18 Blok
                             </span>
                         </div>
@@ -100,7 +100,7 @@
                                 <span class="text-[11px] font-bold text-gray-600 dark:text-gray-400">Moderate</span>
                             </div>
                             <span class="text-[11px] font-black italic text-gray-800 dark:text-gray-200">
-                                {{-- Backend: {{ $statusCounts['moderate'] ?? 5 }} Blok --}}
+                                
                                 5 Blok
                             </span>
                         </div>
@@ -111,7 +111,7 @@
                                 <span class="text-[11px] font-bold text-gray-600 dark:text-gray-400">Critical</span>
                             </div>
                             <span class="text-[11px] font-black italic text-gray-800 dark:text-gray-200">
-                                {{-- Backend: {{ $statusCounts['critical'] ?? 1 }} Blok --}}
+                                
                                 1 Blok
                             </span>
                         </div>
@@ -391,15 +391,7 @@
                     'B-02': '#ef4444'
                 },
 
-                {{-- 
-                ==========================================================================
-                BACKEND INTEGRATION:
-                Uncomment saat DB siap & variabel dikirim dari MonitoringController
-                ==========================================================================
-                kondisiPohon: @json($kondisiPohon ?? []),
-                arealTanaman: @json($arealTanaman ?? []),
-                blockStatuses: @json($blockStatuses ?? []),
-                --}}
+                
 
                 layers: [{
                         id: 'ndvi',
@@ -537,22 +529,7 @@
                     this.isAnalyzing = true;
                     this.inferenceResult = null;
 
-                    {{-- 
-                    ==========================================================================
-                    BACKEND INTEGRATION: REAL AI CALL
-                    Uncomment saat route monitoring.analyze-block siap
-                    ==========================================================================
-                    fetch("{{ route('monitoring.analyze-block') }}", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-                        body: JSON.stringify({ blok_id: this.selectedBlock, kebun: '1KDP' })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        this.isAnalyzing = false;
-                        this.inferenceResult = data;
-                    });
-                    --}}
+                    
 
                     // SIMULASI DUMMY (Hapus jika real AI aktif)
                     setTimeout(() => {
@@ -588,4 +565,14 @@
             display: none !important;
         }
     </style>
-</x-layout.default>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6)): ?>
+<?php $attributes = $__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6; ?>
+<?php unset($__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6)): ?>
+<?php $component = $__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6; ?>
+<?php unset($__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6); ?>
+<?php endif; ?>
+<?php /**PATH C:\simtan-monitoring-palm-oil\resources\views/apps/monitoring/detail-kebun.blade.php ENDPATH**/ ?>

@@ -1,4 +1,13 @@
-<x-layout.default>
+<?php if (isset($component)) { $__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layout.default','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('layout.default'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
     <div x-data="uploadHandler()">
         <!-- Header -->
         <div class="mb-6">
@@ -8,27 +17,14 @@
             </p>
         </div>
 
-        {{-- 
-            ==========================================================================
-            BACKEND INTEGRATION: VALIDATION ERRORS
-            ==========================================================================
-            @if ($errors->any())
-                <div class="mb-5 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded shadow-md">
-                    <p class="font-bold">Gagal Validasi:</p>
-                    <ul class="list-disc ml-5 text-sm">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-        --}}
+        
 
         <div class="space-y-6">
 
             <!-- FORM START -->
-            <form action="#" {{-- method="POST" enctype="multipart/form-data" action="{{ route('monitoring.import.store') }}" --}}>
-                {{-- @csrf --}}
+            <!-- Uncomment action di bawah jika backend store sudah siap -->
+            <form action="#" >
+                
 
                 <div class="space-y-6">
                     <!-- 1. PANEL METADATA DATA -->
@@ -60,7 +56,7 @@
                                     Penanggung Jawab</label>
                                 <input type="text"
                                     class="form-input rounded-xl py-3 bg-gray-50 dark:bg-[#1b2e4b]/50 font-bold border-none cursor-not-allowed dark:text-white-dark"
-                                    value="Maghfirah (Superadmin)" {{-- value="{{ auth()->user()->name }}" --}} readonly>
+                                    value="Maghfirah (Superadmin)"  readonly>
                             </div>
 
                             <div>
@@ -195,27 +191,7 @@
                             </tr>
                         </thead>
                         <tbody class="text-sm font-semibold">
-                            {{-- 
-                            ==========================================================================
-                            BACKEND INTEGRATION: TABLE DATA (UNCOMMENT JIKA DB SIAP)
-                            ==========================================================================
-                            @forelse(\App\Models\SimtanForms::latest()->take(5)->get() as $item)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b dark:border-gray-800">
-                                <td class="py-4 text-primary font-black">{{ $item->kode_upload }}</td>
-                                <td class="py-4">
-                                    <div class="font-bold text-gray-900 dark:text-white">{{ $item->judul_file }}</div>
-                                    <div class="text-[10px] text-gray-400">{{ $item->tanggal_upload->format('d/m/Y H:i') }}</div>
-                                </td>
-                                <td class="py-4"><span class="badge badge-outline-primary rounded-full px-4 text-[9px] font-black">{{ $item->kategori_file }}</span></td>
-                                <td class="py-4 text-center">
-                                    <span class="badge bg-success !text-white rounded-full px-5 text-[9px] font-black">Success</span>
-                                </td>
-                                <td class="py-4 text-center">
-                                    <button @click="triggerEdit('{{$item->id}}', '{{$item->kategori_file}}', '{{$item->periode_data}}', '{{$item->judul_file}}')" class="btn btn-sm btn-outline-primary rounded-lg text-[10px] font-black">Edit</button>
-                                </td>
-                            </tr>
-                            @empty
-                            --}}
+                            
 
                             <!-- DATA DUMMY (Akan Muncul Selama DB Belum Diaktifkan) -->
                             <tr
@@ -267,7 +243,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            {{-- @endforelse --}}
+                            
                         </tbody>
                     </table>
                 </div>
@@ -334,7 +310,7 @@
                     </div>
                     <div class="px-8 py-8 text-left">
                         <form action="javascript:;" method="POST" class="space-y-5">
-                            {{-- @csrf --}}
+                            
                             <div>
                                 <label
                                     class="text-[10px] font-black text-gray-400 dark:text-gray-500 mb-2 block tracking-widest">Nama
@@ -481,4 +457,14 @@
             }));
         });
     </script>
-</x-layout.default>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6)): ?>
+<?php $attributes = $__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6; ?>
+<?php unset($__attributesOriginal9d5893b966d42bc9a39e2bb81c9df0c6); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6)): ?>
+<?php $component = $__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6; ?>
+<?php unset($__componentOriginal9d5893b966d42bc9a39e2bb81c9df0c6); ?>
+<?php endif; ?>
+<?php /**PATH C:\simtan-monitoring-palm-oil\resources\views/apps/monitoring/import.blade.php ENDPATH**/ ?>
