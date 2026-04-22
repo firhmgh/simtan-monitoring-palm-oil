@@ -58,7 +58,7 @@
                         <i data-lucide="user"
                             class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
                         <input id="username" name="username" type="text" value="{{ old('username') }}"
-                            placeholder="contoh: adminptpn4 atau firahmagh485"
+                            placeholder="contoh: admin_regional1 atau gitaddpir"
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent @error('username') border-red-500 @enderror"
                             required autocomplete="username" autofocus>
                         @error('username')

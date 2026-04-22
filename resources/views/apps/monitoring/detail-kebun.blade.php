@@ -1,21 +1,17 @@
 <x-layout.default>
-    {{-- 
-        ==========================================================================
-        LOGIKA BACKEND INTEGRATION (DITIDURKAN):
-        ==========================================================================
-        1. DATA HEADER: {{ $infoKebun['nama'] ?? 'Sei Dadap' }}
-        2. DATA SIDEBAR: $statusCounts (Dihitung dari DetailRekaps per blok)
-        3. DATA MAP: @json($blockStatuses) -> Untuk mewarnai peta SVG secara otomatis
-        4. DATA CHART: @json($kondisiPohon) dan @json($arealTanaman)
-        5. AI ENDPOINT: {{ route('monitoring.analyze-block') }}
-    --}}
+    <!-- 1. GIS Library Dependencies (Leaflet) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="/assets/js/apexcharts.js"></script>
 
     <div x-data="detailKebun()">
         <!-- 1. Breadcrumbs & Header -->
         <div class="mb-6">
             <ul class="flex space-x-2 rtl:space-x-reverse text-xs mb-2 tracking-widest font-bold text-gray-400">
                 <li><a href="javascript:;" class="text-primary hover:underline">Monitoring</a></li>
-                <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2"><span>Detail Kebun Spasial</span></li>
+                <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 text-gray-400 dark:text-gray-600">
+                    <span>Detail Kebun Spasial</span>
+                </li>
             </ul>
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -28,7 +24,7 @@
                             class="badge bg-emerald-500 !text-white text-[10px] px-3 py-1 font-black rounded-full tracking-widest shadow-sm">CONNECTED</span>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium italic">
-                        {{-- Backend: {{ $infoKebun['distrik'] ?? 'Distrik Asahan' }} • 24 Blok Aktif • {{ $infoKebun['luas'] ?? '1.450' }} Ha Total Areal --}}
+                        {{-- Backend: {{ $infoKebun['distrik'] ?? 'Distrik Labuhan Batu I' }} • 24 Blok Aktif • {{ $infoKebun['luas'] ?? '1.450' }} Ha --}}
                         Distrik Labuhan Batu I • 24 Blok Aktif • 1.450 Ha Total Areal
                     </p>
                 </div>
@@ -68,7 +64,7 @@
                                 <label class="w-8 h-4 relative mb-0">
                                     <input type="checkbox"
                                         class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                        x-model="layer.active" />
+                                        x-model="layer.active" @change="toggleLayer(layer.id)" />
                                     <span
                                         class="bg-[#ebedf2] dark:bg-dark block h-full rounded-full before:absolute before:left-1 before:bg-white before:bottom-0.5 before:w-3 before:h-3 before:rounded-full peer-checked:before:left-4 peer-checked:bg-primary transition-all duration-300 shadow-inner"></span>
                                 </label>
@@ -81,511 +77,583 @@
                 <div class="panel p-6 border-0 shadow-sm rounded-3xl dark:bg-[#1b2e4b]">
                     <h5 class="font-black text-[10px] tracking-[0.2em] mb-5 text-gray-400 dark:text-gray-500 italic">
                         Status Kesehatan Blok</h5>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
+                    <div class="space-y-4 text-[11px] font-bold">
+                        <div class="flex items-center justify-between text-success">
                             <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]">
+                                <div class="w-3 h-3 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.4)]">
                                 </div>
-                                <span class="text-[11px] font-bold text-gray-600 dark:text-gray-400">Healthy</span>
-                            </div>
-                            <span class="text-[11px] font-black italic text-gray-800 dark:text-gray-200">
-                                {{-- Backend: {{ $statusCounts['healthy'] ?? 18 }} Blok --}}
-                                18 Blok
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 rounded-full bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.4)]">
-                                </div>
-                                <span class="text-[11px] font-bold text-gray-600 dark:text-gray-400">Moderate</span>
-                            </div>
-                            <span class="text-[11px] font-black italic text-gray-800 dark:text-gray-200">
-                                {{-- Backend: {{ $statusCounts['moderate'] ?? 5 }} Blok --}}
-                                5 Blok
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.4)]">
-                                </div>
-                                <span class="text-[11px] font-bold text-gray-600 dark:text-gray-400">Critical</span>
-                            </div>
-                            <span class="text-[11px] font-black italic text-gray-800 dark:text-gray-200">
-                                {{-- Backend: {{ $statusCounts['critical'] ?? 1 }} Blok --}}
-                                1 Blok
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT COLUMN: Interactive Map & Charts -->
-            <div class="xl:col-span-3 space-y-5">
-                <!-- Interactive Map Panel -->
-                <div
-                    class="panel p-0 border-0 shadow-sm h-[500px] flex flex-col overflow-hidden rounded-3xl dark:bg-[#1b2e4b]">
-                    <!-- Toolbar Map -->
-                    <div
-                        class="p-4 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1b2e4b] z-10">
-                        <div class="flex items-center gap-2">
-                            <div class="p-2 bg-primary/10 text-primary rounded-lg">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-width="2"
-                                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1.01.553.894v10.764a1 1 0 01-1.447.894L15 17m-6 3l6-3m-6 0V7m6 10V4" />
-                                </svg>
-                            </div>
-                            <h5 class="font-black text-[10px] tracking-widest text-gray-500 dark:text-gray-400">
-                                Visualisasi Spasial Blok</h5>
-                        </div>
-                        <div class="flex gap-2">
-                            <button @click="zoomOut"
-                                class="p-2 bg-gray-50 dark:bg-black/20 hover:bg-primary/10 rounded-xl transition-all border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-width="2.5" d="M20 12H4" />
-                                </svg>
-                            </button>
-                            <button @click="zoomIn"
-                                class="p-2 bg-gray-50 dark:bg-black/20 hover:bg-primary/10 rounded-xl transition-all border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-width="2.5" d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- SVG Workspace -->
-                    <div class="flex-1 relative bg-gray-50 dark:bg-black/20 overflow-hidden cursor-move"
-                        @mousedown="startPan" @mousemove="doPan" @mouseup="endPan" @mouseleave="endPan">
-                        <div class="w-full h-full transition-transform duration-200 ease-out flex items-center justify-center"
-                            :style="`transform: scale(${scale}) translate(${panX}px, ${panY}px)`">
-                            <svg class="w-full h-full max-w-[800px]" viewBox="0 0 400 300"
-                                preserveAspectRatio="xMidYMid meet">
-                                <template x-for="(row, rIdx) in ['A','B','C']" :key="rIdx">
-                                    <template x-for="(col, cIdx) in ['01','02','03','04']" :key="cIdx">
-                                        <g :transform="`translate(${100 + (cIdx * 60)}, ${80 + (rIdx * 70)})`"
-                                            class="group cursor-pointer" @click="selectedBlock = row + '-' + col">
-                                            <rect x="-25" y="-30" width="50" height="60" rx="6"
-                                                :fill="getBlockColor(row + '-' + col)"
-                                                :stroke="selectedBlock === row + '-' + col ? (document.documentElement.classList
-                                                    .contains('dark') ? '#fff' : '#0e1726') : (document
-                                                    .documentElement.classList.contains('dark') ? '#3b3f5c' : '#fff'
-                                                )"
-                                                :stroke-width="selectedBlock === row + '-' + col ? 3 : 1"
-                                                class="transition-all duration-300 group-hover:brightness-90 shadow-sm" />
-                                            <text x="0" y="5" text-anchor="middle" fill="white" font-size="9"
-                                                font-weight="900" class="select-none pointer-events-none"
-                                                x-text="row + '-' + col"></text>
-                                        </g>
-                                    </template>
-                                </template>
-                            </svg>
-                        </div>
-                        <div
-                            class="absolute top-6 right-6 w-12 h-12 bg-white/90 dark:bg-black/60 backdrop-blur rounded-full flex items-center justify-center border border-white/20 shadow-xl">
-                            <span class="text-xs font-black text-primary">N</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CHARTS ROW -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
-                        <h5
-                            class="font-black text-[10px] tracking-[0.2em] mb-8 text-gray-400 dark:text-gray-500 text-center italic tracking-tighter">
-                            Proporsi Kondisi Pohon (%)</h5>
-                        <div x-ref="pieChartDummy" class="min-h-[300px]"></div>
-                    </div>
-                    <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
-                        <h5
-                            class="font-black text-[10px] tracking-[0.2em] mb-8 text-gray-400 dark:text-gray-500 text-center italic tracking-tighter">
-                            Analisis Parameter Areal (%)</h5>
-                        <div x-ref="barChartDummy" class="min-h-[300px]"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3. AI ANALYSIS SECTION -->
-        <div
-            class="panel border-0 shadow-2xl p-0 overflow-hidden mt-8 bg-white dark:bg-gradient-to-br dark:from-[#1b2e4b] dark:to-[#060818] rounded-[2rem] border border-gray-100 dark:border-transparent transition-all duration-300">
-            <div class="p-8 md:p-10">
-                <!-- Header Engine -->
-                <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
-                    <div class="flex items-center gap-5">
-                        <div
-                            class="w-16 h-16 bg-primary text-white rounded-3xl flex items-center justify-center shadow-xl shadow-primary/20 dark:shadow-none transition-transform hover:scale-105">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-black text-xl tracking-tight text-gray-900 dark:text-white">
-                                Autonomous Prescriptive Engine</h4>
-                            <p
-                                class="text-[10px] text-primary dark:text-indigo-400 font-black tracking-[0.4em] mt-1 opacity-80">
-                                Diagnostic Node: DSS-SAWIT-V2.4</p>
-                        </div>
-                    </div>
-
-                    <!-- Input Controls -->
-                    <div
-                        class="flex items-center gap-3 bg-gray-50 dark:bg-black/40 p-2 rounded-2xl border border-gray-200 dark:border-white/10 w-full md:w-auto shadow-inner">
-                        <select
-                            class="form-select border-none bg-transparent font-black text-[11px] tracking-widest min-w-[200px] cursor-pointer text-gray-700 dark:text-white focus:ring-0"
-                            x-model="selectedBlock">
-                            <option value="">Pilih Unit Blok</option>
-                            <template x-for="row in ['A','B','C']" :key="row">
-                                <template x-for="col in ['01','02','03','04']" :key="col">
-                                    <option :value="row + '-' + col" x-text="'ANALISIS UNIT ' + row + '-' + col">
-                                    </option>
-                                </template>
-                            </template>
-                        </select>
-                        <button
-                            class="btn btn-primary px-8 py-3 rounded-xl font-black text-[10px] tracking-[0.2em] shadow-lg shadow-primary/30 transition-all active:scale-95 hover:brightness-110"
-                            @click="runInference" :disabled="isAnalyzing">
-                            <span x-show="!isAnalyzing">EXECUTE AI</span>
-                            <span x-show="isAnalyzing" class="flex items-center gap-2">
                                 <span
-                                    class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
-                                NEURAL...
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Result Container -->
-                <div class="min-h-[250px] relative transition-all duration-500">
-
-                    <!-- IDLE STATE -->
-                    <template x-if="!inferenceResult && !isAnalyzing">
-                        <div class="h-full flex flex-col items-center justify-center py-10 opacity-40">
-                            <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-width="1"
-                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <p class="text-gray-400 text-[10px] font-black tracking-[0.6em]">System Standby -
-                                Select Spatial Node</p>
-                        </div>
-                    </template>
-
-                    <!-- LOADING STATE -->
-                    <template x-if="isAnalyzing">
-                        <div
-                            class="flex flex-col items-center justify-center py-10 space-y-6 animate__animated animate__fadeIn">
-                            <div class="relative w-20 h-20">
-                                <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
-                                <div
-                                    class="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin">
+                                    class=">Healthy</span>
+                            </div>
+                            <span class="font-black
+                                    italic dark:text-gray-200 text-[12px]">18 Blok</span>
+                            </div>
+                            <div class="flex items-center justify-between text-warning">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-warning shadow-[0_0_8px_rgba(245,158,11,0.4)]">
+                                    </div>
+                                    <span
+                                        class=">Moderate</span>
+                            </div>
+                            <span class="font-black
+                                        italic dark:text-gray-200 text-[12px]">5 Blok</span>
                                 </div>
-                            </div>
-                            <div class="text-center">
-                                <p
-                                    class="text-xs font-black tracking-[0.3em] text-primary dark:text-indigo-400 animate-pulse">
-                                    Running Monte Carlo Inference...</p>
-                                <p class="text-[9px] text-gray-400 mt-2 font-mono tracking-tighter">
-                                    Memory-Alloc: Spatial Vigor Index Calculation</p>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- RESULT STATE -->
-                    <template x-if="inferenceResult && !isAnalyzing">
-                        <div class="animate__animated animate__fadeInUp">
-                            <!-- Label Metadata -->
-                            <div class="flex items-center gap-4 mb-8">
-                                <span
-                                    class="bg-emerald-500 !text-white text-[9px] font-black px-4 py-1.5 rounded-lg tracking-[0.2em] shadow-lg shadow-emerald-500/20">INFERENCE
-                                    SUCCESS</span>
-                                <div class="h-[1px] flex-1 bg-gray-100 dark:bg-white/10"></div>
-                                <span
-                                    class="text-[10px] font-bold text-gray-400 dark:text-gray-500 tracking-widest">Report
-                                    ID: <span x-text="'SP-ID-'+Math.floor(Math.random()*1000)"></span></span>
-                            </div>
-
-                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                                <!-- Box Rekomendasi (Diberi Jarak & Contrast) -->
-                                <div class="lg:col-span-8 group">
-                                    <div
-                                        class="h-full p-8 bg-gray-50 dark:bg-white/[0.03] rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm transition-all hover:border-emerald-500/50">
-                                        <div class="flex items-center gap-2 mb-6">
-                                            <div class="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
-                                            <h6
-                                                class="text-[11px] font-black text-emerald-600 dark:text-emerald-400 tracking-widest italic">
-                                                Rekomendasi Preskriptif:</h6>
+                                <div class="flex items-center justify-between text-danger">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-3 h-3 rounded-full bg-danger shadow-[0_0_8px_rgba(239,68,68,0.4)]">
                                         </div>
-                                        <p class="text-gray-800 dark:text-gray-100 text-lg md:text-xl font-bold leading-relaxed italic tracking-tight px-2"
-                                            x-text="inferenceResult.recommendation"></p>
+                                        <span
+                                            class=">Critical</span>
+                            </div>
+                            <span class="font-black
+                                            italic dark:text-gray-200 text-[12px]">1 Blok</span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <!-- Box Metrics (Scopus Style) -->
-                                <div class="lg:col-span-4 grid grid-cols-1 gap-4">
-                                    <div
-                                        class="p-6 bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-center">
-                                        <p
-                                            class="text-[9px] text-gray-400 dark:text-gray-500 font-black mb-3 tracking-widest">
-                                            Confidence Score</p>
-                                        <div class="flex items-end gap-2">
-                                            <span class="text-3xl font-black text-gray-900 dark:text-white"
-                                                x-text="inferenceResult.confidence + '%'"></span>
-                                            <svg class="w-5 h-5 text-emerald-500 mb-1" fill="currentColor"
-                                                viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                    clip-rule="evenodd" />
+                        <!-- RIGHT COLUMN: Interactive GIS Map & Charts -->
+                        <div class="xl:col-span-3 space-y-5">
+                            <!-- 1. INTEGRATED GIS MAP PANEL -->
+                            <div
+                                class="panel p-0 border-0 shadow-sm h-[500px] flex flex-col overflow-hidden rounded-3xl dark:bg-[#1b2e4b] relative border border-gray-100 dark:border-white/5">
+                                <!-- Toolbar Map -->
+                                <div
+                                    class="p-4 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1b2e4b] z-20">
+                                    <div class="flex items-center gap-2">
+                                        <div class="p-2 bg-primary/10 text-primary rounded-lg">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-width="2"
+                                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1.01.553.894v10.764a1 1 0 01-1.447.894L15 17m-6 3l6-3m-6 0V7m6 10V4" />
                                             </svg>
                                         </div>
+                                        <h5
+                                            class="font-black text-[10px] tracking-widest text-gray-500 dark:text-gray-400">
+                                            Interactive Spatial Grid</h5>
                                     </div>
+                                    <div class="flex gap-2">
+                                        <button @click="zoomOut"
+                                            class="p-2 bg-gray-50 dark:bg-black/20 hover:bg-primary/10 rounded-xl border border-gray-100 dark:border-gray-700 transition-all text-gray-600 dark:text-gray-400">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M20 12H4" />
+                                            </svg>
+                                        </button>
+                                        <button @click="zoomIn"
+                                            class="p-2 bg-gray-50 dark:bg-black/20 hover:bg-primary/10 rounded-xl border border-gray-100 dark:border-gray-700 transition-all text-gray-600 dark:text-gray-400">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- LEAFLET CONTAINER -->
+                                <div class="flex-1 relative overflow-hidden">
+                                    <div id="leafletMap" class="w-full h-full z-10 bg-[#f8f9fc] dark:bg-black/20"></div>
+
+                                    <!-- Compass Overlay -->
                                     <div
-                                        class="p-6 bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-center">
-                                        <p
-                                            class="text-[9px] text-gray-400 dark:text-gray-500 font-black mb-3 tracking-widest">
-                                            Vigor Index (NDVI)</p>
-                                        <div class="flex items-end gap-2 text-indigo-500 dark:text-indigo-400">
-                                            <span class="text-3xl font-black" x-text="inferenceResult.vigor"></span>
-                                            <span class="text-[10px] font-black mb-2 opacity-60">Value</span>
+                                        class="absolute top-6 right-6 w-12 h-12 bg-white/90 dark:bg-black/60 backdrop-blur rounded-full flex items-center justify-center border border-white/20 shadow-xl text-primary font-black z-[1000] pointer-events-none">
+                                        N</div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Charts Row (Pie & Bar) -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
+                                    <h5
+                                        class="font-black text-[10px] tracking-[0.2em] mb-8 text-gray-400 dark:text-gray-500 text-center italic">
+                                        Proporsi Kondisi Pohon (%)</h5>
+                                    <div x-ref="pieChartDummy" class="min-h-[300px]"></div>
+                                </div>
+                                <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
+                                    <h5
+                                        class="font-black text-[10px] tracking-[0.2em] mb-8 text-gray-400 dark:text-gray-500 text-center italic">
+                                        Analisis Parameter Areal (%)</h5>
+                                    <div x-ref="barChartDummy" class="min-h-[300px]"></div>
+                                </div>
+                            </div>
+
+                            <!-- 3. TREN BIOMETRIK VEGETATIF (FULL WIDTH) -->
+                            <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
+                                <div
+                                    class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-gray-50 dark:border-gray-800 pb-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="p-2 bg-warning/10 text-warning rounded-lg"><svg class="w-5 h-5"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                            </svg></div>
+                                        <div>
+                                            <h5
+                                                class="font-black text-xs tracking-widest text-gray-900 dark:text-white-light">
+                                                Tren Biometrik Vegetatif</h5>
+                                            <p class="text-[10px] font-bold text-gray-400 tracking-tighter">Unit: <span
+                                                    class="text-primary italic"
+                                                    x-text="selectedBlock ? 'Unit Blok ' + selectedBlock : 'Rata-rata Seluruh Kebun'"></span>
+                                            </p>
                                         </div>
                                     </div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="selectedBlock = ''"
+                                            class="btn btn-sm btn-outline-secondary rounded-lg text-[10px] font-black tracking-widest"
+                                            x-show="selectedBlock">RESET DATA</button>
+                                        <span
+                                            class="text-[9px] font-black text-gray-400 tracking-[0.2em] bg-gray-50 dark:bg-black/20 px-3 py-1 rounded-full italic">Source:
+                                            Ground-Check 2024</span>
+                                    </div>
+                                </div>
+                                <div class="relative min-h-[350px]">
+                                    <div x-ref="vegetativeTrendChart"></div>
                                 </div>
                             </div>
                         </div>
-                    </template>
+                    </div>
+
+                    <!-- 4. AI ANALYSIS SECTION -->
+                    <div
+                        class="panel border-0 shadow-2xl p-0 overflow-hidden mt-8 bg-white dark:bg-gradient-to-br dark:from-[#1b2e4b] dark:to-[#060818] rounded-[2rem] border border-gray-100 dark:border-transparent transition-all duration-300">
+                        <div class="p-10">
+                            <div class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+                                <div class="flex items-center gap-5">
+                                    <div
+                                        class="w-16 h-16 bg-primary text-white rounded-3xl flex items-center justify-center shadow-xl shadow-primary/20 dark:shadow-none animate-pulse">
+                                        <svg class="w-8 h-8" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4
+                                            class="font-black text-xl tracking-tight text-gray-900 dark:text-white tracking-tighter">
+                                            Autonomous Prescriptive Engine</h4>
+                                        <p
+                                            class="text-xs text-indigo-500 dark:text-indigo-400 font-black tracking-[0.3em] mt-1 opacity-80">
+                                            Diagnostic Node: DSS-SAWIT-V2.4</p>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="flex items-center gap-4 bg-gray-50 dark:bg-black/30 p-3 rounded-[1.5rem] border border-gray-100 dark:border-white/10 w-full md:w-auto shadow-inner font-black">
+                                    <select
+                                        class="form-select border-none bg-transparent font-black text-xs tracking-widest min-w-[180px] cursor-pointer text-gray-700 dark:text-white focus:ring-0"
+                                        x-model="selectedBlock">
+                                        <option value="">Pilih Unit Blok</option>
+                                        <template x-for="row in ['A','B','C']" :key="row">
+                                            <template x-for="col in ['01','02','03','04']" :key="col">
+                                                <option :value="row + '-' + col"
+                                                    x-text="'ANALISIS BLOK ' + row + '-' + col"
+                                                    class="dark:bg-[#1b2e4b]"></option>
+                                            </template>
+                                        </template>
+                                    </select>
+                                    <button
+                                        class="btn btn-primary px-10 py-3 rounded-2xl font-black text-[11px] tracking-[0.2em] active:scale-95 shadow-xl shadow-primary/20 transition-all"
+                                        @click="runInference" :disabled="isAnalyzing">
+                                        <span x-show="!isAnalyzing">EXECUTE INFERENCE AI</span>
+                                        <span x-show="isAnalyzing" class="animate-pulse">PROCESSING NEURAL...</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                class="min-h-[200px] bg-gray-50/50 dark:bg-black/40 rounded-[2rem] border-2 border-dashed border-gray-200 dark:border-white/10 p-10 flex flex-col justify-center relative overflow-hidden transition-all duration-500">
+                                <template x-if="!inferenceResult && !isAnalyzing">
+                                    <div class="text-center py-4 opacity-50">
+                                        <p
+                                            class="text-gray-400 dark:text-white/20 text-[10px] font-black tracking-[0.5em] italic">
+                                            System Idle - Standby for spatial input</p>
+                                    </div>
+                                </template>
+                                <template x-if="isAnalyzing">
+                                    <div class="flex flex-col items-center gap-6">
+                                        <div
+                                            class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin">
+                                        </div>
+                                        <p
+                                            class="text-xs font-black tracking-widest text-indigo-500 dark:text-indigo-400 animate-pulse">
+                                            Running Monte Carlo Simulation...</p>
+                                    </div>
+                                </template>
+                                <template x-if="inferenceResult && !isAnalyzing">
+                                    <div class="animate__animated animate__fadeInUp relative z-10">
+                                        <div class="flex items-center gap-3 mb-6">
+                                            <span
+                                                class="bg-emerald-500 !text-white text-[9px] font-black px-4 py-1.5 rounded-full tracking-[0.2em] shadow-lg shadow-emerald-500/20">Success
+                                                Inference</span>
+                                            <h6
+                                                class="text-xs font-black text-gray-800 dark:text-white tracking-widest tracking-tighter">
+                                                Diagnostic Report: Blok <span x-text="selectedBlock"></span></h6>
+                                        </div>
+                                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                                            <div
+                                                class="lg:col-span-2 p-8 bg-white dark:bg-black/20 rounded-3xl border-l-[6px] border-l-emerald-500 shadow-sm border border-gray-100 dark:border-white/5 font-bold italic">
+                                                <p
+                                                    class="text-[10px] font-black text-emerald-500 tracking-widest mb-3 italic">
+                                                    Rekomendasi Preskriptif:</p>
+                                                <p class="text-gray-800 dark:text-gray-200 text-lg leading-relaxed italic tracking-tight"
+                                                    x-text="inferenceResult.recommendation"></p>
+                                            </div>
+                                            <div class="space-y-4">
+                                                <div
+                                                    class="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-center">
+                                                    <p
+                                                        class="text-[9px] text-gray-500 dark:text-gray-400 font-black mb-1 tracking-widest italic">
+                                                        Confidence Score</p>
+                                                    <p class="text-2xl font-black text-emerald-500 font-mono"
+                                                        x-text="inferenceResult.confidence + '%'"></p>
+                                                </div>
+                                                <div
+                                                    class="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-center">
+                                                    <p
+                                                        class="text-[9px] text-gray-500 dark:text-gray-400 font-black mb-1 tracking-widest italic">
+                                                        Vigor Index (NDVI)</p>
+                                                    <p class="text-2xl font-black text-indigo-500 dark:text-indigo-400 font-mono"
+                                                        x-text="inferenceResult.vigor"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- ApexCharts Library -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+                <!-- SCRIPTS -->
+                <script>
+                    document.addEventListener("alpine:init", () => {
+                        Alpine.data("detailKebun", () => ({
+                            // Map Properties
+                            map: null,
+                            blockLayer: null,
+                            orthoLayer: null,
+                            selectedBlock: '',
+                            isAnalyzing: false,
+                            inferenceResult: null,
+                            trendChart: null,
 
-    <script>
-        document.addEventListener("alpine:init", () => {
-            Alpine.data("detailKebun", () => ({
-                scale: 1,
-                panX: 0,
-                panY: 0,
-                isPanning: false,
-                startX: 0,
-                startY: 0,
-                selectedBlock: '',
-                isAnalyzing: false,
-                inferenceResult: null,
-
-                // DATA DUMMY (Fallbacks if Backend is Sleep)
-                kondisiPohon: {
-                    "PKK NORMAL": 92.5,
-                    "PKK KERDIL": 5.2,
-                    "PKK MATI": 2.3
-                },
-                arealTanaman: {
-                    "KACANGAN": 78.5,
-                    "KURANG BAIK": 12.0,
-                    "TERGENANG": 6.5,
-                    "ANAK KAYU": 3.0
-                },
-                blockStatuses: {
-                    'A-03': '#f59e0b',
-                    'B-02': '#ef4444'
-                },
-
-                {{-- 
-                ==========================================================================
-                BACKEND INTEGRATION:
-                Uncomment saat DB siap & variabel dikirim dari MonitoringController
-                ==========================================================================
+                            // --- LOGIKA BACKEND (DITIDURKAN) ---
+                            {{-- 
+                infoKebun: @json($infoKebun ?? []),
+                blockStatuses: @json($blockStatuses ?? []),
                 kondisiPohon: @json($kondisiPohon ?? []),
                 arealTanaman: @json($arealTanaman ?? []),
-                blockStatuses: @json($blockStatuses ?? []),
+                vegetativeData: @json($vegetativeTrend ?? []),
+                tileConfig: @json($tileConfig ?? null),
                 --}}
 
-                layers: [{
-                        id: 'ndvi',
-                        label: 'Layer Batas Blok',
-                        active: true
-                    },
-                    {
-                        id: 'point',
-                        label: 'Layer Point (Pohon)',
-                        active: true
-                    },
-                    {
-                        id: 'maint',
-                        label: 'Layer Pemeliharaan',
-                        active: false
-                    },
-                    {
-                        id: 'lcc',
-                        label: 'Layer Kacangan',
-                        active: false
-                    },
-                ],
-
-                init() {
-                    setTimeout(() => {
-                        this.renderCharts();
-                    }, 300);
-                },
-
-                getBlockColor(id) {
-                    return this.blockStatuses[id] || '#10b981';
-                },
-
-                zoomIn() {
-                    this.scale = Math.min(this.scale + 0.3, 3);
-                },
-                zoomOut() {
-                    this.scale = Math.max(this.scale - 0.3, 0.5);
-                },
-                startPan(e) {
-                    this.isPanning = true;
-                    this.startX = e.clientX - this.panX;
-                    this.startY = e.clientY - this.panY;
-                },
-                doPan(e) {
-                    if (!this.isPanning) return;
-                    this.panX = e.clientX - this.startX;
-                    this.panY = e.clientY - this.startY;
-                },
-                endPan() {
-                    this.isPanning = false;
-                },
-
-                renderCharts() {
-                    const isDark = document.documentElement.classList.contains('dark');
-                    const themeText = isDark ? '#cbd5e1' : '#334155';
-
-                    new ApexCharts(this.$refs.pieChartDummy, {
-                        series: Object.values(this.kondisiPohon),
-                        labels: Object.keys(this.kondisiPohon),
-                        chart: {
-                            type: 'pie',
-                            height: 350
-                        },
-                        colors: ['#0ea5e9', '#f59e0b', '#ef4444'],
-                        stroke: {
-                            show: false
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                colors: themeText
-                            }
-                        },
-                        dataLabels: {
-                            enabled: true,
-                            style: {
-                                fontWeight: 900
+                            // DUMMY DATA FOR UI (Fallbacks)
+                            kondisiPohon: {
+                                "PKK NORMAL": 92.5,
+                                "PKK KERDIL": 5.2,
+                                "PKK MATI": 2.3
                             },
-                            formatter: val => val.toFixed(1) + "%"
-                        }
-                    }).render();
-
-                    new ApexCharts(this.$refs.barChartDummy, {
-                        series: Object.entries(this.arealTanaman).map(([k, v]) => ({
-                            name: k,
-                            data: [v]
-                        })),
-                        chart: {
-                            type: 'bar',
-                            height: 300,
-                            toolbar: {
-                                show: false
-                            }
-                        },
-                        colors: ['#84cc16', '#f59e0b', '#ef4444', '#78350f'],
-                        plotOptions: {
-                            bar: {
-                                columnWidth: '60%',
-                                borderRadius: 10
-                            }
-                        },
-                        xaxis: {
-                            categories: [''],
-                            axisBorder: {
-                                show: false
-                            }
-                        },
-                        yaxis: {
-                            max: 100,
-                            labels: {
-                                style: {
-                                    colors: themeText
+                            arealTanaman: {
+                                "KACANGAN": 78.5,
+                                "KURANG BAIK": 12.0,
+                                "TERGENANG": 6.5,
+                                "ANAK KAYU": 3.0
+                            },
+                            dummyBlockStatuses: {
+                                'A-03': '#f59e0b',
+                                'C-02': '#f59e0b',
+                                'B-02': '#ef4444'
+                            },
+                            vegetativeData: {
+                                'default': {
+                                    girth: [75, 76, 78, 79, 82, 85],
+                                    fronds: [32, 33, 33, 34, 35, 36],
+                                    length: [180, 182, 185, 188, 190, 192],
+                                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun']
                                 },
-                                formatter: v => v + "%"
-                            }
-                        },
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                colors: themeText
-                            }
-                        },
-                        grid: {
-                            borderColor: isDark ? '#334155' : '#e2e8f0'
-                        }
-                    }).render();
-                },
+                                'C-02': {
+                                    girth: [60, 62, 63, 65, 66, 68],
+                                    fronds: [28, 29, 29, 30, 30, 31],
+                                    length: [150, 155, 158, 160, 162, 165],
+                                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun']
+                                },
+                                'B-02': {
+                                    girth: [55, 56, 56, 57, 58, 59],
+                                    fronds: [25, 26, 26, 26, 27, 27],
+                                    length: [140, 142, 143, 144, 145, 148],
+                                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun']
+                                }
+                            },
 
-                runInference() {
-                    if (!this.selectedBlock) {
-                        alert('SILA PILIH BLOK TERLEBIH DAHULU');
-                        return;
-                    }
-                    this.isAnalyzing = true;
-                    this.inferenceResult = null;
+                            layers: [{
+                                    id: 'ortho',
+                                    label: 'Layer Orthophoto (Drone)',
+                                    active: true
+                                },
+                                {
+                                    id: 'blocks',
+                                    label: 'Layer Batas Blok Spasial',
+                                    active: true
+                                },
+                                {
+                                    id: 'trees',
+                                    label: 'Point Individu Pohon',
+                                    active: false
+                                },
+                            ],
 
-                    {{-- 
-                    ==========================================================================
-                    BACKEND INTEGRATION: REAL AI CALL
-                    Uncomment saat route monitoring.analyze-block siap
-                    ==========================================================================
-                    fetch("{{ route('monitoring.analyze-block') }}", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-                        body: JSON.stringify({ blok_id: this.selectedBlock, kebun: '1KDP' })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        this.isAnalyzing = false;
-                        this.inferenceResult = data;
+                            init() {
+                                this.$nextTick(() => {
+                                    this.initMap();
+                                    this.renderCharts();
+                                    this.renderVegetativeTrend();
+                                });
+                                this.$watch('selectedBlock', (val) => {
+                                    this.updateVegetativeChart(val);
+                                });
+                            },
+
+                            initMap() {
+                                // Start Map at Sei Dadap Sample
+                                this.map = L.map('leafletMap').setView([-2.95, 104.7], 14);
+
+                                // Tile Layer Standard Fallback
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+
+                                // Logic Dummy Grid (Simulasi Grid A01-C04 di GIS)
+                                // Nantinya diganti L.geoJSON(this.geoJSONData)
+                                const gridColors = this.dummyBlockStatuses;
+                                ['A', 'B', 'C'].forEach((row, rIdx) => {
+                                    ['01', '02', '03', '04'].forEach((col, cIdx) => {
+                                        const blockId = row + '-' + col;
+                                        const lat = -2.95 - (rIdx * 0.005);
+                                        const lng = 104.7 + (cIdx * 0.005);
+
+                                        L.rectangle([
+                                            [lat, lng],
+                                            [lat - 0.004, lng + 0.004]
+                                        ], {
+                                            color: "#fff",
+                                            weight: 1,
+                                            fillColor: gridColors[blockId] || "#10b981",
+                                            fillOpacity: 0.6
+                                        }).on('click', () => {
+                                            this.selectedBlock = blockId;
+                                        }).addTo(this.map);
+                                    });
+                                });
+                            },
+
+                            getBlockColor(id) {
+                                return this.dummyBlockStatuses[id] || '#10b981';
+                            },
+                            zoomIn() {
+                                this.map.zoomIn();
+                            },
+                            zoomOut() {
+                                this.map.zoomOut();
+                            },
+                            toggleLayer(id) {
+                                /* Logic layer switch Leaflet */
+                            },
+
+                            renderCharts() {
+                                const isDark = document.documentElement.classList.contains('dark');
+                                const textCol = isDark ? '#cbd5e1' : '#334155';
+
+                                new ApexCharts(this.$refs.pieChartDummy, {
+                                    series: Object.values(this.kondisiPohon),
+                                    labels: Object.keys(this.kondisiPohon),
+                                    chart: {
+                                        type: 'pie',
+                                        height: 350
+                                    },
+                                    colors: ['#0ea5e9', '#f59e0b', '#ef4444'],
+                                    stroke: {
+                                        show: false
+                                    },
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            colors: textCol
+                                        }
+                                    },
+                                    dataLabels: {
+                                        enabled: true,
+                                        style: {
+                                            fontWeight: 900
+                                        },
+                                        formatter: val => val.toFixed(1) + "%"
+                                    }
+                                }).render();
+
+                                new ApexCharts(this.$refs.barChartDummy, {
+                                    series: Object.entries(this.arealTanaman).map(([k, v]) => ({
+                                        name: k,
+                                        data: [v]
+                                    })),
+                                    chart: {
+                                        type: 'bar',
+                                        height: 300,
+                                        toolbar: {
+                                            show: false
+                                        }
+                                    },
+                                    colors: ['#84cc16', '#f59e0b', '#ef4444', '#78350f'],
+                                    plotOptions: {
+                                        bar: {
+                                            columnWidth: '60%',
+                                            borderRadius: 10
+                                        }
+                                    },
+                                    xaxis: {
+                                        categories: [''],
+                                        axisBorder: {
+                                            show: false
+                                        }
+                                    },
+                                    yaxis: {
+                                        max: 100,
+                                        labels: {
+                                            style: {
+                                                colors: textCol
+                                            },
+                                            formatter: v => v + "%"
+                                        }
+                                    },
+                                    legend: {
+                                        position: 'top',
+                                        labels: {
+                                            colors: textCol
+                                        }
+                                    },
+                                    grid: {
+                                        borderColor: isDark ? '#334155' : '#e2e8f0'
+                                    }
+                                }).render();
+                            },
+
+                            renderVegetativeTrend() {
+                                const isDark = document.documentElement.classList.contains('dark');
+                                const textCol = isDark ? '#cbd5e1' : '#334155';
+                                const data = this.vegetativeData['default'];
+                                this.trendChart = new ApexCharts(this.$refs.vegetativeTrendChart, {
+                                    series: [{
+                                        name: 'Lingkar Batang (cm)',
+                                        data: data.girth
+                                    }, {
+                                        name: 'Jumlah Pelepah',
+                                        data: data.fronds
+                                    }, {
+                                        name: 'Panjang Pelepah (cm)',
+                                        data: data.length
+                                    }],
+                                    chart: {
+                                        type: 'bar',
+                                        height: 350,
+                                        toolbar: {
+                                            show: true
+                                        },
+                                        animations: {
+                                            enabled: true
+                                        }
+                                    },
+                                    plotOptions: {
+                                        bar: {
+                                            columnWidth: '55%',
+                                            borderRadius: 4
+                                        }
+                                    },
+                                    colors: ['#0ea5e9', '#10b981', '#f59e0b'],
+                                    xaxis: {
+                                        categories: data.labels,
+                                        labels: {
+                                            style: {
+                                                colors: textCol,
+                                                fontWeight: 700
+                                            }
+                                        }
+                                    },
+                                    yaxis: {
+                                        labels: {
+                                            style: {
+                                                colors: textCol
+                                            }
+                                        }
+                                    },
+                                    legend: {
+                                        position: 'top',
+                                        labels: {
+                                            colors: textCol
+                                        }
+                                    },
+                                    grid: {
+                                        borderColor: isDark ? '#334155' : '#e2e8f0'
+                                    },
+                                    tooltip: {
+                                        theme: isDark ? 'dark' : 'light'
+                                    }
+                                });
+                                this.trendChart.render();
+                            },
+
+                            updateVegetativeChart(blockId) {
+                                const newData = this.vegetativeData[blockId] || this.vegetativeData['default'];
+                                this.trendChart.updateSeries([{
+                                    name: 'Lingkar Batang (cm)',
+                                    data: newData.girth
+                                }, {
+                                    name: 'Jumlah Pelepah',
+                                    data: newData.fronds
+                                }, {
+                                    name: 'Panjang Pelepah (cm)',
+                                    data: newData.length
+                                }]);
+                            },
+
+                            runInference() {
+                                if (!this.selectedBlock) {
+                                    alert('SILA PILIH BLOK TERLEBIH DAHULU');
+                                    return;
+                                }
+                                this.isAnalyzing = true;
+                                this.inferenceResult = null;
+                                setTimeout(() => {
+                                    this.isAnalyzing = false;
+                                    this.inferenceResult = {
+                                        recommendation: "Berdasarkan analisis citra spasial pada Blok " +
+                                            this.selectedBlock +
+                                            ", terdeteksi defisiensi hara Nitrogen signifikan. Rekomendasi: Aplikasi Urea 1.5kg/pokok dan evaluasi sistem drainase.",
+                                        confidence: (Math.random() * (99.8 - 96.5) + 96.5).toFixed(1),
+                                        vigor: (Math.random() * (0.85 - 0.75) + 0.75).toFixed(3)
+                                    };
+                                }, 2500);
+                            }
+                        }));
                     });
-                    --}}
+                </script>
 
-                    // SIMULASI DUMMY (Hapus jika real AI aktif)
-                    setTimeout(() => {
-                        this.isAnalyzing = false;
-                        this.inferenceResult = {
-                            recommendation: "Berdasarkan analisis citra spasial & sensor ground-truth pada Blok " +
-                                this.selectedBlock +
-                                ", terdeteksi defisiensi hara Nitrogen yang signifikan. Rekomendasi: Aplikasi segera Urea 1.5kg/pokok. Segera lakukan normalisasi parit di sisi timur blok untuk mencegah akumulasi genangan.",
-                            confidence: (Math.random() * (99.8 - 96.5) + 96.5).toFixed(1),
-                            vigor: (Math.random() * (0.85 - 0.75) + 0.75).toFixed(3)
-                        };
-                    }, 2500);
-                }
-            }));
-        });
-    </script>
+                <style>
+                    .custom_switch:checked~span:before {
+                        background-color: #fff !important;
+                    }
 
-    <style>
-        .custom_switch:checked~span:before {
-            background-color: #fff !important;
-        }
+                    .panel {
+                        background: #fff;
+                        border-radius: 2rem;
+                    }
 
-        .panel {
-            background: #fff;
-            border-radius: 2rem;
-        }
+                    .dark .panel {
+                        background: #1b2e4b;
+                    }
 
-        .dark .panel {
-            background: #1b2e4b;
-        }
+                    [x-cloak] {
+                        display: none !important;
+                    }
 
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
+                    #leafletMap {
+                        border-radius: 2rem;
+                        min-height: 440px;
+                    }
+                </style>
 </x-layout.default>

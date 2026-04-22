@@ -13,6 +13,7 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AI_Controller;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SpatialController; // Import Baru
 
 /*
 |--------------------------------------------------------------------------
@@ -54,8 +55,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/detail-kebun', [MonitoringController::class, 'detailKebun'])->name('detail-kebun');
         Route::get('/detail/{id}', [MonitoringController::class, 'detailAreal'])->name('detail');
         Route::get('/laporan', [MonitoringController::class, 'laporan'])->name('laporan');
-
-        // --- TAMBAHKAN INI AGAR MENU SETTINGS DI SIDEBAR BISA DIKLIK ---
         Route::get('/settings', [MonitoringController::class, 'settings'])->name('settings');
     });
 
@@ -72,15 +71,28 @@ Route::middleware('auth')->group(function () {
             Route::get('/riwayat-data', [MonitoringController::class, 'riwayatData'])->name('riwayat-data');
         });
 
+        /**
+         * MODULE: AI ENGINE
+         */
         Route::controller(AI_Controller::class)->group(function () {
             Route::get('/ai/analyze-dashboard', 'analyzeDashboard')->name('ai.analyze.dashboard');
             Route::post('/ai/analyze/{blockId}', 'generateAnalysis')->name('ai.analyze');
             Route::get('/ai/recommendation/{blockId}', 'getPrescriptiveRecommendation')->name('ai.recommendation');
             Route::post('/ai/config/update', 'updateConfig')->name('ai.config.update');
             Route::post('/monitoring/analyze-block', 'analyzeBlock')->name('monitoring.analyze-block');
-            Route::post('/monitoring/analyze-block', 'analyzeBlock')->name('monitoring.analyze-block');
         });
 
+        /**
+         * MODULE: SPASIAL API (Untuk Interaktivitas Peta GeoJSON & GIS)
+         */
+        Route::prefix('api/spatial')->name('api.spatial.')->group(function () {
+            Route::get('/blocks/{kode_kebun}', [SpatialController::class, 'getBlocks'])->name('blocks');
+            Route::get('/trees/{kode_kebun}', [SpatialController::class, 'getTrees'])->name('trees');
+        });
+
+        /**
+         * MODULE: REPORTS
+         */
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
             Route::post('/preview', [ReportController::class, 'preview'])->name('preview');

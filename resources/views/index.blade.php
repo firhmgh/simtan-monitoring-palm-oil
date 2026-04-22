@@ -40,7 +40,9 @@
             <div class="rounded-xl shadow-sm p-6 text-white transform hover:scale-[1.02] transition-transform duration-300"
                 style="background: linear-gradient(135deg, #00a76f 0%, #007b55 100%);">
                 <div class="text-sm font-medium text-white/80 mb-3 tracking-wider">Total Luas Areal</div>
-                <div class="text-[32px] font-bold leading-none mb-4">15.200 <span class="text-lg">Ha</span></div>
+                <div class="text-[32px] font-bold leading-none mb-4">
+                    {{-- Backend: {{ number_format($total_luas ?? 15200) }} --}}
+                    15.200 <span class="text-lg">Ha</span></div>
                 <div class="text-sm text-white/90 font-medium opacity-75 italic">Seluruh Regional I</div>
             </div>
 
@@ -48,7 +50,9 @@
             <div class="rounded-xl shadow-sm p-6 text-white transform hover:scale-[1.02] transition-transform duration-300"
                 style="background: linear-gradient(135deg, #1c64f2 0%, #154ec1 100%);">
                 <div class="text-sm font-medium text-white/80 mb-3 tracking-wider">Total Jumlah Pokok</div>
-                <div class="text-[32px] font-bold leading-none mb-4">2.1 <span class="text-lg">Juta</span></div>
+                <div class="text-[32px] font-bold leading-none mb-4">
+                    {{-- Backend: {{ $total_pokok ?? '2.1' }} --}}
+                    2.1 <span class="text-lg">Juta</span></div>
                 <div class="text-sm text-white/90 font-medium opacity-75 italic">Tanaman kelapa sawit</div>
             </div>
 
@@ -56,7 +60,9 @@
             <div class="rounded-xl shadow-sm p-6 text-white transform hover:scale-[1.02] transition-transform duration-300"
                 style="background: linear-gradient(135deg, #f97316 0%, #d95d0d 100%);">
                 <div class="text-sm font-medium text-white/80 mb-3 tracking-wider">Areal Produksi</div>
-                <div class="text-[32px] font-bold leading-none mb-4">1.120 <span class="text-lg">Ha</span></div>
+                <div class="text-[32px] font-bold leading-none mb-4">
+                    {{-- Backend: {{ number_format($areal_produksi ?? 1120) }} --}}
+                    1.120 <span class="text-lg">Ha</span></div>
                 <div class="text-sm text-white/90 font-medium opacity-75 italic">Dalam masa TBM III</div>
             </div>
 
@@ -64,7 +70,9 @@
             <div class="rounded-xl shadow-sm p-6 text-white transform hover:scale-[1.02] transition-transform duration-300"
                 style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
                 <div class="text-sm font-medium text-white/80 mb-3 tracking-wider">Rata-rata Kesehatan</div>
-                <div class="text-[32px] font-bold leading-none mb-4">82.8%</div>
+                <div class="text-[32px] font-bold leading-none mb-4">
+                    {{-- Backend: {{ $avg_health ?? '82.8' }}% --}}
+                    82.8%</div>
                 <div class="text-sm text-white/90 font-medium opacity-75 italic">Tingkat kesehatan tanaman</div>
             </div>
         </div>
@@ -236,14 +244,18 @@
                         class="divide-y divide-gray-100 dark:divide-white-dark/5 text-[#3b3f5c] dark:text-white-dark font-semibold">
                         <tr class="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
                             <td class="py-4 px-4 font-bold">Laju Pertumbuhan Batang</td>
-                            <td class="py-4 px-4 text-center">12.5 cm</td>
+                            <td class="py-4 px-4 text-center">
+                                {{-- Backend: {{ $agregat['avg_girth'] ?? '12.5' }} cm --}}
+                                12.5 cm</td>
                             <td class="py-4 px-4 text-center">12.0 cm</td>
                             <td class="py-4 px-4 text-center text-emerald-500 font-black">+0.5</td>
                             <td class="py-4 px-4 text-center">✓</td>
                         </tr>
                         <tr class="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors text-rose-500">
                             <td class="py-4 px-4 font-bold">Tingkat Kelangsungan Hidup (Pokok Hidup)</td>
-                            <td class="py-4 px-4 text-center">97.8%</td>
+                            <td class="py-4 px-4 text-center">
+                                {{-- Backend: {{ $agregat['survival_rate'] ?? '97.8' }}% --}}
+                                97.8%</td>
                             <td class="py-4 px-4 text-center">98.0%</td>
                             <td class="py-4 px-4 text-center font-black">-0.2</td>
                             <td class="py-4 px-4 text-center">!</td>
@@ -340,6 +352,15 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50 dark:divide-white-dark/5 text-gray-700 dark:text-white-dark">
+                        {{-- 
+                        @foreach ($latestKebuns as $kebun)
+                        <tr>
+                            <td class="py-5 px-4 font-black uppercase text-primary italic">{{ $kebun->kebun }}</td>
+                            <td class="py-5 px-4 text-center font-black">{{ $kebun->luas_ha }} Ha</td>
+                            <td class="py-5 px-4 text-center font-black uppercase">Valid</td>
+                        </tr>
+                        @endforeach 
+                        --}}
                         <!-- Baris 1: Baik -->
                         <tr class="hover:bg-gray-50 dark:hover:bg-black/5 transition-colors cursor-pointer">
                             <td class="py-4 px-4 font-black">KBN-001</td>
@@ -397,6 +418,57 @@
 
     <script>
         document.addEventListener("alpine:init", () => {
+
+            const vegetatifData = {
+                categories: [
+                    '2024 | BERGELOMBANG | 190A',
+                    '2024 | BERGELOMBANG | 200A',
+                    '2024 | BERBUKIT | 210A',
+                    '2024 | BERBUKIT | 220A',
+                    '2024 | RENDAHAN | 230A',
+                    '2024 | RENDAHAN | 240B'
+                ],
+                series: [{
+                        name: 'Lingkar Batang',
+                        data: [0.075, 0.082, 0.077, 0.085, 0.090, 0.088]
+                    },
+                    {
+                        name: 'Jumlah Pelepah',
+                        data: [0.044, 0.042, 0.043, 0.045, 0.048, 0.047]
+                    },
+                    {
+                        name: 'Panjang Pelepah',
+                        data: [0.192, 0.183, 0.190, 0.195, 0.198, 0.194]
+                    }
+                ]
+            };
+
+            const allVegetatifData = vegetatifData.categories.map((cat, idx) => ({
+                kebun: cat,
+                lingkar_batang: vegetatifData.series[0].data[idx],
+                jumlah_pelepah: vegetatifData.series[1].data[idx],
+                panjang_pelepah: vegetatifData.series[2].data[idx],
+            }));
+
+            function getSortedVegetatifSeries(byField) {
+                const sorted = [...allVegetatifData].sort((a, b) => b[byField] - a[byField]);
+                return {
+                    categories: sorted.map(d => d.kebun),
+                    series: [{
+                            name: 'Lingkar Batang',
+                            data: sorted.map(d => d.lingkar_batang)
+                        },
+                        {
+                            name: 'Jumlah Pelepah',
+                            data: sorted.map(d => d.jumlah_pelepah)
+                        },
+                        {
+                            name: 'Panjang Pelepah',
+                            data: sorted.map(d => d.panjang_pelepah)
+                        }
+                    ]
+                };
+            }
             Alpine.data("dashboard", () => ({
                 isThinking: false,
                 analysisMode: 'multimodal',
@@ -424,6 +496,118 @@
                         hex: "#4361ee"
                     }
                 ],
+
+                get korelasiVegetatifChartOptions() {
+                    const isDark = this.$store.app.theme === "dark" || this.$store.app.isDarkMode;
+                    const textCol = isDark ? '#bfc9d4' : '#3b3f5c';
+                    return {
+                        series: vegetatifData.series,
+                        chart: {
+                            type: 'bar',
+                            height: 600,
+                            width: '100%',
+                            stacked: false,
+                            events: {
+                                legendClick: function(chartContext, seriesIndex) {
+                                    const fieldMap = ['lingkar_batang', 'jumlah_pelepah',
+                                        'panjang_pelepah'
+                                    ];
+                                    const selectedField = fieldMap[seriesIndex];
+                                    const {
+                                        categories,
+                                        series
+                                    } = getSortedVegetatifSeries(selectedField);
+                                    chartContext.updateOptions({
+                                        xaxis: {
+                                            categories
+                                        },
+                                        series
+                                    });
+                                    return false;
+                                }
+                            },
+                            toolbar: {
+                                show: true,
+                                tools: {
+                                    download: true,
+                                    zoom: false,
+                                    pan: false,
+                                    reset: true
+                                }
+                            },
+                            fontFamily: 'Inter, sans-serif',
+                            animations: {
+                                enabled: true,
+                                easing: 'easeinout',
+                                speed: 700
+                            }
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: false,
+                                columnWidth: '55%',
+                                borderRadius: 4
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        xaxis: {
+                            categories: vegetatifData.categories,
+                            labels: {
+                                rotate: -45,
+                                style: {
+                                    fontSize: '10px',
+                                    fontWeight: 600,
+                                    colors: textCol
+                                },
+                                formatter: val => val.split("|").map(p => p.trim()).join(" → ")
+                            },
+                            title: {
+                                text: 'Tahun - Kebun - Topografi - Blok',
+                                style: {
+                                    fontWeight: 600,
+                                    color: textCol
+                                }
+                            }
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Nilai Pengukuran',
+                                style: {
+                                    fontWeight: 600,
+                                    color: textCol
+                                }
+                            },
+                            labels: {
+                                formatter: val => val.toFixed(3),
+                                style: {
+                                    colors: textCol
+                                }
+                            }
+                        },
+                        grid: {
+                            borderColor: isDark ? '#191e3a' : '#e0e0e0',
+                            strokeDashArray: 4
+                        },
+                        colors: ['#1E90FF', '#32CD32', '#FF8C00'],
+                        legend: {
+                            position: 'top',
+                            fontSize: '13px',
+                            labels: {
+                                colors: textCol
+                            }
+                        },
+                        tooltip: {
+                            shared: true,
+                            intersect: false,
+                            theme: isDark ? 'dark' : 'light',
+                            y: {
+                                formatter: val => `${parseFloat(val).toFixed(3)}`
+                            }
+                        }
+                    };
+                },
 
                 //    async runAIInference() {
                 //         this.isThinking = true;
@@ -899,60 +1083,8 @@
                     }).render();
 
                     // 6. Korelasi Vegetatif
-                    new ApexCharts(this.$refs.vegetatifChart, {
-                        series: [{
-                                name: 'Lingkar Batang',
-                                data: [12.5, 11.8, 12.1, 13.0, 12.4]
-                            },
-                            {
-                                name: 'Jumlah Pelepah',
-                                data: [34, 32, 35, 33, 36]
-                            },
-                            {
-                                name: 'Panjang Pelepah',
-                                data: [4.2, 4.0, 4.1, 4.3, 4.2]
-                            }
-                        ],
-                        chart: {
-                            type: 'bar',
-                            height: 450,
-                            toolbar: {
-                                show: true
-                            }
-                        },
-                        plotOptions: {
-                            bar: {
-                                horizontal: false,
-                                columnWidth: '55%',
-                                borderRadius: 4
-                            }
-                        },
-                        xaxis: {
-                            categories: ['2022-A1', '2022-A2', '2023-B1', '2023-B2', '2024-C1'],
-                            labels: {
-                                style: {
-                                    colors: isDark ? '#bfc9d4' : '#3b3f5c'
-                                }
-                            }
-                        },
-                        yaxis: {
-                            labels: {
-                                style: {
-                                    colors: isDark ? '#bfc9d4' : '#3b3f5c'
-                                }
-                            }
-                        },
-                        colors: ['#1E90FF', '#32CD32', '#FF8C00'],
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                colors: isDark ? '#bfc9d4' : '#3b3f5c'
-                            }
-                        },
-                        grid: {
-                            borderColor: isDark ? '#191e3a' : '#f0f0f0'
-                        }
-                    }).render();
+                    new ApexCharts(this.$refs.vegetatifChart, this
+                        .korelasiVegetatifChartOptions).render();
                 }
             }));
         });
