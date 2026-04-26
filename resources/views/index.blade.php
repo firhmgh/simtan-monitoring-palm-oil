@@ -355,9 +355,9 @@
                         {{-- 
                         @foreach ($latestKebuns as $kebun)
                         <tr>
-                            <td class="py-5 px-4 font-black uppercase text-primary italic">{{ $kebun->kebun }}</td>
+                            <td class="py-5 px-4 font-black text-primary italic">{{ $kebun->kebun }}</td>
                             <td class="py-5 px-4 text-center font-black">{{ $kebun->luas_ha }} Ha</td>
-                            <td class="py-5 px-4 text-center font-black uppercase">Valid</td>
+                            <td class="py-5 px-4 text-center font-black">Valid</td>
                         </tr>
                         @endforeach 
                         --}}
