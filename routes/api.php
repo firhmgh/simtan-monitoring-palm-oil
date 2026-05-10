@@ -32,7 +32,7 @@ Route::prefix('spatial')->group(function () {
 
     /**
      * API: Konfigurasi Spasial Kebun
-     * Mengambil koordinat pusat (Center) dan level zoom berdasarkan data tabel 'lokasi_kebuns'.
+     * Mengambil koordinat pusat (Center) dan level zoom berdasarkan data tabel 'lokasi_kebun'.
      */
     Route::get('/config/{kode_kebun}', [SpatialController::class, 'getConfig'])->name('api.spatial.config');
 

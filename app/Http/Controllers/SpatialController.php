@@ -28,7 +28,7 @@ class SpatialController extends Controller
 
     /**
      * API: Mengambil Konfigurasi Awal Peta (Center & Zoom).
-     * Mengintegrasikan koordinat lokasi kebun dari tabel 'lokasi_kebuns' ke UI.
+     * Mengintegrasikan koordinat lokasi kebun dari tabel 'lokasi_kebun' ke UI.
      */
     public function getConfig($kode_kebun)
     {

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DetailRekaps;
+use App\Models\DetailRekap;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf; 
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -13,7 +13,7 @@ class ReportController extends Controller
      */
     public function preview()
     {
-        $reports = DetailRekaps::with('simtanForm')->get();
+        $reports = DetailRekap::with('simtanForm')->get();
         return view('reports.preview', compact('reports'));
     }
 
@@ -22,9 +22,9 @@ class ReportController extends Controller
      */
     public function downloadPDF(Request $request)
     {
-        $data = DetailRekaps::all();
+        $data = DetailRekap::all();
         $pdf = Pdf::loadView('reports.pdf_template', compact('data'));
-        
+
         return $pdf->download('Laporan_Monitoring_TBM_III.pdf');
     }
 

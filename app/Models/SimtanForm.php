@@ -8,18 +8,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Model SimtanForms - Entitas Pusat Metadata Unggahan.
+ * Model SimtanForm - Entitas Pusat Metadata Unggahan.
  * Merupakan wadah agregasi bagi data operasional lainnya.
  */
-class SimtanForms extends Model
+class SimtanForm extends Model
 {
     use HasFactory;
 
-    protected $table = 'simtan_forms';
+    protected $table = 'simtan_form';
 
     protected $fillable = [
         'kode_upload',
         'uploaded_by',
+        'personel_pj',
         'judul_file',
         'tanggal_upload',
         'kategori_file',
@@ -37,11 +38,12 @@ class SimtanForms extends Model
     }
 
     /**
-     * Relasi Agregasi ke DetailRekaps.
+     * Relasi Agregasi ke DetailRekap.
+     * Menggunakan simtan_form_id sebagai foreign key (Integer)
      */
-    public function detailRekaps(): HasMany
+    public function DetailRekap(): HasMany
     {
-        return $this->hasMany(DetailRekaps::class, 'kode_upload', 'kode_upload');
+        return $this->hasMany(DetailRekap::class, 'simtan_form_id', 'id');
     }
 
     /**
@@ -49,22 +51,22 @@ class SimtanForms extends Model
      */
     public function korelasiVegetatif(): HasMany
     {
-        return $this->hasMany(KorelasiVegetatif::class, 'kode_upload', 'kode_upload');
+        return $this->hasMany(KorelasiVegetatif::class, 'simtan_form_id', 'id');
     }
 
     /**
-     * Relasi ke LokasiKebuns (Data Spasial/GIS).
+     * Relasi ke LokasiKebun (Data Spasial/GIS).
      */
-    public function lokasiKebuns(): HasMany
+    public function LokasiKebun(): HasMany
     {
-        return $this->hasMany(LokasiKebuns::class, 'kode_upload', 'kode_upload');
+        return $this->hasMany(LokasiKebun::class, 'simtan_form_id', 'id');
     }
 
     /**
-     * Relasi ke Audit Trail (UploadLogs).
+     * Relasi ke Audit Trail (UploadLog).
      */
-    public function uploadLogs(): HasMany
+    public function UploadLog(): HasMany
     {
-        return $this->hasMany(UploadLogs::class, 'simtan_form_id');
+        return $this->hasMany(UploadLog::class, 'simtan_form_id', 'id');
     }
 }

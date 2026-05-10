@@ -35,63 +35,110 @@
             </div>
         </div>
 
-        <!-- 2. KPI Summary Cards -->
+        <!-- 2. KPI Summary Cards - Professional Enterprise Standard (Vristo Optimized) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Card 1: Green (Total Luas) -->
-            <div class="relative overflow-hidden rounded-3xl p-6 shadow-sm"
-                style="background: linear-gradient(135deg, #00a76f 0%, #007850 100%);">
-                <div class="relative z-10 text-white">
-                    <div class="text-[10px] font-black text-white/70 tracking-widest mb-3">Total Luas Areal
+
+            <!-- Card 1: Green Gradient (Spatial Coverage) -->
+            <div class="panel border-0 p-0 overflow-hidden rounded-2xl shadow-md transform hover:scale-[1.02] transition-all duration-300 group"
+                style="background: linear-gradient(135deg, #00a76f 0%, #007b55 100%);">
+                <div class="p-6 relative text-white">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Spatial
+                                Coverage</p>
+                            <h3 class="text-white/90 text-xs font-bold">Total Luas Areal</h3>
+                        </div>
+                        <!-- Icon Map -->
+                        <div
+                            class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="flex items-end gap-2">
-                        {{-- Logika Backend: {{ number_format($kpi['total_luas'] ?? 2450) }} --}}
-                        <span class="text-4xl font-black">2.450</span>
-                        <span class="text-lg font-bold text-white/80 mb-1">Ha</span>
+                    <div class="mt-6 flex items-baseline gap-2">
+                        <span class="text-4xl font-black">
+                            {{ number_format($kpi['total_luas'] ?? ($total_luas ?? 15200)) }}
+                        </span>
+                        <span class="text-lg font-bold text-white/70 uppercase">Ha</span>
                     </div>
                     <div
-                        class="mt-4 flex items-center text-[10px] font-bold text-white/90 bg-black/10 w-fit px-3 py-1 rounded-full">
-                        <span class="w-2 h-2 rounded-full bg-white mr-2"></span>
-                        Seluruh Regional I
+                        class="mt-6 flex items-center justify-center gap-2 text-[10px] font-black text-white bg-black/10 w-full py-2 rounded-lg border border-white/5 uppercase tracking-widest">
+                        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                        Regional I Active
                     </div>
                 </div>
             </div>
 
-            <!-- Card 2: Blue (Total Pokok) -->
-            <div class="relative overflow-hidden rounded-3xl p-6 shadow-sm"
+            <!-- Card 2: Blue Gradient (Resource Inventory) -->
+            <div class="panel border-0 p-0 overflow-hidden rounded-2xl shadow-md transform hover:scale-[1.02] transition-all duration-300 group"
                 style="background: linear-gradient(135deg, #1c64f2 0%, #154ec1 100%);">
-                <div class="relative z-10 text-white">
-                    <div class="text-[10px] font-black text-white/70 tracking-widest mb-3">Total Jumlah Pokok
+                <div class="p-6 relative text-white">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Resource
+                                Inventory</p>
+                            <h3 class="text-white/90 text-xs font-bold">Populasi Pokok</h3>
+                        </div>
+                        <!-- Icon Pokok/Plant -->
+                        <div
+                            class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="flex items-end gap-2">
-                        {{-- Logika Backend: {{ number_format($kpi['total_pokok'] ?? 342300) }} --}}
-                        <span class="text-4xl font-black">342.300</span>
+                    <div class="mt-6 flex items-baseline gap-2">
+                        <span class="text-4xl font-black">
+                            {{ number_format($kpi['total_pokok'] ?? ($total_pokok ?? 2100000)) }}
+                        </span>
+                        <span class="text-lg font-bold text-white/70 uppercase">Pkk</span>
                     </div>
                     <div
-                        class="mt-4 flex items-center text-[10px] font-bold text-white/90 bg-black/10 w-fit px-3 py-1 rounded-full">
-                        <span class="w-2 h-2 rounded-full bg-white mr-2"></span>
-                        Pokok Terdata
+                        class="mt-6 flex items-center justify-center gap-2 text-[10px] font-black text-white bg-black/10 w-full py-2 rounded-lg border border-white/5 uppercase tracking-widest">
+                        Terdata secara digital
                     </div>
                 </div>
             </div>
 
-            <!-- Card 3: Purple (Avg Health) -->
-            <div class="relative overflow-hidden rounded-3xl p-6 shadow-sm"
+            <!-- Card 3: Purple Gradient (Health Index) -->
+            <div class="panel border-0 p-0 overflow-hidden rounded-2xl shadow-md transform hover:scale-[1.02] transition-all duration-300 group"
                 style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
-                <div class="relative z-10 text-white">
-                    <div class="text-[10px] font-black text-white/70 tracking-widest mb-3">Rata-rata Kesehatan
+                <div class="p-6 relative text-white">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Health Index
+                            </p>
+                            <h3 class="text-white/90 text-xs font-bold">Rata-rata Kesehatan</h3>
+                        </div>
+                        <!-- Icon Heart/Health -->
+                        <div
+                            class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="flex items-end gap-2">
-                        {{-- Logika Backend: {{ $kpi['avg_health'] ?? 82.8 }} --}}
-                        <span class="text-4xl font-black">82.8</span>
-                        <span class="text-lg font-bold text-white/80 mb-1">%</span>
+                    <div class="mt-6 flex items-baseline gap-2">
+                        <span class="text-4xl font-black">
+                            {{ $kpi['avg_health'] ?? ($avg_health ?? 82.8) }}
+                        </span>
+                        <span class="text-lg font-bold text-white/70 uppercase">%</span>
                     </div>
-                    <div
-                        class="mt-4 flex items-center text-[10px] font-bold text-white/90 bg-black/10 w-fit px-3 py-1 rounded-full">
-                        <span class="w-2 h-2 rounded-full bg-white mr-2"></span>
-                        Kondisi TBM III
+                    <div class="mt-6 space-y-2">
+                        <div class="w-full bg-black/10 h-1.5 rounded-full overflow-hidden border border-white/5">
+                            <div class="bg-white h-full"
+                                style="width: {{ $kpi['avg_health'] ?? ($avg_health ?? 82.8) }}%"></div>
+                        </div>
+                        <div class="text-[9px] font-bold text-center text-white/60 tracking-widest uppercase">Target
+                            Performance: 95%</div>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- 3. Main Panel: Search & Table -->
@@ -127,7 +174,8 @@
                         </div>
                         <svg class="w-4 h-4 text-gray-400" :class="openDropdown ? 'rotate-180' : ''" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
 

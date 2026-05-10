@@ -5,6 +5,8 @@
  * --------------------------------------------------------------------------
  * @package     SIMTAN
  * @author      Maghfirah <220203064>
+ * 
+ * routes/web.php - Khusus Halaman, Form Actions, & Download (Session-Based)
  */
 
 use Illuminate\Support\Facades\Route;
@@ -13,7 +15,6 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AI_Controller;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\SpatialController; // Import Baru
 
 /*
 |--------------------------------------------------------------------------
@@ -28,7 +29,7 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| 2. AUTHENTICATED ROUTES (Semua Role: Superadmin, Admin, User)
+| 2. AUTHENTICATED ROUTES (Global Access)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
@@ -38,8 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [MonitoringController::class, 'index'])->name('index');
 
     /**
-     * MODULE: SETTINGS - AKSES DARI HEADER
-     * Digunakan oleh dropdown profil di sebelah kanan atas
+     * MODULE: SETTINGS (Profile & Password)
+     * Diakses melalui dropdown profil kanan atas
      */
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [MonitoringController::class, 'settings'])->name('index');
@@ -48,7 +49,8 @@ Route::middleware('auth')->group(function () {
     });
 
     /**
-     * MODULE: VIEW MONITORING - AKSES DARI SIDEBAR
+     * MODULE: MONITORING VIEWS
+     * Navigasi utama Sidebar
      */
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/data-kebun', [MonitoringController::class, 'dataKebun'])->name('data-kebun');
@@ -66,8 +68,16 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:superadmin,admin'])->group(function () {
 
         Route::prefix('monitoring')->name('monitoring.')->group(function () {
+            // -- Ingesti Data (Upload) --
             Route::get('/upload-data', [MonitoringController::class, 'importView'])->name('import');
             Route::post('/upload-data/store', [MonitoringController::class, 'importStore'])->name('import.store');
+
+            // -- CRUD Metadata & Audit Trail Download --
+            // Catatan: Wajib di web.php karena butuh Session Auth & CSRF Protection
+            Route::get('/import/download/{id}', [MonitoringController::class, 'downloadFile'])->name('import.download');
+            Route::put('/import/{id}', [MonitoringController::class, 'importUpdate'])->name('import.update');
+            Route::delete('/import/{id}', [MonitoringController::class, 'importDestroy'])->name('import.destroy');
+
             Route::get('/riwayat-data', [MonitoringController::class, 'riwayatData'])->name('riwayat-data');
         });
 
@@ -83,15 +93,7 @@ Route::middleware('auth')->group(function () {
         });
 
         /**
-         * MODULE: SPASIAL API (Untuk Interaktivitas Peta GeoJSON & GIS)
-         */
-        Route::prefix('api/spatial')->name('api.spatial.')->group(function () {
-            Route::get('/blocks/{kode_kebun}', [SpatialController::class, 'getBlocks'])->name('blocks');
-            Route::get('/trees/{kode_kebun}', [SpatialController::class, 'getTrees'])->name('trees');
-        });
-
-        /**
-         * MODULE: REPORTS
+         * MODULE: REPORTS (Export PDF & Excel)
          */
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
@@ -108,7 +110,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::middleware(['role:superadmin'])->prefix('superadmin')->group(function () {
 
-        // Menu Kelola Akun untuk Sidebar
+        // Menu Kelola Akun
         Route::get('/kelola-akun', [UserController::class, 'index'])->name('monitoring.kelola-akun');
 
         Route::name('admin.')->group(function () {
@@ -119,4 +121,9 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+/*
+|--------------------------------------------------------------------------
+| 5. FALLBACK ROUTE
+|--------------------------------------------------------------------------
+*/
 Route::fallback(fn() => view('pages.error404'));

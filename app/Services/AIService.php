@@ -54,7 +54,7 @@ class AIService
     public function analyzeSpecificBlok($kebun, $blokId)
     {
         // Mencari data blok spesifik di database
-        $data = DetailRekaps::where('kebun', $kebun)->where('blok', $blokId)->first();
+        $data = DetailRekap::where('kebun', $kebun)->where('blok', $blokId)->first();
 
         if (!$data) return null;
 
@@ -68,7 +68,7 @@ class AIService
         } elseif ($data->persen_area_tergenang > 10) {
             $rec = "Blok rawan waterlogging. Rekomendasi: Lakukan normalisasi parit cacing dan evaluasi outlet drainase primer untuk mencegah leaching pupuk.";
         }
-
+        
         return [
             'recommendation' => $rec,
             'confidence' => rand(95, 99) . "." . rand(1, 9),

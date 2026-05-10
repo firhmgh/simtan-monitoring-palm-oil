@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('korelasi_vegetatif', function (Blueprint $table) {
             $table->id();
             $table->string('kode_upload');
-            $table->foreign('kode_upload')->references('kode_upload')->on('simtan_forms')->onDelete('cascade');
+            $table->foreign('kode_upload')->references('kode_upload')->on('simtan_form')->onDelete('cascade');
 
             $table->string('tahun', 4);
             $table->string('kebun', 100);

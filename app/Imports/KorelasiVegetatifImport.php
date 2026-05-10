@@ -9,23 +9,42 @@ use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * KorelasiVegetatifImport
+ * Logika parsing Excel khusus untuk data Biometrik Vegetatif (Input AI).
+ * Mengintegrasikan logika carry-over (merged cells) dan pembulatan angka presisi.
+ */
 class KorelasiVegetatifImport implements ToCollection, WithStartRow, WithMultipleSheets
 {
+    protected $simtanFormId;
     protected $kodeUpload;
 
-    public function __construct($kodeUpload)
+    /**
+     * Constructor menerima ID (Integer) untuk relasi database
+     * dan Kode (String) untuk identitas dokumen (Audit Trail).
+     */
+    public function __construct($simtanFormId, $kodeUpload)
     {
+        $this->simtanFormId = $simtanFormId;
         $this->kodeUpload = $kodeUpload;
     }
 
+    /**
+     * Pilih hanya sheet pertama (index 0) agar proses efisien.
+     */
     public function sheets(): array
     {
-        return [0 => $this]; // Hanya baca sheet pertama
+        return [
+            0 => $this
+        ];
     }
 
+    /**
+     * Baris awal pembacaan Excel.
+     */
     public function startRow(): int
     {
-        return 3; // Mulai baca dari baris ke-3
+        return 3;
     }
 
     public function collection(Collection $rows)
@@ -33,57 +52,67 @@ class KorelasiVegetatifImport implements ToCollection, WithStartRow, WithMultipl
         $success = 0;
         $failed = 0;
 
+        // Variabel penampung nilai terakhir untuk baris yang kosong (Handle Merged Cells)
         $lastTahun     = null;
         $lastKebun     = null;
         $lastTopografi = null;
         $lastBlok      = null;
 
         foreach ($rows as $index => $row) {
+            // 1. Ambil nilai berdasarkan index kolom (0=A, 1=B, dst)
+            // Jika kolom kosong (akibat merged cells), ambil data dari baris sebelumnya (Carry-over logic)
             $tahun     = $this->keepString($row[0] ?? null) ?: $lastTahun;
             $kebun     = $this->keepString($row[1] ?? null) ?: $lastKebun;
             $topografi = $this->keepString($row[2] ?? null) ?: $lastTopografi;
             $blok      = $this->keepString($row[3] ?? null) ?: $lastBlok;
 
-            if (strtoupper((string)$topografi) === 'RATA-RATA') {
+            // Logika Khusus: Jika baris adalah baris 'RATA-RATA', kolom blok dipaksa NULL
+            if ($topografi && strtoupper((string)$topografi) === 'RATA-RATA') {
                 $blok = null;
             }
 
-            $keliling_crown  = $this->sanitizeDesimal($row[4] ?? null);
-            $lingkar_batang  = $this->sanitizeDesimal($row[5] ?? null);
-            $jumlah_pelepah  = $this->sanitizeDesimal($row[6] ?? null);
-            $panjang_pelepah = $this->sanitizeDesimal($row[7] ?? null);
+            // 2. Ambil data mentah angka (kolom index 4 sampai 7)
+            $rawCrown   = $this->sanitizeDesimal($row[4] ?? null);
+            $rawBatang  = $this->sanitizeDesimal($row[5] ?? null);
+            $rawPelepah = $this->sanitizeDesimal($row[6] ?? null);
+            $rawPanjang = $this->sanitizeDesimal($row[7] ?? null);
 
+            // 3. Update 'last values' untuk digunakan baris selanjutnya (State maintenance)
             if (!empty($tahun))     $lastTahun     = $tahun;
             if (!empty($kebun))     $lastKebun     = $kebun;
             if (!empty($topografi)) $lastTopografi = $topografi;
             if (!empty($blok))      $lastBlok      = $blok;
 
-            // Baris header duplikat skip
+            // Cek baris kosong atau baris header duplikat untuk di-skip
+            if (empty($tahun) && empty($kebun) && $rawCrown === null && $rawBatang === null) continue;
             if (strtoupper(trim((string)$tahun)) === 'TAHUN') continue;
 
-            if (empty($tahun) && empty($kebun) && $keliling_crown === null) continue;
-
             try {
+                // 4. Simpan ke Database menggunakan Hybrid Key dan Rounding (Pembulatan)
                 KorelasiVegetatif::create([
-                    'kode_upload'     => $this->kodeUpload,
+                    'simtan_form_id'  => $this->simtanFormId, // Integer
+                    'kode_upload'     => $this->kodeUpload,    // String (Audit Trail)
                     'tahun'           => $tahun,
                     'kebun'           => $kebun,
                     'topografi'       => $topografi,
                     'blok'            => $blok,
-                    'keliling_crown'  => $keliling_crown,
-                    'lingkar_batang'  => $lingkar_batang,
-                    'jumlah_pelepah'  => $jumlah_pelepah,
-                    'panjang_pelepah' => $panjang_pelepah,
+                    'keliling_crown'  => $rawCrown !== null ? round($rawCrown, 0) : null,
+                    'lingkar_batang'  => $rawBatang !== null ? round($rawBatang, 3) : null,
+                    'jumlah_pelepah'  => $rawPelepah !== null ? round($rawPelepah, 3) : null,
+                    'panjang_pelepah' => $rawPanjang !== null ? round($rawPanjang, 3) : null,
                 ]);
                 $success++;
             } catch (\Exception $e) {
                 $failed++;
-                Log::error("Gagal simpan Korelasi Vegetatif: " . $e->getMessage());
+                Log::error("❌ Gagal simpan Korelasi Vegetatif baris {$index}: " . $e->getMessage());
             }
         }
-        Log::info("[IMPORT VEGETATIF] Sukses: {$success}, Gagal: {$failed}");
+        Log::info("[IMPORT VEGETATIF] Selesai. ✅ Sukses: {$success}, ❌ Gagal: {$failed}");
     }
 
+    /**
+     * Membersihkan input desimal (mengubah koma menjadi titik)
+     */
     private function sanitizeDesimal($value)
     {
         if ($value === null || $value === '') return null;
@@ -91,8 +120,12 @@ class KorelasiVegetatifImport implements ToCollection, WithStartRow, WithMultipl
         return is_numeric($value) ? (float) $value : null;
     }
 
+    /**
+     * Membersihkan input teks (trim spasi)
+     */
     private function keepString($value)
     {
-        return $value === null ? null : trim((string) $value);
+        if ($value === null) return null;
+        return trim((string) $value);
     }
 }

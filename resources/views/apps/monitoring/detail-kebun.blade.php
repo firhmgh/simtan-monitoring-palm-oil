@@ -18,7 +18,7 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-bold dark:text-white-light">
-                            Kebun Sei Dadap (1KAS)
+                            Kebun Aek Nabara Selatan (1KAS)
                         </h1>
                         <span
                             class="badge bg-emerald-500 !text-white text-[10px] px-3 py-1 font-black rounded-full tracking-widest shadow-sm uppercase">LIVE

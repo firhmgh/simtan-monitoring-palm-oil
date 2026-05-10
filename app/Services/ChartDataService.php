@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\DetailRekaps;
-use App\Models\LokasiKebuns;
+use App\Models\DetailRekap;
+use App\Models\LokasiKebun;
 use App\Models\KorelasiVegetatif;
 use App\Helpers\ExcelDataHelper;
 use Illuminate\Support\Collection;
@@ -17,7 +17,7 @@ class ChartDataService
      */
     public function getPeringkatKondisiPohonData()
     {
-        $data = DetailRekaps::where('is_total', true)
+        $data = DetailRekap::where('is_total', true)
             ->orderByDesc('persen_pkk_normal')
             ->get(['kebun', 'persen_pkk_normal', 'persen_pkk_non_valuer', 'persen_pkk_mati']);
 
@@ -34,7 +34,7 @@ class ChartDataService
      */
     public function getPeringkatPemeliharaanData()
     {
-        $data = DetailRekaps::where('is_total', true)
+        $data = DetailRekap::where('is_total', true)
             ->orderByDesc('persen_tutupan_kacangan')
             ->get(['kebun', 'persen_tutupan_kacangan', 'persen_pir_pkk_kurang_baik', 'persen_area_tergenang', 'kondisi_anak_kayu']);
 
@@ -70,7 +70,7 @@ class ChartDataService
      */
     public function getLuasArealTahunTanamData()
     {
-        $data = DetailRekaps::where('is_total', false)
+        $data = DetailRekap::where('is_total', false)
             ->whereNotNull('tahun_tanam')
             ->where('tahun_tanam', '!=', 0)
             ->selectRaw('tahun_tanam as tahun, SUM(luas_ha) as total_luas')
@@ -97,7 +97,7 @@ class ChartDataService
      */
     public function getPopulasiPerformanceData()
     {
-        $data = DetailRekaps::where('is_total', 0)
+        $data = DetailRekap::where('is_total', 0)
             ->selectRaw('kebun, SUM(luas_ha) as total_luas, SUM(pkk_normal) as realisasi_pokok')
             ->groupBy('kebun')
             ->get();
@@ -133,7 +133,7 @@ class ChartDataService
      */
     public function getLuasArealTahunTanamPerKebunData()
     {
-        $data = DetailRekaps::where(function ($query) {
+        $data = DetailRekap::where(function ($query) {
             $query->whereNotNull('tahun_tanam')->orWhere('is_total', 1);
         })
             ->whereNotNull('luas_ha')
@@ -188,7 +188,7 @@ class ChartDataService
      */
     public function getInfoKebunData($kodeKebun)
     {
-        $row = DetailRekaps::where('kebun', strtoupper($kodeKebun))
+        $row = DetailRekap::where('kebun', strtoupper($kodeKebun))
             ->where('is_total', true)
             ->first();
 
@@ -214,7 +214,7 @@ class ChartDataService
      */
     public function getBlockAnalysisData($kodeKebun)
     {
-        $blocks = DetailRekaps::where('kebun', strtoupper($kodeKebun))
+        $blocks = DetailRekap::where('kebun', strtoupper($kodeKebun))
             ->where('is_total', 0)
             ->get();
 
@@ -251,7 +251,7 @@ class ChartDataService
      */
     public function getKondisiPohonData($kodeKebun)
     {
-        $data = DetailRekaps::where('kebun', strtoupper($kodeKebun))
+        $data = DetailRekap::where('kebun', strtoupper($kodeKebun))
             ->where('is_total', true)
             ->get();
 
@@ -263,7 +263,7 @@ class ChartDataService
      */
     public function getArealTanamanData($kodeKebun)
     {
-        $data = DetailRekaps::where('kebun', strtoupper($kodeKebun))
+        $data = DetailRekap::where('kebun', strtoupper($kodeKebun))
             ->where('is_total', true)
             ->get();
 
@@ -275,7 +275,7 @@ class ChartDataService
      */
     public function getLokasiKebunData($kodeKebun)
     {
-        $data = LokasiKebuns::where('kebun', strtoupper($kodeKebun))->get();
+        $data = LokasiKebun::where('kebun', strtoupper($kodeKebun))->get();
 
         return $data->isEmpty() ? [] : ExcelDataHelper::getLokasiKebun($data);
     }

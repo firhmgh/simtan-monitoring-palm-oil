@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\DetailRekaps;
-use App\Models\LokasiKebuns;
+use App\Models\DetailRekap;
+use App\Models\LokasiKebun;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +30,7 @@ class SpatialDataService
         $geojsonData = json_decode(File::get($path), true);
 
         // Ambil data statistik dari DB untuk fusi data kesehatan
-        $afdelingStats = DetailRekaps::where('kebun', strtoupper($kodeKebun))
+        $afdelingStats = DetailRekap::where('kebun', strtoupper($kodeKebun))
             ->get()
             ->groupBy('afdeling');
 
@@ -139,7 +139,7 @@ class SpatialDataService
      */
     public function getOrthophotoConfig($kodeKebun)
     {
-        $kebun = LokasiKebuns::where('kebun', strtoupper($kodeKebun))->first();
+        $kebun = LokasiKebun::where('kebun', strtoupper($kodeKebun))->first();
 
         $lat = $kebun->latitude ?? 2.03394;
         $lng = $kebun->longitude ?? 99.9952;

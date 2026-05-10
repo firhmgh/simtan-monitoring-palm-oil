@@ -5,8 +5,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
-        Schema::create('simtan_forms', function (Blueprint $table) {
+    public function up(): void
+    {
+        Schema::create('simtan_form', function (Blueprint $table) {
             $table->id();
             $table->string('kode_upload', 50)->unique(); // UK: Kode unik referensi
             $table->foreignId('uploaded_by')->constrained('users'); // FK: Aktor pengunggah
@@ -20,7 +21,8 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void {
-        Schema::dropIfExists('simtan_forms');
+    public function down(): void
+    {
+        Schema::dropIfExists('simtan_form');
     }
 };
