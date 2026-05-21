@@ -26,10 +26,6 @@
         $store.app.menu, $store.app.layout, $store.app.rtlClass
     ]">
 
-    <!-- sidebar menu overlay -->
-    <div x-cloak class="fixed inset-0 bg-[black]/60 z-50 lg:hidden" :class="{ 'hidden': !$store.app.sidebar }"
-        @click="$store.app.toggleSidebar()"></div>
-
     <!-- screen loader -->
     <div
         class="screen_loader fixed inset-0 bg-[#fafafa] dark:bg-[#060818] z-[60] grid place-content-center animate__animated">
@@ -47,69 +43,67 @@
         </svg>
     </div>
 
-    <!-- GLOBAL NOTIFICATION SYSTEM (TOAST) -->
+    <!-- GLOBAL NOTIFICATION SYSTEM (TOAST ONLY) - Z-INDEX 99999 -->
     <div x-data="{ show: false, message: '', type: 'success' }" x-cloak
         @toast.window="
             message = $event.detail.message;
             type = $event.detail.type || 'success';
             show = true;
-            setTimeout(() => show = false, 4000);
+            setTimeout(() => show = false, 5000);
         "
-        class="relative z-[1000]">
+        class="fixed inset-0 pointer-events-none z-[99999]">
 
-        <!-- Case: Success (High Impact Centered) -->
-        <template x-if="type === 'success'">
-            <div x-show="show" x-transition.opacity
-                class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] z-[1001]">
-                <div
-                    class="bg-white dark:bg-[#0e1726] rounded-3xl shadow-2xl w-full max-w-[320px] p-8 text-center border-b-4 border-emerald-500 animate__animated animate__zoomIn">
-                    <div class="flex justify-center mb-5">
-                        <div
-                            class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center shadow-inner">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-emerald-600"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                                stroke-linecap="round" stroke-linejoin="round">
+        <!-- Floating Corner Toast (Berlaku untuk Success, Error, dan Info) -->
+        <div x-show="show" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-x-12" x-transition:enter-end="opacity-100 translate-x-0"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0"
+            x-transition:leave-end="opacity-0 translate-x-12"
+            class="fixed top-8 right-8 w-full max-w-sm pointer-events-auto">
+
+            <div :class="{
+                'border-emerald-500 bg-emerald-50 dark:bg-emerald-950': type === 'success',
+                'border-rose-500 bg-rose-50 dark:bg-rose-950': type === 'error',
+                'border-blue-500 bg-blue-50 dark:bg-blue-950': type === 'info'
+            }"
+                class="border-l-[6px] rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.2)] p-6 flex items-center gap-5 border border-white/20 backdrop-blur-md">
+
+                <!-- Icons -->
+                <div class="flex-shrink-0">
+                    <template x-if="type === 'success'">
+                        <div class="p-2 bg-emerald-500 text-white rounded-xl shadow-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3"
+                                viewBox="0 0 24 24">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                         </div>
-                    </div>
-                    <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-tight"
-                        x-text="message"></h3>
-                    <p class="text-[10px] text-gray-400 mt-3 font-bold uppercase tracking-[0.2em]">PTPN IV Regional I
-                    </p>
-                </div>
-            </div>
-        </template>
-
-        <!-- Case: Error / Info (Top Bar Style) -->
-        <template x-if="type === 'error' || type === 'info'">
-            <div x-show="show" x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 -translate-y-10" x-transition:enter-end="opacity-100 translate-y-0"
-                class="fixed top-10 inset-x-0 flex justify-center z-[1001] px-4 pointer-events-none">
-                <div :class="type === 'error' ? 'border-red-500 bg-white' : 'border-blue-500 bg-white'"
-                    class="dark:bg-[#1b2e4b] border-l-4 rounded-xl shadow-2xl w-full max-w-md p-5 flex items-center gap-4 pointer-events-auto">
-                    <div :class="type === 'error' ? 'text-red-500' : 'text-blue-500'">
-                        <template x-if="type === 'error'"><svg class="w-8 h-8" fill="none" stroke="currentColor"
-                                stroke-width="2" viewBox="0 0 24 24">
+                    </template>
+                    <template x-if="type === 'error'">
+                        <div class="p-2 bg-rose-500 text-white rounded-xl shadow-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3"
+                                viewBox="0 0 24 24">
                                 <path d="M6 18L18 6M6 6l12 12" />
-                            </svg></template>
-                        <template x-if="type === 'info'"><svg class="w-8 h-8" fill="none" stroke="currentColor"
-                                stroke-width="2" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="12" y1="16" x2="12" y2="12" />
-                                <line x1="12" y1="8" x2="12.01" y2="8" />
-                            </svg></template>
-                    </div>
-                    <div class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-tight"
-                        x-text="message"></div>
+                            </svg>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Text -->
+                <div class="flex-1">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1" x-text="type"></p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-snug"
+                        x-text="message"></p>
                 </div>
             </div>
-        </template>
+        </div>
     </div>
 
-    <!-- BACKEND SESSION TO EVENT BRIDGE (SINKRONISASI TOTAL) -->
+    <!-- sidebar menu overlay -->
+    <div x-cloak class="fixed inset-0 bg-[black]/60 z-50 lg:hidden" :class="{ 'hidden': !$store.app.sidebar }"
+        @click="$store.app.toggleSidebar()"></div>
+
+    <!-- BACKEND SESSION TO EVENT BRIDGE -->
     <script>
-        window.onload = () => {
+        window.addEventListener('load', () => {
             @if (session('success'))
                 window.dispatchEvent(new CustomEvent('toast', {
                     detail: {
@@ -136,13 +130,13 @@
                     }
                 }));
             @endif
-        }
+        });
     </script>
 
     <div class="fixed bottom-6 ltr:right-6 rtl:left-6 z-50" x-data="scrollToTop">
         <template x-if="showTopButton">
             <button type="button"
-                class="btn btn-outline-primary rounded-full p-2 animate-pulse bg-[#fafafa] dark:bg-[#060818] dark:hover:bg-primary"
+                class="btn btn-outline-primary rounded-full p-2 animate-pulse bg-[#fafafa] dark:bg-[#060818] dark:hover:bg-primary shadow-xl"
                 @click="goToTop">
                 <svg width="24" height="24" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
                     xmlns="http://www.w3.org/2000/svg">

@@ -147,9 +147,10 @@
                         <option value="growth">VIGOR TUMBUH</option>
                         <option value="survival">MORTALITAS</option>
                     </select>
-                    <button @click="runAIInference"
-                        class="btn btn-primary btn-sm rounded-lg px-4 font-black text-[10px] italic tracking-widest">Refresh
-                        AI</button>
+                    <button @click="runAIInference(true)"
+                        class="btn btn-primary btn-sm rounded-lg px-4 font-black text-[10px] italic tracking-widest">
+                        Refresh AI
+                    </button>
                 </div>
             </div>
             <div class="p-8">
@@ -460,39 +461,43 @@
                         @endif
                     },
 
-                    // Update runAIInference agar tidak error jika data kosong
-                    async runAIInference() {
+                    async runAIInference(isManual = false) {
+                        // Jika data tidak ada, jangan paksa kirim ke API
                         if (!this.hasData) {
                             this.aiInferenceText =
-                                "Analisis dihentikan: Dataset periode ini kosong. Sila pilih dimensi waktu lain.";
+                                "Analisis dihentikan: Dataset periode ini kosong. Silakan pilih dimensi waktu lain.";
                             return;
                         }
-                        this.isThinking = true;
-                        try {
-                            const res = await fetch(
-                                `/api/ai/dashboard-insight?mode=${this.analysisMode}&periode=${this.selectedPeriode}`
-                            );
-                            const data = await res.json();
-                            this.aiInferenceText = data.status === 'success' ? data.narration :
-                                "Neural Engine gagal sinkronisasi.";
-                        } catch (e) {
-                            this.aiInferenceText = "Error memproses narasi biometrik.";
-                        } finally {
-                            this.isThinking = false;
-                        }
-                    },
 
-                    async runAIInference() {
                         this.isThinking = true;
                         try {
-                            const res = await fetch(
-                                `/api/ai/dashboard-insight?mode=${this.analysisMode}&periode=${this.selectedPeriode}`
-                            );
+                            // 1. Ambil URL dasar dari route Laravel
+                            let baseUrl = "{{ route('ai.analyze.dashboard') }}";
+
+                            // 2. Susun Query Parameters (Mode + Periode)
+                            let params = new URLSearchParams({
+                                mode: this.analysisMode,
+                                periode: this.selectedPeriode
+                            });
+
+                            // 3. Jika diklik manual lewat tombol Refresh, tambahkan flag refresh untuk hapus cache
+                            if (isManual) {
+                                params.append('refresh', '1');
+                            }
+
+                            // 4. Eksekusi Fetch
+                            const res = await fetch(`${baseUrl}?${params.toString()}`);
                             const data = await res.json();
-                            this.aiInferenceText = data.status === 'success' ? data.narration :
-                                "Neural Engine gagal sinkronisasi.";
+
+                            if (data.status === 'success') {
+                                this.aiInferenceText = data.narration;
+                            } else {
+                                this.aiInferenceText = "Neural Engine gagal sinkronisasi: " + data
+                                    .message;
+                            }
                         } catch (e) {
-                            this.aiInferenceText = "Error memproses narasi.";
+                            console.error(e);
+                            this.aiInferenceText = "Error memproses narasi biometrik.";
                         } finally {
                             this.isThinking = false;
                         }

@@ -79,18 +79,16 @@
         <!-- 1. HEADER -->
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="space-y-1">
-                <nav class="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase text-primary/60">
+                <nav class="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-primary/60">
                     <a href="{{ route('monitoring.data-kebun') }}"
                         class="hover:text-primary transition-colors italic">Daftar Kebun</a>
                     <span class="text-slate-300">/</span>
                     <span class="text-slate-400">Analisis Bio-Spasial</span>
                 </nav>
-                <h1
-                    class="text-3xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white leading-none">
+                <h1 class="text-3xl font-black tracking-tighter italic text-slate-900 dark:text-white leading-none">
                     {{ $kebun->nama_kebun }} <span class="text-primary">({{ $kebun->kebun }})</span>
                 </h1>
-                <p
-                    class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
+                <p class="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-widest leading-none">
                     {{ $kebun->nama_distrik }} • {{ array_sum($statusCounts) }} Unit Blok •
                     {{ number_format($infoKebun['luas'] ?? 0, 2, ',', '.') }} Ha Luas Areal
                 </p>
@@ -100,12 +98,12 @@
             <div
                 class="flex items-center gap-4 p-2 pl-5 bg-white dark:bg-[#0e1726] rounded-2xl border border-slate-100 dark:border-white-dark/10 shadow-sm transition-all hover:shadow-md">
                 <div class="hidden lg:block text-right border-r border-slate-100 dark:border-slate-800 pr-4">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Dimensi
+                    <p class="text-[9px] font-black text-slate-400 tracking-widest leading-none mb-1">Dimensi
                         Waktu</p>
-                    <p class="text-[10px] font-black text-primary uppercase italic">Tersinkronisasi</p>
+                    <p class="text-[10px] font-black text-primary italic">Tersinkronisasi</p>
                 </div>
                 <select x-model="selectedPeriode" @change="changePeriode()"
-                    class="form-select py-2.5 text-xs font-black uppercase rounded-xl border-none bg-slate-50 dark:bg-black/20 focus:ring-2 focus:ring-primary/20 cursor-pointer w-[240px] text-slate-700 dark:text-white">
+                    class="form-select py-2.5 text-xs font-black rounded-xl border-none bg-slate-50 dark:bg-black/20 focus:ring-2 focus:ring-primary/20 cursor-pointer w-[240px] text-slate-700 dark:text-white">
                     @foreach ($listPeriode as $slug => $info)
                         <option value="{{ $slug }}">{{ strtoupper($info['label']) }}</option>
                     @endforeach
@@ -117,9 +115,9 @@
             <!-- SIDEBAR KONTROL -->
             <div class="space-y-6" x-show="!isMapExpanded">
                 <div class="panel p-6 border-none rounded-[2rem] bg-white dark:bg-[#0e1726] shadow-xl">
-                    <h5 class="font-black text-[10px] tracking-[0.2em] mb-6 text-slate-400 uppercase italic">Kesehatan
+                    <h5 class="font-black text-[10px] tracking-[0.2em] mb-6 text-slate-400 italic">Kesehatan
                         Tanaman</h5>
-                    <div class="space-y-5 text-[11px] font-black uppercase">
+                    <div class="space-y-5 text-[11px] font-black">
                         <div class="flex justify-between text-success"><span>Normal</span><span
                                 x-text="statusCounts['healthy'] || 0"></span></div>
                         <div class="flex justify-between text-warning"><span>Waspada</span><span
@@ -130,18 +128,17 @@
                 </div>
 
                 <div class="panel p-6 border-none rounded-[2rem] bg-white dark:bg-[#0e1726] shadow-xl">
-                    <h5
-                        class="font-black text-[10px] mb-6 text-slate-400 uppercase italic tracking-widest border-b pb-2">
+                    <h5 class="font-black text-[10px] mb-6 text-slate-400 italic tracking-widest border-b pb-2">
                         Visualization Layers</h5>
                     <div class="space-y-4">
                         <template x-for="layer in layers" :key="layer.id">
                             <div class="flex justify-between items-center group cursor-pointer"
                                 @click="toggleLayer(layer.id)">
                                 <div class="flex flex-col text-left">
-                                    <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase"
+                                    <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400"
                                         x-text="layer.label"></span>
                                     <span x-show="!layer.exists"
-                                        class="text-[8px] text-danger font-black italic uppercase tracking-tighter leading-none mt-1">Data
+                                        class="text-[8px] text-danger font-black italic tracking-tighter leading-none mt-1">Data
                                         Not Integrated</span>
                                 </div>
                                 <label class="w-8 h-4 relative mb-0">
@@ -165,8 +162,7 @@
 
                     <div
                         class="p-4 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1b2e4b] z-[1001]">
-                        <div
-                            class="flex items-center gap-2 text-primary font-black uppercase italic tracking-widest text-[10px]">
+                        <div class="flex items-center gap-2 text-primary font-black italic tracking-widest text-[10px]">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-width="2"
                                     d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1 0 010.553 0.894v10.764a1 1 0 01-1.447 0.894L15 17m-6 3l6-3m-6 0V7m6 10V4" />
@@ -178,7 +174,7 @@
                                 class="p-2 px-4 rounded-xl transition-all shadow-sm flex items-center gap-2"
                                 :class="isMapExpanded ? 'bg-danger text-white shadow-danger/20' :
                                     'bg-gray-100 dark:bg-black/20 text-primary'">
-                                <span class="text-[10px] font-black uppercase"
+                                <span class="text-[10px] font-black"
                                     x-text="isMapExpanded ? 'Exit Theater' : 'Theater Mode'"></span>
                             </button>
                             <button @click="map.zoomIn()"
@@ -198,7 +194,7 @@
                     <div class="panel p-8 rounded-[2.5rem] bg-white dark:bg-[#0e1726] border-none shadow-xl">
                         <div class="flex items-center justify-between mb-10">
                             <h5
-                                class="text-[11px] font-black text-slate-400 uppercase tracking-widest italic border-l-4 border-primary pl-4">
+                                class="text-[11px] font-black text-slate-400 tracking-widest italic border-l-4 border-primary pl-4">
                                 Condition Proportions</h5>
                             <span class="text-[9px] font-bold text-slate-300">Live Sync</span>
                         </div>
@@ -207,7 +203,7 @@
                     <div class="panel p-8 rounded-[2.5rem] bg-white dark:bg-[#0e1726] border-none shadow-xl">
                         <div class="flex items-center justify-between mb-10">
                             <h5
-                                class="text-[11px] font-black text-slate-400 uppercase tracking-widest italic border-l-4 border-success pl-4">
+                                class="text-[11px] font-black text-slate-400 tracking-widest italic border-l-4 border-success pl-4">
                                 Areal Parameters</h5>
                             <span class="text-[9px] font-bold text-slate-300">Metric View</span>
                         </div>
@@ -223,18 +219,17 @@
 
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 text-left">
                             <div class="space-y-1">
-                                <h4
-                                    class="text-2xl font-black italic text-slate-800 dark:text-white uppercase tracking-tighter">
+                                <h4 class="text-2xl font-black italic text-slate-800 dark:text-white tracking-tighter">
                                     Analisis Biometrik Vegetatif</h4>
                                 <div
-                                    class="flex items-center gap-3 text-[10px] text-primary font-bold tracking-[0.3em] uppercase opacity-70">
+                                    class="flex items-center gap-3 text-[10px] text-primary font-bold tracking-[0.3em] opacity-70">
                                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                                     Parameter: Lingkar Batang, Jumlah & Panjang Pelepah
                                 </div>
                             </div>
                             <div class="flex gap-2">
                                 <span
-                                    class="px-5 py-2 rounded-2xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase text-slate-500 italic tracking-widest">Multivariate
+                                    class="px-5 py-2 rounded-2xl bg-slate-100 dark:bg-white/5 text-[10px] font-black text-slate-500 italic tracking-widest">Multivariate
                                     Growth Analysis</span>
                             </div>
                         </div>
@@ -254,7 +249,7 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg.
+                                    <p class="text-[9px] font-black text-slate-400 tracking-widest">Avg.
                                         Girth</p>
                                     <p class="text-lg font-black dark:text-white" x-text="avgGirth + ' m'"></p>
                                 </div>
@@ -267,7 +262,7 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Frond
+                                    <p class="text-[9px] font-black text-slate-400 tracking-widest">Frond
                                         Production</p>
                                     <p class="text-lg font-black dark:text-white" x-text="avgFrondCount"></p>
                                 </div>
@@ -280,7 +275,7 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg.
+                                    <p class="text-[9px] font-black text-slate-400 tracking-widest">Avg.
                                         Length</p>
                                     <p class="text-lg font-black dark:text-white" x-text="avgFrondLen + ' m'"></p>
                                 </div>
@@ -306,10 +301,10 @@
                             </div>
                             <div>
                                 <h4
-                                    class="text-xl font-black italic text-slate-800 dark:text-white uppercase tracking-tighter leading-none">
+                                    class="text-xl font-black italic text-slate-800 dark:text-white tracking-tighter leading-none">
                                     Autonomous Prescriptive Engine</h4>
                                 <p
-                                    class="text-[10px] text-indigo-500 font-bold tracking-[0.3em] uppercase opacity-70 mt-2 font-mono">
+                                    class="text-[10px] text-indigo-500 font-bold tracking-[0.3em] opacity-70 mt-2 font-mono">
                                     Node: DSS-XAI-STANDAR-SCOPUS</p>
                             </div>
                         </div>
@@ -319,16 +314,16 @@
                             <template x-if="inferenceResult">
                                 <div class="animate__animated animate__fadeInUp space-y-4">
                                     <div
-                                        class="inline-block px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                                        class="inline-block px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black tracking-widest">
                                         High Confidence Recommendation</div>
                                     <p class="text-slate-100 text-xl font-medium leading-relaxed italic tracking-tight"
                                         x-text="inferenceResult.recommendation"></p>
                                 </div>
                             </template>
                             <div x-show="!inferenceResult" class="text-center space-y-4 py-6 opacity-40">
-                                <div class="text-[11px] font-black text-slate-300 uppercase tracking-[0.6em] italic">
+                                <div class="text-[11px] font-black text-slate-300 tracking-[0.6em] italic">
                                     System Standby</div>
-                                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Silakan
+                                <p class="text-slate-400 text-xs font-bold tracking-widest">Silakan
                                     berinteraksi dengan unit blok pada peta untuk analisis</p>
                             </div>
                         </div>
@@ -545,7 +540,7 @@
                             },
                             onEachFeature: (f, l) => {
                                 l.bindPopup(
-                                    `<b class="text-danger uppercase text-xs">Anomaly: ${f.properties.KETERANGAN}</b>`
+                                    `<b class="text-danger text-xs">Anomaly: ${f.properties.KETERANGAN}</b>`
                                 );
                             }
                         }),
@@ -559,7 +554,7 @@
                             onEachFeature: (f, l) => {
                                 l.bindPopup(`
                                     <div class="overflow-hidden vristo-popup">
-                                        <div class="bg-primary px-4 py-2"><h5 class="text-white font-black text-[10px] m-0 uppercase italic">Kacangan Analysis</h5></div>
+                                        <div class="bg-primary px-4 py-2"><h5 class="text-white font-black text-[10px] m-0 italic">Kacangan Analysis</h5></div>
                                         <div class="p-4 space-y-2 text-xs">
                                             <div class="flex justify-between"><span>Unit ID</span><span class="font-black text-primary">${f.properties.afdeling_id || 'N/A'}</span></div>
                                             <div class="flex justify-between"><span>Luas</span><span class="font-black">${f.properties.LUAS} Ha</span></div>
@@ -605,7 +600,7 @@
                         new ApexCharts(this.$refs.pieChart, {
                             series: Object.values(this.kondisiPohon || {}),
                             labels: Object.keys(this.kondisiPohon || {}).map(l => l
-                                .toUpperCase()),
+                                .t()),
                             chart: {
                                 type: 'donut',
                                 height: 350,

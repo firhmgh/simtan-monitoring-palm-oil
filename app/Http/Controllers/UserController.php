@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Controller untuk Manajemen Pengguna dan Pengaturan Profil.
- * Sesuai Perancangan Bab 3.6.1.2 (Activity Diagram Kelola Akun)
  */
 class UserController extends Controller
 {
@@ -99,12 +98,19 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
+        // 1. Validasi Input
         $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email,' . $user->id,
         ]);
 
-        $user = \App\Models\User::find(Auth::id());
+        // 2. Eksekusi Perubahan ke Database
+        // Menggunakan instance user yang sedang login agar perubahan tersimpan
+        $currentUser = User::find($user->id);
+        $currentUser->update([
+            'name'  => $request->name,
+            'email' => $request->email
+        ]);
 
         return back()->with('success', 'Profil personal Anda berhasil diperbarui.');
     }
@@ -122,12 +128,15 @@ class UserController extends Controller
 
         // Verifikasi apakah kata sandi saat ini cocok dengan database
         if (!Hash::check($request->current_password, Auth::user()->password)) {
-            return back()->withErrors(['current_password' => 'Konfirmasi kata sandi saat ini tidak cocok dengan data kami.']);
+            // Menggunakan with('error') agar muncul di Pop-up Toast SweetAlert2
+            return back()->with('error', 'Konfirmasi kata sandi saat ini tidak cocok dengan data kami.');
         }
 
         // Update password baru dengan Hash
-        $user = \App\Models\User::find(Auth::id());
-        $user->update(['password' => Hash::make($request->password)]);
+        $user = User::find(Auth::id());
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
 
         return back()->with('success', 'Keamanan akun berhasil diperbarui. Silakan gunakan password baru pada login berikutnya.');
     }

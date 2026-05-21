@@ -5,104 +5,195 @@ namespace App\Services;
 use App\Models\DetailRekap;
 use App\Models\KorelasiVegetatif;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
+/**
+ * AIService - Smart Decision Support System Engine
+ * Mengelola inferensi neural menggunakan Google Gemini & Groq API.
+ * Mendukung analisis multimodal, pertumbuhan (growth), dan mortalitas (survival).
+ */
 class AIService
 {
-    /**
-     * DASHBOARD LEVEL: Narasi Otomatis Berbasis Anomali
-     * Strategi: Mendeteksi data yang menyimpang dari standar PTPN IV
-     */
-    public function generateExecutiveSummary()
+    protected $config;
+
+    public function __construct()
     {
-        // 1. Ambil data agregat (Pre-processing)
-        $avgHealth = DetailRekap::where('is_total', 1)->avg('persen_pkk_normal');
-        $totalLuas = DetailRekap::where('is_total', 1)->sum('luas_ha');
-        
-        // Cari Anomali (Misal: Kebun dengan tingkat kematian tertinggi)
-        $worstKebun = DetailRekap::where('is_total', 1)
+        // Mengambil konfigurasi engine (API Key & Provider) dari database
+        $this->config = DB::table('ai_configs')->first();
+    }
+
+    /**
+     * DASHBOARD LEVEL: Narasi Berdasarkan Mode Analisis yang Dipilih User
+     */
+    public function generateExecutiveSummary($periode, $mode = 'multimodal', $forceRefresh = false)
+    {
+        // 1. Pre-processing: Ambil data statistik populasi
+        $stats = DetailRekap::where('periode', $periode)->where('is_total', 1)->get();
+        if ($stats->isEmpty()) {
+            return "Dataset monitoring untuk periode ini belum tersedia untuk dianalisis oleh AI.";
+        }
+
+        $avgHealth = $stats->avg('persen_pkk_normal');
+        $worstUnit = DetailRekap::where('periode', $periode)
+            ->where('is_total', 1)
             ->orderBy('persen_pkk_mati', 'desc')
             ->first();
 
-        // Cari Tren Pertumbuhan (Vegetatif)
-        $avgGirth = KorelasiVegetatif::avg('lingkar_batang');
+        // 2. Ambil data vegetatif (Biometrik Growth) asli dari database
+        $veg = KorelasiVegetatif::where('periode', $periode)->get();
 
-        // 2. Susun Data Contextual untuk AI
+        // 3. Susun Konteks (Fusi Data) - FIX: Menggunakan key 'avg_girth' agar sinkron dengan buildPrompt
         $context = [
-            'avg_survival_rate' => round($avgHealth, 2) . '%',
-            'worst_unit' => $worstKebun->kebun ?? 'N/A',
-            'worst_mortality' => ($worstKebun->persen_pkk_mati ?? 0) . '%',
-            'avg_stem_girth' => round($avgGirth, 2) . ' cm',
-            'standard_girth_tbm3' => '70-75 cm', // Standar agronomis
+            'mode_analisis' => $mode,
+            'periode' => $periode,
+            'data_populasi' => [
+                'avg_survival_rate' => round($avgHealth, 2) . '%',
+                'pkk_kerdil_total' => $stats->sum('pkk_non_valuer'),
+                'unit_terburuk' => $worstUnit->kebun ?? 'N/A',
+                'mortalitas_unit_terburuk' => ($worstUnit->persen_pkk_mati ?? 0) . '%'
+            ],
+            'data_vegetatif' => [
+                'avg_girth' => round($veg->avg('lingkar_batang'), 3) . ' m',
+                'avg_jumlah_pelepah' => round($veg->avg('jumlah_pelepah'), 1),
+                'avg_panjang_pelepah' => round($veg->avg('panjang_pelepah'), 3) . ' m'
+            ]
         ];
 
-        return $this->askAI('dashboard_summary', $context);
+        // INTEGRASI: Gunakan variabel $mode agar tercatat dengan benar di database
+        return $this->askAI($mode, $context, $forceRefresh, 'Regional I');
     }
 
     /**
-     * BLOCK LEVEL: Diagnosa & Prediksi Spesifik
+     * BLOCK LEVEL: Diagnosa Preskriptif per Unit Blok
      */
-    public function analyzeSpecificBlok($kebun, $blokId)
+    public function analyzeSpecificBlok($kebun, $blokId, $periode, $forceRefresh = false)
     {
-        $data = DetailRekap::where('kebun', $kebun)->where('blok', $blokId)->first();
+        $data = DetailRekap::where('kebun', $kebun)
+            ->where('blok', $blokId)
+            ->where('periode', $periode)
+            ->first();
+
         if (!$data) return null;
 
-        // Logika Pakar (Hard Rules) - Fondasi untuk Scopus (Expert-System Driven)
-        $anomalies = [];
-        if ($data->persen_pkk_mati > 2) $anomalies[] = "Mortalitas di atas ambang batas ekonomi (>2%)";
-        if ($data->persen_tutupan_kacangan < 80) $anomalies[] = "Tutupan LCC (kacangan) kritis, risiko kompetisi gulma tinggi";
-        if ($data->persen_pkk_kerdil > 3) $anomalies[] = "Populasi kerdil/stunted terdeteksi signifikan";
-
-        // Minta AI memberikan "Prescription" (Saran Tindakan)
-        $aiPrescription = $this->askAI('block_diagnostic', [
+        $context = [
+            'unit' => $kebun,
             'blok' => $blokId,
-            'data' => $data->toArray(),
-            'detected_anomalies' => $anomalies
-        ]);
-
-        return [
-            'diagnosa' => $anomalies,
-            'rekomendasi_ai' => $aiPrescription,
-            'prediction_mortality_risk' => $data->persen_pkk_mati > 5 ? 'High' : 'Moderate',
-            'confidence_score' => 94.5
+            'sr' => $data->persen_pkk_normal . '%',
+            'lcc_coverage' => $data->persen_tutupan_kacangan . '%',
+            'dead_rate' => $data->persen_pkk_mati . '%'
         ];
+
+        return $this->askAI('block_diagnostic', $context, $forceRefresh, $kebun . '-' . $blokId);
     }
 
-    public function askAI($mode, $contextData)
+    /**
+     * Core Engine Logic dengan Mode-Specific Caching & Failsafe
+     */
+    public function askAI($mode, $contextData, $forceRefresh = false, $unitLabel = null)
     {
-        $apiKey = config('services.openai.key');
-        if (!$apiKey) return "AI Offline: API Key belum diatur.";
+        if (!$this->config) return "Konfigurasi AI tidak ditemukan. Sila atur di menu Settings.";
 
-        // Caching agar tidak boros kuota & cepat (Scopus-ready: Optimization)
-        $cacheKey = "ai_inference_" . md5($mode . json_encode($contextData));
-        return Cache::remember($cacheKey, 3600, function () use ($mode, $contextData, $apiKey) {
-            
-            $prompt = $this->buildPrompt($mode, $contextData);
+        $prompt = $this->buildPrompt($mode, $contextData);
 
-            $response = Http::withToken($apiKey)->post('https://api.openai.com/v1/chat/completions', [
-                'model' => 'gpt-4o',
-                'messages' => [
-                    ['role' => 'system', 'content' => 'Anda adalah AI Agronomis Senior PTPN IV. Gunakan terminologi perkebunan sawit (TBM, Pokok, LCC, Sensus). Fokus pada analisis preskriptif (saran tindakan).'],
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-                'temperature' => 0.5, // Lebih rendah agar lebih konsisten/ilmiah
-            ]);
+        // Cache key menyertakan MODE agar hasil tidak tertukar saat ganti dropdown
+        $cacheKey = "ai_res_" . $mode . "_" . md5($prompt);
 
-            return $response->successful() ? $response->json()['choices'][0]['message']['content'] : "Analisis tertunda.";
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
+
+        return Cache::remember($cacheKey, 3600, function () use ($prompt, $mode, $unitLabel, $contextData) {
+
+            // LOG PENGGUNAAN KE DATABASE (Audit Trail Scopus)
+            try {
+                DB::table('ai_usage_logs')->insert([
+                    'user_id'    => Auth::id() ?? 1,
+                    'kebun'      => $unitLabel ?? 'Global',
+                    'mode'       => $mode,
+                    'periode'    => $contextData['periode'] ?? 'Custom',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            } catch (\Exception $e) {
+                Log::error("Gagal mencatat log AI: " . $e->getMessage());
+            }
+
+            try {
+                // Mencoba Layanan Utama (L1)
+                return $this->requestToLLM($this->config->provider_primary, $this->config->key_primary, $prompt);
+            } catch (\Exception $e) {
+                Log::warning("AI Primary Provider Gagal, mencoba backup. Error: " . $e->getMessage());
+                try {
+                    // Failsafe ke Layanan Cadangan (L2)
+                    return $this->requestToLLM($this->config->provider_backup, $this->config->key_backup, $prompt);
+                } catch (\Exception $e2) {
+                    return "Gagal melakukan analisis neural. Silakan periksa validitas API Key di Settings.";
+                }
+            }
         });
     }
 
-    private function buildPrompt($mode, $data)
+    /**
+     * Request Machine: Menangani integrasi ke API Gemini (v1) dan Groq
+     */
+    private function requestToLLM($provider, $key, $prompt)
     {
-        if ($mode === 'dashboard_summary') {
-            return "Data: " . json_encode($data) . ". \nAnalisis tren operasional Regional I secara singkat. Sebutkan anomali unit terburuk dan dampaknya terhadap biaya penyisipan (cost benefit analysis). Maksimal 3 kalimat.";
-        }
-        
-        if ($mode === 'block_diagnostic') {
-            return "Blok: {$data['blok']}. Anomali: " . implode(', ', $data['detected_anomalies']) . ". \nData Detail: " . json_encode($data['data']) . ". \nBerikan diagnosa penyebab (misal: hama atau drainase) dan 1 tindakan prioritas untuk asisten kebun.";
+        if (empty($key)) throw new \Exception("API Key untuk $provider kosong.");
+
+        $systemInstructions = "Anda adalah Pakar Agronomi PTPN IV. Berikan analisis teknis yang tajam, sangat singkat (maks 3 kalimat) dalam Bahasa Indonesia profesional.";
+
+        if ($provider === 'gemini') {
+            $url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={$key}";
+            $response = Http::withoutVerifying()->post($url, [
+                'contents' => [
+                    ['parts' => [['text' => $systemInstructions . "\n\nInstruksi: " . $prompt]]]
+                ],
+                'generationConfig' => ['temperature' => 0.4]
+            ]);
+
+            if ($response->failed()) throw new \Exception("Gemini Error: " . ($response->json()['error']['message'] ?? 'Unknown'));
+
+            return $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? "Respon Gemini Kosong";
         }
 
-        return "Berikan analisis umum data ini: " . json_encode($data);
+        if ($provider === 'groq') {
+            $response = Http::withoutVerifying()->withToken($key)->post("https://api.groq.com/openai/v1/chat/completions", [
+                'model' => 'llama-3.1-8b-instant',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemInstructions],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'temperature' => 0.3,
+            ]);
+
+            if ($response->failed()) throw new \Exception("Groq Error: " . ($response->json()['error']['message'] ?? 'Unknown'));
+
+            return $response->json()['choices'][0]['message']['content'] ?? "Respon Groq Kosong";
+        }
+
+        throw new \Exception("Provider $provider tidak didukung.");
+    }
+
+    /**
+     * Prompt Engineering: Switch logic berdasarkan pilihan mode di Frontend
+     */
+    private function buildPrompt($mode, $data)
+    {
+        switch ($mode) {
+            case 'growth':
+                return "Analisis pertumbuhan VIGOR TUMBUH. Data: " . json_encode($data['data_vegetatif']) . ". Bandingkan lingkar batang terhadap standar TBM III (min 0.70 m). Evaluasi apakah pertumbuhan tergolong vigor atau stagnan.";
+
+            case 'survival':
+                return "Analisis MORTALITAS. Data: " . json_encode($data['data_populasi']) . ". Fokus pada unit " . $data['data_populasi']['unit_terburuk'] . " dan risiko kematian pohon berdasarkan populasi kerdil.";
+
+            case 'block_diagnostic':
+                return "Analisis Blok Spesifik: " . json_encode($data) . ". Berikan 1 alasan ilmiah potensi masalah dan 1 instruksi prioritas bagi asisten kebun.";
+
+            default: // multimodal
+                return "Analisis MULTIMODAL. Korelasikan SR (" . $data['data_populasi']['avg_survival_rate'] . ") dengan rata-rata lingkar batang (" . $data['data_vegetatif']['avg_girth'] . "). Sebutkan satu insight strategis untuk Regional I.";
+        }
     }
 }

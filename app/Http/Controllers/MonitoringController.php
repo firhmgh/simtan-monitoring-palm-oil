@@ -384,7 +384,9 @@ class MonitoringController extends Controller
     }
     public function settings()
     {
-        return view('apps.monitoring.settings');
+        // Mengambil data AI Config dari database untuk ditampilkan di form
+        $aiConfig = \Illuminate\Support\Facades\DB::table('ai_configs')->first();
+        return view('apps.monitoring.settings', compact('aiConfig'));
     }
 
     private function getProcessedRowCount($k, $f)
