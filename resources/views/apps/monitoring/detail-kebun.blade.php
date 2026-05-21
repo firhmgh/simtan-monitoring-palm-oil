@@ -1,523 +1,717 @@
 <x-layout.default>
-    <!-- 1. GIS & Chart Dependencies -->
+    <!-- Dependensi GIS & Grafik Analitik -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script defer src="/assets/js/apexcharts.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
-    <div x-data="detailKebun()">
-        <!-- 1. Breadcrumbs & Header -->
-        <div class="mb-6">
-            <ul
-                class="flex space-x-2 rtl:space-x-reverse text-xs mb-2 tracking-widest font-bold text-gray-400 uppercase">
-                <li><a href="javascript:;" class="text-primary hover:underline">Monitoring</a></li>
-                <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 text-gray-400 dark:text-gray-600">
-                    <span>Detail Kebun Spasial</span>
-                </li>
-            </ul>
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-gray-900 dark:text-white">
-                <div>
-                    <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-bold dark:text-white-light">
-                            Kebun Aek Nabara Selatan (1KAS)
-                        </h1>
-                        <span
-                            class="badge bg-emerald-500 !text-white text-[10px] px-3 py-1 font-black rounded-full tracking-widest shadow-sm uppercase">LIVE
-                            GIS</span>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium italic">
-                        Distrik Labuhan Batu I • 24 Blok Aktif • 1.450 Ha Total Areal
-                    </p>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        #leafletMap {
+            height: 100% !important;
+            width: 100% !important;
+            min-height: 400px;
+            background: #04131a !important;
+            /* Warna gelap agar satelit terlihat solid */
+            cursor: crosshair;
+            border-radius: 1.5rem;
+        }
+
+        .map-fullscreen {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+        }
+
+        .leaflet-control-zoom,
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+
+        /* Basemap Google Satelit */
+        .satellite-base {
+            filter: brightness(0.9) contrast(1.1);
+        }
+
+        /* Vristo Popup & Tooltip Styling */
+        .vristo-popup .leaflet-popup-content-wrapper {
+            padding: 0 !important;
+            overflow: hidden;
+            border-radius: 12px !important;
+            background: #fff !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .dark .vristo-popup .leaflet-popup-content-wrapper {
+            background: #1b2e4b !important;
+            border: 1px solid #191e3a;
+        }
+
+        .vristo-popup .leaflet-popup-content {
+            margin: 0 !important;
+            width: 230px !important;
+        }
+
+        .vristo-popup .leaflet-popup-tip {
+            background: #4361ee !important;
+        }
+
+        .custom-leaflet-popup .leaflet-popup-content-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 5px;
+        }
+    </style>
+
+    <div x-data="detailKebun()" x-init="initComponent()" x-cloak
+        class="space-y-6 pb-10 font-['Plus_Jakarta_Sans'] antialiased text-slate-800 dark:text-white-light text-left">
+
+        <!-- 1. HEADER -->
+        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="space-y-1">
+                <nav class="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] uppercase text-primary/60">
+                    <a href="{{ route('monitoring.data-kebun') }}"
+                        class="hover:text-primary transition-colors italic">Daftar Kebun</a>
+                    <span class="text-slate-300">/</span>
+                    <span class="text-slate-400">Analisis Bio-Spasial</span>
+                </nav>
+                <h1
+                    class="text-3xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white leading-none">
+                    {{ $kebun->nama_kebun }} <span class="text-primary">({{ $kebun->kebun }})</span>
+                </h1>
+                <p
+                    class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
+                    {{ $kebun->nama_distrik }} • {{ array_sum($statusCounts) }} Unit Blok •
+                    {{ number_format($infoKebun['luas'] ?? 0, 2, ',', '.') }} Ha Luas Areal
+                </p>
+            </div>
+
+            <!-- Pemilih Periode -->
+            <div
+                class="flex items-center gap-4 p-2 pl-5 bg-white dark:bg-[#0e1726] rounded-2xl border border-slate-100 dark:border-white-dark/10 shadow-sm transition-all hover:shadow-md">
+                <div class="hidden lg:block text-right border-r border-slate-100 dark:border-slate-800 pr-4">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Dimensi
+                        Waktu</p>
+                    <p class="text-[10px] font-black text-primary uppercase italic">Tersinkronisasi</p>
                 </div>
+                <select x-model="selectedPeriode" @change="changePeriode()"
+                    class="form-select py-2.5 text-xs font-black uppercase rounded-xl border-none bg-slate-50 dark:bg-black/20 focus:ring-2 focus:ring-primary/20 cursor-pointer w-[240px] text-slate-700 dark:text-white">
+                    @foreach ($listPeriode as $slug => $info)
+                        <option value="{{ $slug }}">{{ strtoupper($info['label']) }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-5">
-            <!-- LEFT COLUMN: Sidebar Controls -->
-            <div class="space-y-5">
-                <!-- Summary -->
-                <div class="panel p-6 border-0 shadow-sm rounded-3xl dark:bg-[#1b2e4b]">
-                    <h5
-                        class="font-black text-[10px] tracking-[0.2em] mb-5 text-gray-400 dark:text-gray-500 italic uppercase">
-                        Kebun Summary</h5>
-                    <div class="space-y-4 text-[11px]">
-                        <div class="flex justify-between items-end border-b border-gray-50 dark:border-gray-700 pb-2">
-                            <p class="text-gray-500 dark:text-gray-400 font-bold uppercase">Status Rawat</p>
-                            <p class="font-black text-emerald-500 uppercase font-black">Optimal</p>
-                        </div>
-                        <div class="flex justify-between items-end border-b border-gray-50 dark:border-gray-700 pb-2">
-                            <p class="text-gray-500 dark:text-gray-400 font-bold uppercase">Update</p>
-                            <p class="font-black italic dark:text-gray-200">25 April 2026</p>
-                        </div>
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <!-- SIDEBAR KONTROL -->
+            <div class="space-y-6" x-show="!isMapExpanded">
+                <div class="panel p-6 border-none rounded-[2rem] bg-white dark:bg-[#0e1726] shadow-xl">
+                    <h5 class="font-black text-[10px] tracking-[0.2em] mb-6 text-slate-400 uppercase italic">Kesehatan
+                        Tanaman</h5>
+                    <div class="space-y-5 text-[11px] font-black uppercase">
+                        <div class="flex justify-between text-success"><span>Normal</span><span
+                                x-text="statusCounts['healthy'] || 0"></span></div>
+                        <div class="flex justify-between text-warning"><span>Waspada</span><span
+                                x-text="statusCounts['moderate'] || 0"></span></div>
+                        <div class="flex justify-between text-danger"><span>Kritis</span><span
+                                x-text="statusCounts['critical'] || 0"></span></div>
                     </div>
                 </div>
 
-                <!-- Layer Visualisasi -->
-                <div class="panel p-6 border-0 shadow-sm rounded-3xl dark:bg-[#1b2e4b]">
+                <div class="panel p-6 border-none rounded-[2rem] bg-white dark:bg-[#0e1726] shadow-xl">
                     <h5
-                        class="font-black text-[10px] tracking-[0.2em] mb-5 text-gray-400 dark:text-gray-500 italic uppercase">
-                        Layer Visualisasi</h5>
+                        class="font-black text-[10px] mb-6 text-slate-400 uppercase italic tracking-widest border-b pb-2">
+                        Visualization Layers</h5>
                     <div class="space-y-4">
                         <template x-for="layer in layers" :key="layer.id">
-                            <div class="flex justify-between items-center group">
-                                <span
-                                    class="text-[11px] font-bold text-gray-700 dark:text-gray-300 group-hover:text-primary transition-all uppercase"
-                                    x-text="layer.label"></span>
+                            <div class="flex justify-between items-center group cursor-pointer"
+                                @click="toggleLayer(layer.id)">
+                                <div class="flex flex-col text-left">
+                                    <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase"
+                                        x-text="layer.label"></span>
+                                    <span x-show="!layer.exists"
+                                        class="text-[8px] text-danger font-black italic uppercase tracking-tighter leading-none mt-1">Data
+                                        Not Integrated</span>
+                                </div>
                                 <label class="w-8 h-4 relative mb-0">
                                     <input type="checkbox"
-                                        class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                        x-model="layer.active" @change="toggleLayer(layer.id)" />
-                                    <span
-                                        class="bg-[#ebedf2] dark:bg-dark block h-full rounded-full before:absolute before:left-1 before:bg-white before:bottom-0.5 before:w-3 before:h-3 before:rounded-full peer-checked:before:left-4 peer-checked:bg-primary transition-all duration-300 shadow-inner"></span>
+                                        class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer"
+                                        x-model="layer.active" :disabled="!layer.exists" />
+                                    <span class="bg-[#ebedf2] dark:bg-dark block h-full rounded-full transition-all"
+                                        :class="layer.active ? 'bg-primary' : 'bg-slate-200'"></span>
                                 </label>
                             </div>
                         </template>
                     </div>
                 </div>
-
-                <!-- Legend status -->
-                <div class="panel p-6 border-0 shadow-sm rounded-3xl dark:bg-[#1b2e4b]">
-                    <h5
-                        class="font-black text-[10px] tracking-[0.2em] mb-5 text-gray-400 dark:text-gray-500 italic uppercase">
-                        Status Kesehatan Blok</h5>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3 text-success">
-                                <div class="w-2.5 h-2.5 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.4)]">
-                                </div>
-                                <span class="text-[11px] font-bold uppercase tracking-tight">Healthy</span>
-                            </div>
-                            <span class="text-[11px] font-black italic dark:text-gray-200">18 Blok</span>
-                        </div>
-                        <div class="flex items-center justify-between text-warning">
-                            <div class="flex items-center gap-2">
-                                <div class="w-2.5 h-2.5 rounded-full bg-warning shadow-[0_0_8px_rgba(245,158,11,0.4)]">
-                                </div>
-                                <span class="text-[11px] font-bold uppercase tracking-tight">Moderate</span>
-                            </div>
-                            <span class="text-[11px] font-black italic dark:text-gray-200">5 Blok</span>
-                        </div>
-                        <div class="flex items-center justify-between text-danger">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2.5 h-2.5 rounded-full bg-danger shadow-[0_0_8px_rgba(239,68,68,0.4)]">
-                                </div>
-                                <span class="text-[11px] font-bold uppercase tracking-tight">Critical</span>
-                            </div>
-                            <span class="text-[11px] font-black italic dark:text-gray-200">1 Blok</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- RIGHT COLUMN -->
-            <div class="xl:col-span-3 space-y-5">
-                <!-- 1. INTEGRATED GIS MAP PANEL -->
-                <div class="panel p-0 border-0 shadow-sm transition-all duration-500 flex flex-col overflow-hidden rounded-3xl dark:bg-[#1b2e4b] relative border border-gray-100 dark:border-white/5"
-                    :class="isMapExpanded ? 'h-[750px] shadow-2xl ring-4 ring-primary/10' : 'h-[500px]'">
+            <!-- PETA PANEL -->
+            <div :class="isMapExpanded ? 'xl:col-span-4' : 'xl:col-span-3'"
+                class="space-y-6 transition-all duration-500">
+                <div class="panel p-0 border-0 shadow-sm flex flex-col overflow-hidden bg-white dark:bg-[#1b2e4b] relative border border-gray-100 dark:border-white/5"
+                    :class="isMapExpanded ? 'map-fullscreen' : 'h-[550px] rounded-3xl'">
 
                     <div
-                        class="p-4 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1b2e4b] z-20">
-                        <div class="flex items-center gap-2">
-                            <div class="p-2 bg-primary/10 text-primary rounded-lg">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-width="2"
-                                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1.01.553.894v10.764a1 1 0 01-1.447.894L15 17m-6 3l6-3m-6 0V7m6 10V4" />
-                                </svg>
-                            </div>
-                            <h5
-                                class="font-black text-[10px] tracking-widest text-gray-500 dark:text-gray-400 uppercase italic">
-                                Interactive Spatial Intelligence</h5>
-                        </div>
-                        <div class="flex gap-2 text-gray-600 dark:text-gray-400">
-                            <!-- Theater Mode Button -->
-                            <button @click="toggleMapHeight()"
-                                class="p-2 bg-gray-50 dark:bg-black/20 hover:bg-primary/10 rounded-xl border border-gray-100 dark:border-gray-700 transition-all shadow-sm">
-                                <svg x-show="!isMapExpanded" class="w-4 h-4" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-width="2.5"
-                                        d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
-                                </svg>
-                                <svg x-show="isMapExpanded" class="w-4 h-4" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-width="2.5" d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6l7 7" />
-                                </svg>
-                            </button>
-
-                            <div class="w-[1px] h-8 bg-gray-100 dark:bg-gray-700 mx-1"></div>
-                            <!-- Pro-Zoom Controls -->
-                            <button @click="zoomOut()"
-                                class="p-2.5 bg-gray-50 dark:bg-black/20 hover:bg-primary hover:text-white rounded-xl border border-gray-100 dark:border-gray-700 transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-width="3" d="M20 12H4" />
-                                </svg>
-                            </button>
-                            <button @click="zoomIn()"
-                                class="p-2.5 bg-gray-50 dark:bg-black/20 hover:bg-primary hover:text-white rounded-xl border border-gray-100 dark:border-gray-700 transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-width="3" d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="leafletMap" class="w-full h-full z-10 bg-[#1e1e2f]"></div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
-                            <h5
-                                class="font-black text-[10px] tracking-[0.2em] mb-8 text-gray-400 dark:text-gray-500 text-center italic uppercase">
-                                Proporsi Kondisi Pohon (%) - <span class="text-primary"
-                                    x-text="selectedBlock || 'Global'"></span></h5>
-                            <div x-ref="pieChart" class="min-h-[300px]"></div>
-                        </div>
-                        <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
-                            <h5
-                                class="font-black text-[10px] tracking-[0.2em] mb-8 text-gray-400 dark:text-gray-500 text-center italic uppercase">
-                                Analisis Parameter Areal (%) - <span class="text-primary"
-                                    x-text="selectedBlock || 'Global'"></span></h5>
-                            <div x-ref="barChart" class="min-h-[300px]"></div>
-                        </div>
-                    </div>
-
-                    <div class="panel border-0 shadow-sm rounded-3xl p-8 dark:bg-[#1b2e4b]">
+                        class="p-4 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1b2e4b] z-[1001]">
                         <div
-                            class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-gray-50 dark:border-gray-800 pb-5 uppercase tracking-tighter">
-                            <div class="flex items-center gap-3">
-                                <div class="p-2 bg-warning/10 text-warning rounded-lg"><svg class="w-5 h-5"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg></div>
-                                <div>
-                                    <h5
-                                        class="font-black text-xs uppercase tracking-widest text-gray-900 dark:text-white-light italic">
-                                        Tren Biometrik Vegetatif</h5>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter italic">
-                                        Unit:
-                                        <span class="text-primary italic"
-                                            x-text="selectedBlock ? 'Unit Blok ' + selectedBlock : 'Rata-rata Seluruh Kebun'"></span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button @click="resetToGlobal"
-                                    class="btn btn-sm btn-outline-secondary rounded-lg text-[10px] font-black uppercase tracking-widest"
-                                    x-show="selectedBlock">RESET DATA</button>
-                                <span
-                                    class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] bg-gray-50 dark:bg-black/20 px-3 py-1 rounded-full italic">Source:
-                                    Ground-Check 2024</span>
-                            </div>
+                            class="flex items-center gap-2 text-primary font-black uppercase italic tracking-widest text-[10px]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-width="2"
+                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1 0 010.553 0.894v10.764a1 1 0 01-1.447 0.894L15 17m-6 3l6-3m-6 0V7m6 10V4" />
+                            </svg>
+                            Interactive Spatial Intelligence
                         </div>
-                        <div class="relative min-h-[500px]">
-                            <div x-ref="vegetativeTrendChart"></div>
+                        <div class="flex gap-2">
+                            <button @click="toggleMapHeight()"
+                                class="p-2 px-4 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                                :class="isMapExpanded ? 'bg-danger text-white shadow-danger/20' :
+                                    'bg-gray-100 dark:bg-black/20 text-primary'">
+                                <span class="text-[10px] font-black uppercase"
+                                    x-text="isMapExpanded ? 'Exit Theater' : 'Theater Mode'"></span>
+                            </button>
+                            <button @click="map.zoomIn()"
+                                class="p-2 bg-primary text-white rounded-xl w-10 transition-all shadow-lg active:scale-90">+</button>
+                            <button @click="map.zoomOut()"
+                                class="p-2 bg-primary text-white rounded-xl w-10 transition-all shadow-lg active:scale-90">-</button>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- 4. AI ANALYSIS SECTION (Asli Desainmu) -->
-            <div
-                class="panel border-0 shadow-2xl p-0 overflow-hidden mt-8 bg-white dark:bg-gradient-to-br dark:from-[#1b2e4b] dark:to-[#060818] rounded-[2rem] border border-gray-100 dark:border-transparent transition-all duration-300 uppercase font-black">
-                <div class="p-10">
-                    <div
-                        class="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 text-gray-900 dark:text-white uppercase tracking-tighter">
-                        <div class="flex items-center gap-5">
+                    <div class="flex-1 relative overflow-hidden bg-[#04131a]">
+                        <div id="leafletMap" class="w-full h-full z-10"></div>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS CHARTS (Disembunyikan saat Theater) -->
+                <div x-show="!isMapExpanded" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="panel p-8 rounded-[2.5rem] bg-white dark:bg-[#0e1726] border-none shadow-xl">
+                        <div class="flex items-center justify-between mb-10">
+                            <h5
+                                class="text-[11px] font-black text-slate-400 uppercase tracking-widest italic border-l-4 border-primary pl-4">
+                                Condition Proportions</h5>
+                            <span class="text-[9px] font-bold text-slate-300">Live Sync</span>
+                        </div>
+                        <div x-ref="pieChart" class="min-h-[320px]"></div>
+                    </div>
+                    <div class="panel p-8 rounded-[2.5rem] bg-white dark:bg-[#0e1726] border-none shadow-xl">
+                        <div class="flex items-center justify-between mb-10">
+                            <h5
+                                class="text-[11px] font-black text-slate-400 uppercase tracking-widest italic border-l-4 border-success pl-4">
+                                Areal Parameters</h5>
+                            <span class="text-[9px] font-bold text-slate-300">Metric View</span>
+                        </div>
+                        <div x-ref="barChart" class="min-h-[320px]"></div>
+                    </div>
+
+                </div>
+
+                <!-- INTEGRASI DATA VEGETATIF (Conditional Rendering) -->
+                <template x-if="vegetatifData && vegetatifData.labels.length > 0">
+                    <div class="panel p-10 rounded-[3.5rem] bg-white dark:bg-[#0e1726] border-none shadow-2xl space-y-8"
+                        x-transition:enter="transition-premium" x-transition:enter-start="opacity-0 translate-y-10">
+
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 text-left">
+                            <div class="space-y-1">
+                                <h4
+                                    class="text-2xl font-black italic text-slate-800 dark:text-white uppercase tracking-tighter">
+                                    Analisis Biometrik Vegetatif</h4>
+                                <div
+                                    class="flex items-center gap-3 text-[10px] text-primary font-bold tracking-[0.3em] uppercase opacity-70">
+                                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                    Parameter: Lingkar Batang, Jumlah & Panjang Pelepah
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <span
+                                    class="px-5 py-2 rounded-2xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase text-slate-500 italic tracking-widest">Multivariate
+                                    Growth Analysis</span>
+                            </div>
+                        </div>
+
+                        <div class="relative w-full">
+                            <div x-ref="vegetatifChart" class="min-h-[480px]"></div>
+                        </div>
+
+                        <!-- Summary Stats untuk Vegetatif -->
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-slate-100 dark:border-white/5 text-left">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M12 2v20m0-20l-4 4m4-4l4 4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg.
+                                        Girth</p>
+                                    <p class="text-lg font-black dark:text-white" x-text="avgGirth + ' m'"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center text-success">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Frond
+                                        Production</p>
+                                    <p class="text-lg font-black dark:text-white" x-text="avgFrondCount"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg.
+                                        Length</p>
+                                    <p class="text-lg font-black dark:text-white" x-text="avgFrondLen + ' m'"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- AI PRESCRIPTIVE ENGINE -->
+                <div
+                    class="panel p-0 rounded-[3rem] border-none shadow-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 relative">
+                    <!-- Glow Decorative -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -mr-32 -mt-32"></div>
+
+                    <div class="p-10 relative z-10">
+                        <div class="flex flex-col md:flex-row md:items-center gap-8 mb-12">
                             <div
-                                class="w-16 h-16 bg-primary text-white rounded-3xl flex items-center justify-center shadow-xl shadow-primary/20 animate-pulse">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                class="w-20 h-20 bg-primary rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/40 animate-pulse-soft">
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="text-xl">Autonomous Prescriptive Engine</h4>
+                                <h4
+                                    class="text-xl font-black italic text-slate-800 dark:text-white uppercase tracking-tighter leading-none">
+                                    Autonomous Prescriptive Engine</h4>
                                 <p
-                                    class="text-[10px] text-indigo-500 dark:text-indigo-300 tracking-[0.3em] mt-1 font-mono">
-                                    Node: DSS-SAWIT-XAI-2025</p>
+                                    class="text-[10px] text-indigo-500 font-bold tracking-[0.3em] uppercase opacity-70 mt-2 font-mono">
+                                    Node: DSS-XAI-STANDAR-SCOPUS</p>
                             </div>
                         </div>
 
                         <div
-                            class="flex items-center gap-4 bg-gray-50 dark:bg-black/30 p-3 rounded-[1.5rem] border border-gray-100 dark:border-white/10 w-full md:w-auto shadow-inner">
-                            <div
-                                class="px-5 py-2 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 text-center">
-                                <span
-                                    class="text-[10px] text-gray-400 block mb-0.5 tracking-tighter uppercase font-bold">Selected
-                                    Node</span>
-                                <span class="text-sm text-primary font-black font-mono"
-                                    x-text="selectedBlock || 'GLOBAL'"></span>
-                            </div>
-                            <button
-                                class="btn btn-primary px-10 py-4 rounded-xl font-black text-[11px] tracking-[0.2em] active:scale-95 shadow-lg shadow-primary/20 transition-all"
-                                @click="runInference" :disabled="!selectedBlock || isAnalyzing">
-                                <span x-show="!isAnalyzing">EXECUTE AI ANALYSIS</span>
-                                <span x-show="isAnalyzing" class="animate-pulse">PROCESSING NEURAL...</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div
-                        class="min-h-[200px] bg-gray-50/50 dark:bg-black/40 rounded-[2rem] border-2 border-dashed border-gray-200 dark:border-white/10 p-10 flex flex-col justify-center relative overflow-hidden transition-all duration-500">
-                        <template x-if="inferenceResult && !isAnalyzing">
-                            <div class="animate__animated animate__fadeInUp relative z-10">
-                                <div class="flex items-center gap-3 mb-6 font-black uppercase">
-                                    <span
-                                        class="bg-emerald-500 !text-white text-[9px] px-4 py-1.5 rounded-full tracking-[0.2em] uppercase shadow-lg shadow-emerald-500/20">Success
-                                        Inference</span>
-                                    <h6 class="text-xs text-gray-800 dark:text-white tracking-widest">Diagnostic
-                                        Report:
-                                        Blok <span x-text="selectedBlock"></span></h6>
-                                </div>
-                                <!-- Grid Hasil AI Aslimu -->
-                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                            class="min-h-[160px] rounded-[2.2rem] bg-white/5 dark:bg-black/40 border border-white/10 p-10 flex flex-col justify-center relative overflow-hidden transition-all duration-700">
+                            <template x-if="inferenceResult">
+                                <div class="animate__animated animate__fadeInUp space-y-4">
                                     <div
-                                        class="lg:col-span-8 p-8 bg-white dark:bg-black/20 rounded-3xl border-l-[6px] border-l-emerald-500 shadow-sm border border-gray-100 dark:border-white/5 font-bold italic">
-                                        <p
-                                            class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-3 italic">
-                                            Rekomendasi Preskriptif:</p>
-                                        <p class="text-gray-800 dark:text-gray-200 text-lg leading-relaxed italic tracking-tight"
-                                            x-text="inferenceResult.recommendation"></p>
-                                    </div>
-                                    <div class="lg:col-span-4 space-y-4">
-                                        <div
-                                            class="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-center text-center">
-                                            <p
-                                                class="text-[9px] text-gray-500 dark:text-gray-400 font-black mb-1 tracking-widest uppercase italic font-bold">
-                                                Confidence Score</p>
-                                            <p class="text-2xl font-black text-emerald-500 font-mono"
-                                                x-text="inferenceResult.confidence + '%'"></p>
-                                        </div>
-                                        <div
-                                            class="bg-white dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm flex flex-col justify-center text-center">
-                                            <p
-                                                class="text-[9px] text-gray-500 dark:text-gray-400 font-black mb-1 tracking-widest uppercase italic font-bold">
-                                                Vigor Index (NDVI)</p>
-                                            <p class="text-2xl font-black text-indigo-500 dark:text-indigo-400 font-mono"
-                                                x-text="inferenceResult.vigor"></p>
-                                        </div>
-                                    </div>
+                                        class="inline-block px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                                        High Confidence Recommendation</div>
+                                    <p class="text-slate-100 text-xl font-medium leading-relaxed italic tracking-tight"
+                                        x-text="inferenceResult.recommendation"></p>
                                 </div>
+                            </template>
+                            <div x-show="!inferenceResult" class="text-center space-y-4 py-6 opacity-40">
+                                <div class="text-[11px] font-black text-slate-300 uppercase tracking-[0.6em] italic">
+                                    System Standby</div>
+                                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Silakan
+                                    berinteraksi dengan unit blok pada peta untuk analisis</p>
                             </div>
-                        </template>
-                        <p x-show="!inferenceResult && !isAnalyzing"
-                            class="text-center text-gray-400 dark:text-white/20 text-[10px] font-black uppercase tracking-[0.5em] italic">
-                            System Idle - Standby for spatial input</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- SCRIPTS (LOGIKA DIBERSIHKAN DARI DUPLIKASI) -->
-        <script>
-            document.addEventListener("alpine:init", () => {
-                Alpine.data("detailKebun", () => ({
-                    map: null,
-                    selectedBlock: '',
-                    isAnalyzing: false,
-                    inferenceResult: null,
-                    geoLayers: {},
-                    isMapExpanded: false,
-                    pieChart: null,
-                    barChart: null,
-                    trendChart: null,
-                    kodeKebun: "1KAS",
+    <!-- LOGIKA SCRIPT -->
+    <script>
+        document.addEventListener("alpine:init", () => {
+            // LAYER KHUSUS: Mengolah Pixel secara Real-time agar putih hilang tanpa merubah warna asli kebun
+            L.TileLayer.TransparentWhite = L.TileLayer.extend({
+                createTile: function(coords, done) {
+                    const tile = document.createElement('canvas');
+                    const ctx = tile.getContext('2d');
+                    tile.width = tile.height = 256;
 
-                    layers: [{
-                            id: 'satelit',
-                            label: 'Basemap Satellite',
-                            active: true
-                        },
-                        {
-                            id: 'blocks',
-                            label: 'Boundary (Afdeling)',
-                            active: true
-                        },
-                        {
-                            id: 'pemel',
-                            label: 'Maintenance Layer',
-                            active: true
-                        },
-                        {
-                            id: 'lcc',
-                            label: 'Layer Kacangan (LCC)',
-                            active: true
-                        },
-                    ],
-
-                    // Data BarChart sesuai gambar permintaan
-                    arealTanamanGlobal: {
-                        "Kacangan": 78.59,
-                        "Pemeliharaan yang Kurang Baik": 8.24,
-                        "Areal Tergenang": 0.15,
-                        "Anak Kayu": 0.05
-                    },
-
-                    vegetativeData: {
-                        'default': {
-                            girth: [75, 76, 78, 79, 82, 85],
-                            fronds: [32, 33, 33, 34, 35, 36],
-                            length: [180, 182, 185, 188, 190, 192],
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun']
-                        },
-                        '190A': {
-                            girth: [60, 62, 63, 65, 66, 68],
-                            fronds: [28, 29, 29, 30, 30, 31],
-                            length: [150, 155, 158, 160, 162, 165],
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun']
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.onload = function() {
+                        ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, 256, 256);
+                        const data = imageData.data;
+                        // Logika deteksi pixel putih (R, G, B mendekati 255)
+                        for (let i = 0; i < data.length; i += 4) {
+                            if (data[i] > 250 && data[i + 1] > 250 && data[i + 2] > 250) {
+                                data[i + 3] = 0; // Set Alpha ke 0 (Transparan)
+                            }
                         }
-                    },
+                        ctx.putImageData(imageData, 0, 0);
+                        done(null, tile);
+                    };
+                    img.onerror = () => done(null, tile);
+                    img.src = this.getTileUrl(coords);
+                    return tile;
+                }
+            });
 
-                    init() {
-                        setTimeout(() => {
-                            this.initMap();
-                            this.renderCharts();
-                            this.renderVegetativeTrend();
-                        }, 500);
-                        this.$watch('selectedBlock', (val) => {
-                            this.updateCharts(val);
+            Alpine.data("detailKebun", () => ({
+                map: null,
+                isUavMode: false,
+                isMapExpanded: false,
+                geoLayers: {},
+                masterBounds: null,
+                inferenceResult: null,
+
+                center: [{{ $kebun->latitude ?? 2.03394 }}, {{ $kebun->longitude ?? 99.9952 }}],
+                tileUrl: '{{ $kebun->tile_url ?? '' }}',
+                selectedPeriode: '{{ $activeSlug }}',
+                lokasiPoints: @json($lokasiPoints ?? []),
+                statusCounts: @json($statusCounts ?? []),
+                kondisiPohon: @json($kondisiPohon ?? []),
+                arealTanaman: @json($arealTanaman ?? []),
+
+                vegetatifData: {
+                    labels: @json($vegetatif['vegLabels'] ?? []),
+                    lingkar: @json($vegetatif['vegLingkar'] ?? []),
+                    jumlah: @json($vegetatif['vegJumlah'] ?? []),
+                    panjang: @json($vegetatif['vegPanjang'] ?? []),
+                },
+                avgGirth: 0,
+                avgFrondCount: 0,
+                avgFrondLen: 0,
+
+                layers: [{
+                        id: 'basemap',
+                        label: 'Citra Satelit/UAV',
+                        active: true,
+                        exists: true
+                    },
+                    {
+                        id: 'batas',
+                        label: 'Batas Blok',
+                        active: false,
+                        exists: false
+                    },
+                    {
+                        id: 'pemel',
+                        label: 'Anomaly Layer',
+                        active: false,
+                        exists: false
+                    },
+                    {
+                        id: 'lcc',
+                        label: 'Kacangan Layer',
+                        active: false,
+                        exists: false
+                    }
+                ],
+
+                initComponent() {
+                    this.isUavMode = this.tileUrl && this.tileUrl.includes('{z}');
+                    this.masterBounds = L.latLngBounds();
+                    this.masterBounds.extend(this.center);
+                    this.calculateVegStats();
+                    setTimeout(() => {
+                        this.initMap();
+                        this.renderCharts();
+                        if (this.vegetatifData.labels.length > 0) this.renderVegetatifChart();
+                    }, 400);
+                },
+
+                calculateVegStats() {
+                    const d = this.vegetatifData;
+                    if (d.labels.length > 0) {
+                        this.avgGirth = (d.lingkar.reduce((a, b) => a + b, 0) / d.lingkar.length)
+                            .toFixed(3);
+                        this.avgFrondCount = (d.jumlah.reduce((a, b) => a + b, 0) / d.jumlah.length)
+                            .toFixed(1);
+                        this.avgFrondLen = (d.panjang.reduce((a, b) => a + b, 0) / d.panjang.length)
+                            .toFixed(3);
+                    }
+                },
+
+                async initMap() {
+                    if (this.map) this.map.remove();
+                    this.map = L.map('leafletMap', {
+                        zoomControl: false,
+                        attributionControl: false
+                    }).setView(this.center, 15);
+
+                    // 1. Google Satellite
+                    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                        maxZoom: 22,
+                        className: 'satellite-base'
+                    }).addTo(this.map);
+
+                    // 2. UAV Layer (Natural Color + Pixel Transparency)
+                    if (this.isUavMode) {
+                        new L.TileLayer.TransparentWhite(this.tileUrl, {
+                            maxZoom: 22,
+                            maxNativeZoom: 18,
+                            zIndex: 10
+                        }).addTo(this.map);
+                    }
+
+                    // Pane khusus agar Tooltip & GeoJSON selalu berada di atas tile UAV
+                    this.map.createPane('topLayer').style.zIndex = 500;
+
+                    // 3. Markers (Orange style)
+                    if (this.lokasiPoints.length > 0) {
+                        this.lokasiPoints.forEach(pt => {
+                            if (pt.latitude && pt.latitude != 0) {
+                                const pos = [parseFloat(pt.latitude), parseFloat(pt
+                                    .longitude)];
+                                this.masterBounds.extend(pos);
+                                L.circleMarker(pos, {
+                                    radius: 3.5,
+                                    color: '#000',
+                                    fillColor: '#fb923c',
+                                    fillOpacity: 1,
+                                    weight: 1.5,
+                                    pane: 'topLayer'
+                                }).addTo(this.map).bindTooltip(pt.nama_lokasi);
+                            }
                         });
-                    },
+                    }
 
-                    initMap() {
-                        if (this.map) this.map.remove();
-                        this.map = L.map('leafletMap', {
-                            zoomControl: false,
-                            attributionControl: false
-                        }).setView([2.03394, 99.9952], 14);
+                    const kode = '{{ $kebun->kebun }}';
+                    const fetchLayer = async (type, options) => {
+                        try {
+                            const response = await fetch(`/spatial-data/${kode}/${type}`);
+                            const data = await response.json();
+                            if (data.features && data.features.length > 0) {
+                                options.pane = 'topLayer';
+                                const layerInstance = L.geoJSON(data, options);
+                                const idMap = {
+                                    'batas': 'batas',
+                                    'pemeliharaan': 'pemel',
+                                    'kacangan': 'lcc'
+                                };
+                                this.geoLayers[idMap[type]] = layerInstance;
+                                this.layers.find(l => l.id === idMap[type]).exists = true;
 
-                        this.geoLayers.satelit = L.tileLayer(
-                            'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                                maxZoom: 22
-                            }).addTo(this.map);
+                                if (layerInstance.getBounds().isValid()) this.masterBounds
+                                    .extend(layerInstance.getBounds());
 
-                        fetch(`/api/spatial/blocks/${this.kodeKebun}`).then(r => r.json()).then(data => {
-                            this.geoLayers.blocks = L.geoJSON(data, {
-                                style: {
-                                    color: 'white',
-                                    weight: 2.5,
-                                    fillOpacity: 0.1
-                                },
-                                onEachFeature: (f, l) => {
-                                    l.bindTooltip(
-                                        `<b>Wilayah:</b> ${f.properties.display_name}`, {
-                                            sticky: true
-                                        });
+                                if (type === 'batas') {
+                                    this.layers.find(l => l.id === 'batas').active = true;
+                                    layerInstance.addTo(this.map);
                                 }
-                            }).addTo(this.map);
-                            this.map.fitBounds(this.geoLayers.blocks.getBounds(), {
-                                padding: [50, 50]
-                            });
-                        });
+                            }
+                        } catch (e) {}
+                    };
 
-                        fetch(`/api/spatial/maintenance/${this.kodeKebun}`).then(r => r.json()).then(
-                            data => {
-                                this.geoLayers.pemel = L.geoJSON(data, {
-                                    style: (f) => ({
-                                        color: f.properties.KETERANGAN ===
-                                            'GENANGAN AIR/BANJIRAN' ? '#3b82f6' :
-                                            '#ef4444',
-                                        weight: 2,
-                                        fillOpacity: 0.8
-                                    }),
-                                    onEachFeature: (f, l) => {
-                                        l.bindTooltip(
-                                            `<b>Blok:</b> ${f.properties.display_name}<br><small>${f.properties.KETERANGAN}</small>`, {
-                                                sticky: true
-                                            });
-                                        l.on('click', (e) => {
-                                            L.DomEvent.stopPropagation(e);
-                                            this.selectedBlock = f.properties
-                                                .display_name;
-                                            l.setStyle({
-                                                weight: 6,
-                                                color: '#fbbf24',
-                                                fillOpacity: 1
-                                            });
-                                            this.map.panTo(l.getBounds()
-                                                .getCenter());
-                                        });
-                                    }
-                                }).addTo(this.map);
-                            });
-                    },
-
-                    toggleLayer(id) {
-                        const layer = this.geoLayers[id];
-                        if (layer) this.map.hasLayer(layer) ? this.map.removeLayer(layer) : this.map
-                            .addLayer(layer);
-                    },
-
-                    toggleMapHeight() {
-                        this.isMapExpanded = !this.isMapExpanded;
-                        setTimeout(() => {
-                            if (this.map) {
-                                this.map.invalidateSize({
-                                    animate: true
+                    await Promise.all([
+                        fetchLayer('batas', {
+                            style: {
+                                color: 'white',
+                                weight: 2,
+                                fillOpacity: 0
+                            },
+                            onEachFeature: (f, l) => {
+                                l.bindTooltip(`Blok: ${f.properties.display_name}`);
+                                l.bindPopup(
+                                    `<div class="p-1 font-bold text-slate-800 text-xs">Unit: ${f.properties.display_name}<br>Survival: ${f.properties.survival_rate}%</div>`, {
+                                        className: 'custom-leaflet-popup'
+                                    });
+                                l.on('click', () => {
+                                    this.inferenceResult = {
+                                        recommendation: `Lakukan aplikasi pemupukan NPK di Blok ${f.properties.display_name} untuk pemulihan Survival Rate ke target 98.5%.`
+                                    };
                                 });
                             }
-                        }, 500);
-                    },
-
-                    renderCharts() {
-                        const isDark = document.documentElement.classList.contains('dark');
-                        const textCol = isDark ? '#cbd5e1' : '#334155';
-
-                        // PIE CHART ASLIMU
-                        this.pieChart = new ApexCharts(this.$refs.pieChart, {
-                            series: [92.5, 5.2, 2.3],
-                            labels: ['Normal', 'Kerdil', 'Mati'],
-                            chart: {
-                                type: 'pie',
-                                height: 350
+                        }),
+                        fetchLayer('pemeliharaan', {
+                            style: {
+                                color: '#ef4444',
+                                weight: 2,
+                                fillOpacity: 0.2,
+                                dashArray: '4,4'
                             },
-                            colors: ['#0ea5e9', '#f59e0b', '#ef4444'],
+                            onEachFeature: (f, l) => {
+                                l.bindPopup(
+                                    `<b class="text-danger uppercase text-xs">Anomaly: ${f.properties.KETERANGAN}</b>`
+                                );
+                            }
+                        }),
+                        fetchLayer('kacangan', {
+                            style: {
+                                color: '#84cc16',
+                                weight: 1.5,
+                                fillOpacity: 0.4,
+                                fillColor: '#a3e635'
+                            },
+                            onEachFeature: (f, l) => {
+                                l.bindPopup(`
+                                    <div class="overflow-hidden vristo-popup">
+                                        <div class="bg-primary px-4 py-2"><h5 class="text-white font-black text-[10px] m-0 uppercase italic">Kacangan Analysis</h5></div>
+                                        <div class="p-4 space-y-2 text-xs">
+                                            <div class="flex justify-between"><span>Unit ID</span><span class="font-black text-primary">${f.properties.afdeling_id || 'N/A'}</span></div>
+                                            <div class="flex justify-between"><span>Luas</span><span class="font-black">${f.properties.LUAS} Ha</span></div>
+                                        </div>
+                                    </div>`);
+                            }
+                        })
+                    ]);
+
+                    if (this.masterBounds.isValid()) this.map.fitBounds(this.masterBounds, {
+                        padding: [50, 50],
+                        maxZoom: 16
+                    });
+                    setTimeout(() => this.map.invalidateSize(), 600);
+                },
+
+                toggleMapHeight() {
+                    this.isMapExpanded = !this.isMapExpanded;
+                    document.body.style.overflow = this.isMapExpanded ? 'hidden' : 'auto';
+                    setTimeout(() => {
+                        this.map.invalidateSize();
+                        if (this.masterBounds.isValid()) this.map.fitBounds(this.masterBounds, {
+                            padding: [40, 40],
+                            maxZoom: 16
+                        });
+                    }, 400);
+                },
+
+                toggleLayer(id) {
+                    const lyr = this.geoLayers[id === 'pemel' ? 'pemel' : id];
+                    const layerDef = this.layers.find(l => l.id === id);
+                    if (lyr && layerDef.exists) {
+                        layerDef.active = !layerDef.active;
+                        layerDef.active ? this.map.addLayer(lyr) : this.map.removeLayer(lyr);
+                    }
+                },
+
+                renderCharts() {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const textCol = isDark ? '#94a3b8' : '#64748b';
+
+                    if (this.$refs.pieChart) {
+                        new ApexCharts(this.$refs.pieChart, {
+                            series: Object.values(this.kondisiPohon || {}),
+                            labels: Object.keys(this.kondisiPohon || {}).map(l => l
+                                .toUpperCase()),
+                            chart: {
+                                type: 'donut',
+                                height: 350,
+                                fontFamily: 'Plus Jakarta Sans'
+                            },
+                            colors: ['#10b981', '#f59e0b', '#f43f5e'],
+                            dataLabels: {
+                                enabled: true,
+                                style: {
+                                    fontWeight: 900
+                                }
+                            },
+                            stroke: {
+                                width: 0
+                            },
                             legend: {
                                 position: 'bottom',
                                 labels: {
                                     colors: textCol
+                                },
+                                fontWeight: 800
+                            },
+                            tooltip: {
+                                theme: isDark ? 'dark' : 'light',
+                                y: {
+                                    formatter: val => `${val}%`
                                 }
                             },
-                            stroke: {
-                                show: false
+                            plotOptions: {
+                                pie: {
+                                    donut: {
+                                        size: '75%',
+                                        labels: {
+                                            show: true,
+                                            name: {
+                                                fontWeight: 900
+                                            },
+                                            value: {
+                                                fontWeight: 900,
+                                                color: textCol,
+                                                formatter: function(val) {
+                                                    return val + " %";
+                                                }
+                                            },
+                                            total: {
+                                                show: true,
+                                                label: 'TOTAL',
+                                                color: '#4361ee',
+                                                fontWeight: 900,
+                                                formatter: function(w) {
+                                                    let total = w.globals.seriesTotals
+                                                        .reduce((a, b) => a + b, 0);
+                                                    return Math.round(total) + " %";
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        });
-                        this.pieChart.render();
+                        }).render();
+                    }
 
-                        // BAR CHART (INTEGRASI MULTI-SERIES SESUAI GAMBAR)
-                        const warnaAreal = ['#8BC34A', '#FF9800', '#F44336', '#795548'];
-                        const seriesAreal = Object.entries(this.arealTanamanGlobal).map(([label, value],
-                            index) => ({
-                            name: label,
-                            data: [value],
-                            color: warnaAreal[index]
-                        }));
-
-                        this.barChart = new ApexCharts(this.$refs.barChart, {
+                    if (this.$refs.barChart) {
+                        new ApexCharts(this.$refs.barChart, {
+                            series: [{
+                                name: 'Cakupan',
+                                data: Object.values(this.arealTanaman || {})
+                            }],
                             chart: {
                                 type: 'bar',
                                 height: 350,
                                 toolbar: {
                                     show: false
-                                }
+                                },
+                                fontFamily: 'Plus Jakarta Sans'
                             },
-                            series: seriesAreal,
+                            colors: ['#8BC34A', '#FF9800', '#F44336', '#795548'],
                             plotOptions: {
                                 bar: {
-                                    horizontal: false,
+                                    borderRadius: 12,
                                     columnWidth: '40%',
+                                    distributed: true,
                                     dataLabels: {
-                                        position: 'center'
+                                        position: 'top'
                                     }
                                 }
                             },
                             dataLabels: {
                                 enabled: true,
-                                formatter: v => v + "%",
+                                offsetY: -25,
                                 style: {
                                     fontWeight: 900,
-                                    colors: ['#fff']
+                                    colors: [textCol]
+                                },
+                                formatter: function(val) {
+                                    return val.toFixed(2) + "%";
                                 }
                             },
                             xaxis: {
-                                categories: [''],
+                                categories: Object.keys(this.arealTanaman || {}),
+                                labels: {
+                                    style: {
+                                        colors: textCol,
+                                        fontWeight: 800
+                                    }
+                                },
                                 axisBorder: {
                                     show: false
                                 }
@@ -526,193 +720,133 @@
                                 max: 100,
                                 labels: {
                                     style: {
-                                        colors: textCol
-                                    },
-                                    formatter: v => v + "%"
-                                }
-                            },
-                            legend: {
-                                position: 'top',
-                                fontSize: '11px',
-                                labels: {
-                                    colors: textCol
-                                },
-                                markers: {
-                                    radius: 4
-                                }
-                            },
-                            grid: {
-                                borderColor: isDark ? '#1b2e4b' : '#f1f2f3',
-                                strokeDashArray: 4
-                            },
-                            tooltip: {
-                                theme: 'dark',
-                                y: {
-                                    formatter: v => v + "%"
-                                }
-                            }
-                        });
-                        this.barChart.render();
-
-                        // TREND CHART ASLIMU
-                        const dataTrend = this.vegetativeData['default'];
-                        this.trendChart = new ApexCharts(this.$refs.vegetativeTrendChart, {
-                            series: [{
-                                name: 'Lingkar Batang (cm)',
-                                data: dataTrend.girth
-                            }, {
-                                name: 'Jumlah Pelepah',
-                                data: dataTrend.fronds
-                            }, {
-                                name: 'Panjang Pelepah (cm)',
-                                data: dataTrend.length
-                            }],
-                            chart: {
-                                type: 'bar',
-                                height: 450,
-                                toolbar: {
-                                    show: true
-                                },
-                                animations: {
-                                    enabled: true
-                                }
-                            },
-                            plotOptions: {
-                                bar: {
-                                    columnWidth: '55%',
-                                    borderRadius: 4
-                                }
-                            },
-                            xaxis: {
-                                categories: dataTrend.labels,
-                                labels: {
-                                    style: {
                                         colors: textCol,
                                         fontWeight: 700
+                                    },
+                                    formatter: function(val) {
+                                        return val.toFixed(0) + "%";
                                     }
                                 }
                             },
-                            yaxis: {
-                                labels: {
-                                    style: {
-                                        colors: textCol
-                                    }
+                            tooltip: {
+                                theme: isDark ? 'dark' : 'light',
+                                y: {
+                                    title: {
+                                        formatter: (seriesName) =>
+                                            ''
+                                    },
+                                    formatter: (val) => `<b>${val.toFixed(2)}%</b>`
                                 }
                             },
-                            colors: ['#0ea5e9', '#10b981', '#f59e0b'],
                             grid: {
-                                borderColor: isDark ? '#334155' : '#e2e8f0'
+                                borderColor: isDark ? '#1e293b' : '#f1f5f9',
+                                strokeDashArray: 4
                             },
                             legend: {
-                                position: 'top',
-                                labels: {
-                                    colors: textCol
+                                show: false
+                            }
+                        }).render();
+                    }
+                },
+
+                renderVegetatifChart() {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const textCol = isDark ? '#94a3b8' : '#64748b';
+
+                    new ApexCharts(this.$refs.vegetatifChart, {
+                        series: [{
+                                name: 'Lingkar Batang (m)',
+                                data: this.vegetatifData.lingkar
+                            },
+                            {
+                                name: 'Jumlah Pelepah',
+                                data: this.vegetatifData.jumlah
+                            },
+                            {
+                                name: 'Panjang Pelepah (m)',
+                                data: this.vegetatifData.panjang
+                            }
+                        ],
+                        chart: {
+                            type: 'bar',
+                            height: 480,
+                            fontFamily: 'Plus Jakarta Sans',
+                            toolbar: {
+                                show: true
+                            },
+                            animations: {
+                                enabled: true,
+                                easing: 'easeinout',
+                                speed: 1000
+                            }
+                        },
+                        colors: ['#2196F3', '#4CAF50', '#FF9800'],
+                        plotOptions: {
+                            bar: {
+                                horizontal: false,
+                                columnWidth: '60%',
+                                borderRadius: 8,
+                                dataLabels: {
+                                    position: 'top'
                                 }
                             }
-                        });
-                        this.trendChart.render();
-                    },
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            offsetY: -20,
+                            style: {
+                                fontSize: '9px',
+                                fontWeight: 900,
+                                colors: [textCol]
+                            },
+                            formatter: (val) => val.toFixed(3)
+                        },
+                        xaxis: {
+                            categories: this.vegetatifData.labels,
+                            labels: {
+                                rotate: -45,
+                                rotateAlways: true,
+                                style: {
+                                    colors: textCol,
+                                    fontWeight: 700,
+                                    fontSize: '10px'
+                                }
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    colors: textCol,
+                                    fontWeight: 700
+                                },
+                                formatter: (v) => v.toFixed(3)
+                            }
+                        },
+                        grid: {
+                            borderColor: isDark ? '#1e293b' : '#f1f5f9',
+                            strokeDashArray: 5
+                        },
+                        tooltip: {
+                            theme: isDark ? 'dark' : 'light',
+                            y: {
+                                formatter: (v) => v.toFixed(3)
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                colors: textCol
+                            },
+                            fontWeight: 800
+                        }
+                    }).render();
+                },
 
-                    updateCharts(blockId) {
-                        const randomSet = () => [Math.floor(Math.random() * 100), Math.floor(Math.random() *
-                            20), Math.floor(Math.random() * 10)];
-                        this.pieChart.updateSeries(randomSet());
-
-                        const newSeriesBar = Object.entries(this.arealTanamanGlobal).map(([label, value]) =>
-                            ({
-                                name: label,
-                                data: [(Math.random() * 100).toFixed(2)]
-                            }));
-                        this.barChart.updateSeries(newSeriesBar);
-
-                        const newData = this.vegetativeData[blockId] || this.vegetativeData['default'];
-                        this.trendChart.updateSeries([{
-                            name: 'Lingkar Batang (cm)',
-                            data: newData.girth
-                        }, {
-                            name: 'Jumlah Pelepah',
-                            data: newData.fronds
-                        }, {
-                            name: 'Panjang Pelepah (cm)',
-                            data: newData.length
-                        }]);
-                    },
-
-                    resetToGlobal() {
-                        this.selectedBlock = '';
-                        this.map.fitBounds(this.geoLayers.blocks.getBounds());
-                        this.inferenceResult = null;
-                    },
-
-                    runInference() {
-                        if (!this.selectedBlock) return;
-                        this.isAnalyzing = true;
-                        this.inferenceResult = null;
-                        setTimeout(() => {
-                            this.isAnalyzing = false;
-                            this.inferenceResult = {
-                                recommendation: "Berdasarkan analisis spasial blok " + this
-                                    .selectedBlock +
-                                    ", terdeteksi defisiensi Nitrogen signifikan. Rekomendasi: Aplikasi segera Urea 1.5kg/pokok.",
-                                confidence: 99.5,
-                                vigor: 0.776
-                            };
-                        }, 2500);
-                    },
-
-                    zoomIn() {
-                        this.map.zoomIn();
-                    },
-                    zoomOut() {
-                        this.map.zoomOut();
-                    }
-                }));
-            });
-        </script>
-
-        <style>
-            #leafletMap {
-                width: 100%;
-                height: 100%;
-                min-height: 440px;
-                border-radius: 2rem;
-                z-index: 10;
-                background: #1e1e2f;
-                cursor: crosshair;
-            }
-
-            .custom_switch:checked~span:before {
-                background-color: #fff !important;
-            }
-
-            .panel {
-                background: #fff;
-                border-radius: 2rem;
-                transition: all 0.3s;
-            }
-
-            .dark .panel {
-                background: #1b2e4b;
-            }
-
-            .leaflet-tooltip {
-                background: rgba(255, 255, 255, 0.9);
-                border: none;
-                border-radius: 8px;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                font-weight: bold;
-                font-family: inherit;
-                font-size: 10px;
-            }
-
-            .dark .leaflet-tooltip {
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            [x-cloak] {
-                display: none !important;
-            }
-        </style>
+                changePeriode() {
+                    window.location.href =
+                        `/monitoring/detail-areal/{{ $kebun->id ?? $kebun->kebun }}?periode=${this.selectedPeriode}`;
+                }
+            }));
+        });
+    </script>
 </x-layout.default>

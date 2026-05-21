@@ -22,6 +22,7 @@ class KorelasiVegetatif extends Model
     protected $fillable = [
         'simtan_form_id', // Relasi Integer
         'kode_upload',    // Kode unik (Human-readable)
+        'periode',
         'tahun',
         'kebun',
         'topografi',

@@ -5,159 +5,180 @@ namespace App\Imports;
 use App\Models\DetailRekap;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Illuminate\Support\Facades\Log;
 
-/**
- * DetailRekapImport
- * Mengintegrasikan logika cerdas dari simtanfix untuk menangani merged cells,
- * normalisasi header, dan pencegahan error numeric out of range.
- */
-class DetailRekapImport implements ToCollection, WithHeadingRow
+class DetailRekapImport implements ToCollection, WithCalculatedFormulas
 {
-    protected $simtanFormId;
-    protected $kodeUpload;
+    protected $simtanFormId, $kodeUpload, $labelPeriode;
+    private $currentDistrik = null;
+    private $currentKebun = null;
 
-    /**
-     * Constructor menerima ID (Integer) untuk relasi database
-     * dan Kode (String) untuk identitas dokumen (Audit Trail).
-     */
-    public function __construct($simtanFormId, $kodeUpload)
+    public function __construct($simtanFormId, $kodeUpload, $labelPeriode)
     {
         $this->simtanFormId = $simtanFormId;
         $this->kodeUpload = $kodeUpload;
+        $this->labelPeriode = $labelPeriode;
     }
 
     public function collection(Collection $rows)
     {
-        Log::info('🧠 Inisialisasi Import Detail Rekap. Header terdeteksi:', $rows->first()->keys()->toArray());
+        Log::info("⚙️ START INGESTI: [{$this->labelPeriode}]");
 
-        $currentDistrik = null;
-        $currentKebun = null;
+        // Identifikasi Periode 1 (JANFEBMAR...) untuk pemetaan kolom spesifik
+        $isP1 = str_contains(strtoupper($this->labelPeriode), 'JANFEBMAR');
+
         $success = 0;
-        $failed = 0;
+        $skipped = 0;
 
         foreach ($rows as $index => $row) {
-            // 1. Logika Mapping Header Khusus (Menangani simbol % dan variasi penulisan)
-            $specialMapped = $this->mapSpecialHeaderValues($row);
-            $row = collect($row)->merge($specialMapped);
+            // Data asli dimulai dari baris ke-5 (Index 4)
+            if ($index < 3) continue;
 
-            // 2. Normalisasi Keys (Mengubah header Excel menjadi format snake_case database)
-            $row = $row->mapWithKeys(function ($val, $key) {
-                $key = strtolower(trim($key));
-                if (str_starts_with($key, '%')) $key = 'persen_' . substr($key, 1);
-                $key = preg_replace('/[\s\/\(\)%]+/', '_', $key);
-                $key = preg_replace('/_{2,}/', '_', $key); // Hilangkan double underscore
-                $key = trim($key, '_');
-                return [$key => $val];
-            });
+            $c0 = trim($row[0] ?? ''); // Distrik
+            $c1 = trim($row[1] ?? ''); // Kebun
+            $c2 = trim($row[2] ?? ''); // Afdeling
 
-            // Skip jika baris kosong
-            if ($row->filter()->isEmpty()) continue;
+            // 🧬 LOGIKA MERGED CELLS: Selalu tangkap identitas wilayah
+            if (!empty($c0) && !is_numeric($c0) && strtoupper($c0) !== 'TOTAL') $this->currentDistrik = strtoupper($c0);
+            if (!empty($c1) && !is_numeric($c1) && strtoupper($c1) !== 'TOTAL') $this->currentKebun = strtoupper($c1);
 
-            // --- LOGIKA SKIP HEADER & TOTAL (Mencegah Error Data Truncated) ---
-            $valDistrik = strtoupper(trim($row['distrik'] ?? ''));
-            if ($valDistrik === 'DISTRIK' || $valDistrik === 'KEBUN' || $valDistrik === 'AFDELING') {
+            // 🛡️ FILTER 1: Buang baris header (Jika baris mengandung teks judul)
+            if ($this->isHeaderRow($c0, $c1, $c2)) {
+                $skipped++;
                 continue;
             }
 
-            // 3. Logika Merged Cells (Mengambil wilayah dari baris sebelumnya jika kosong)
-            if (!empty($row['distrik']) && strtoupper(trim($row['distrik'])) !== 'TOTAL') {
-                $currentDistrik = strtoupper(trim($row['distrik']));
-            }
-            if (!empty($row['kebun']) && strtoupper(trim($row['kebun'])) !== 'TOTAL') {
-                $currentKebun = strtoupper(trim($row['kebun']));
-            }
-
-            // Jika identitas wilayah dasar belum ditemukan, lewati baris ini
-            if (!$currentDistrik || !$currentKebun) continue;
+            if (!$this->currentDistrik || !$this->currentKebun) continue;
 
             try {
-                $afdeling = $this->sanitizeAfdeling($row['afdeling'] ?? null);
-                // Jika afdeling kosong atau bertuliskan 'TOTAL', tandai sebagai baris total agregat
-                $isTotal = (empty($afdeling) || strtoupper($afdeling) == 'TOTAL') ? 1 : 0;
+                $afdeling = $this->sanitizeAfdeling($c2);
+                $isTotal = ($afdeling == 'TOTAL') ? 1 : 0;
 
-                // 4. Integrasi ke Database (Menggunakan Hybrid Key)
-                DetailRekap::create([
-                    'simtan_form_id'              => $this->simtanFormId, // Integer
-                    'kode_upload'                 => $this->kodeUpload,    // String (Audit Trail)
-                    'distrik'                     => $currentDistrik,
-                    'kebun'                       => $currentKebun,
-                    'afdeling'                    => $afdeling,
-                    'tahun_tanam'                 => !empty($row['tahun_tanam']) ? (int) $row['tahun_tanam'] : null,
-                    'luas_ha'                     => $this->sanitizeDesimal($row['luas_ha'] ?? null),
-                    'pkk_awal'                    => $this->sanitizeRibuan($row['pkk_awal'] ?? null),
-                    'pkk_normal'                  => $this->sanitizeRibuan($row['pkk_normal'] ?? null),
-                    'pkk_non_valuer'              => $this->sanitizeRibuan($row['pkk_non_valuer_kerdil'] ?? $row['pkk_non_valuer'] ?? null),
-                    'pkk_mati'                    => $this->sanitizeRibuan($row['pkk_mati'] ?? null),
+                $luasVal = $this->sanitizeDesimal($row[4]);
+                $pkkAwal = $this->sanitizeRibuan($row[5]);
 
-                    // PENANGANAN ERROR TRILIUNAN (Numeric value out of range)
-                    'pkk_ha_kond_normal'          => $this->limitValue($this->sanitizeDesimal($row['pkkha_kond_normal'] ?? $row['pkk_ha_kond_normal'] ?? null)),
+                // 🛡️ FILTER 2: Buang baris kosong atau baris total hantu (angka nol semua)
+                if ($isTotal && $luasVal == 0 && $pkkAwal == 0) {
+                    $skipped++;
+                    continue;
+                }
 
-                    'persen_pkk_normal'           => $this->sanitizeDesimal($row['persen_pkk_normal'] ?? null),
-                    'persen_pkk_non_valuer'       => $this->sanitizeDesimal($row['persen_pkk_non_valuer'] ?? $row['persen_pkk_non_valuer_kerdil'] ?? null),
-                    'persen_pkk_mati'             => $this->sanitizeDesimal($row['persen_pkk_mati'] ?? null),
-                    'persen_tutupan_kacangan'     => $this->sanitizeDesimal($row['persen_tutupan_kacangan'] ?? $row['tutupan_kacangan'] ?? null),
-                    'persen_pir_pkk_kurang_baik'  => $this->sanitizeDesimal($row['persen_pir_pkk_dan_pasar_pikul_kurang_baik'] ?? $row['pir_pkk_dan_pasar_pikul_kurang_baik'] ?? null),
-                    'persen_area_tergenang'       => $this->sanitizeDesimal($row['persen_area_tergenang'] ?? $row['area_tergenang'] ?? null),
-                    'kondisi_anak_kayu'           => $this->sanitizeDesimal($row['kondisi_anak_kayu'] ?? null),
-                    'gangguan_ternak'             => $row['gangguan_ternak'] ?? null,
-                    'is_total'                    => $isTotal,
-                ]);
+                // 🎯 PEMETAAN KOLOM MANUAL BERDASARKAN PERIODE
+                if ($isP1) {
+                    // MAPPING PERIODE 1 (JANFEBMAR...)
+                    $mapping = [
+                        'pkk_ha_kond_normal'             => $this->limitValue($row[9]),  // Kolom J (Index 9)
+                        'persen_pkk_normal'              => $this->strictRound($row[10], 2),
+                        'persen_pkk_non_valuer'          => $this->strictRound($row[11], 2),
+                        'persen_pkk_mati'                => $this->strictRound($row[12], 2),
+                        'persen_tutupan_kacangan'        => $this->strictRound($row[13], 2),
+                        'persen_pir_pkk_kurang_baik'     => $this->strictRound($row[14], 2), // Gabungan PIR & Pasar Pikul
+                        'persen_pasar_pikul_kurang_baik' => 0, // Kosong di P1
+                        'persen_area_tergenang'          => $this->strictRound($row[15], 2),
+                        'kondisi_anak_kayu'              => $this->strictRound($row[16], 3),
+                        'gangguan_ternak'                => $this->sanitizeTeks($row[17]),
+                        'pkk_mati_mati_kembali'          => 0,
+                        'pkk_kerdil_mati_kembali'        => 0,
+                        'persen_pkk_mati_mati_kembali'   => 0,
+                        'persen_pkk_kerdil_mati_kembali' => 0,
+                    ];
+                } else {
+                    // MAPPING PERIODE 2 & 3 (MEIJUL..., SEPOKT...)
+                    $mapping = [
+                        'pkk_ha_kond_normal'             => $this->limitValue($row[10]), // Kolom K (Index 10)
+                        'persen_pkk_normal'              => $this->strictRound($row[11], 2),
+                        'persen_pkk_non_valuer'          => $this->strictRound($row[12], 2),
+                        'persen_pkk_mati'                => $this->strictRound($row[13], 2),
+                        'persen_tutupan_kacangan'        => $this->strictRound($row[14], 2),
+                        'persen_pasar_pikul_kurang_baik' => $this->strictRound($row[15], 2), // Kolom P (Index 15)
+                        'persen_pir_pkk_kurang_baik'     => $this->strictRound($row[16], 2), // Kolom Q (Index 16)
+                        'persen_area_tergenang'          => $this->strictRound($row[17], 2),
+                        'kondisi_anak_kayu'              => $this->strictRound($row[18], 3),
+                        'gangguan_ternak'                => $this->sanitizeTeks($row[19]),
+                        'pkk_mati_mati_kembali'          => $this->limitValue($row[20] ?? 0),
+                        'persen_pkk_mati_mati_kembali'   => $this->strictRound($row[21] ?? 0, 2),
+                        'pkk_kerdil_mati_kembali'        => $this->limitValue($row[22] ?? 0),
+                        'persen_pkk_kerdil_mati_kembali' => $this->strictRound($row[23] ?? 0, 2),
+                    ];
+                }
+
+                DetailRekap::create(array_merge([
+                    'simtan_form_id' => $this->simtanFormId,
+                    'kode_upload'    => $this->kodeUpload,
+                    'periode'        => $this->labelPeriode,
+                    'distrik'        => $this->currentDistrik,
+                    'kebun'          => $this->currentKebun,
+                    'afdeling'       => $afdeling,
+                    'tahun_tanam'    => is_numeric($row[3]) ? (int)$row[3] : null,
+                    'luas_ha'        => $this->strictRound($row[4], 2),
+                    'pkk_awal'       => $this->limitValue($row[5]),
+                    'pkk_normal'     => $this->limitValue($row[6]),
+                    'pkk_non_valuer' => $this->limitValue($row[7]),
+                    'pkk_mati'       => $this->limitValue($row[8]),
+                    'is_total'       => $isTotal,
+                ], $mapping));
+
                 $success++;
             } catch (\Exception $e) {
-                $failed++;
-                Log::error("❌ Gagal simpan Detail Rekap baris {$index}: " . $e->getMessage());
+                Log::error("❌ Gagal [{$this->labelPeriode}] Baris " . ($index + 1) . ": " . $e->getMessage());
             }
         }
-
-        Log::info("[IMPORT SELESAI] ✅ Sukses: {$success} | ❌ Gagal: {$failed}");
+        Log::info("✅ [{$this->labelPeriode}] Ingesti Selesai. Total Sukses: $success");
     }
 
-    /**
-     * Helper untuk memetakan kolom persentase yang sering menggunakan simbol % di Excel
-     */
-    private function mapSpecialHeaderValues($row): array
+    private function isHeaderRow($c0, $c1, $c2)
     {
-        $mapping = [];
-        foreach ($row as $key => $value) {
-            $n = strtolower(trim($key));
-            if (str_contains($n, '%')) {
-                if (str_contains($n, 'pkk normal')) $mapping['persen_pkk_normal'] = $value;
-                elseif (str_contains($n, 'non valuer') || str_contains($n, 'kerdil')) $mapping['persen_pkk_non_valuer'] = $value;
-                elseif (str_contains($n, 'pkk mati')) $mapping['persen_pkk_mati'] = $value;
-            }
-        }
-        return $mapping;
+        $h = strtoupper($c0 . $c1 . $c2);
+        return (str_contains($h, 'DISTRIK') || str_contains($h, 'KEBUN') || str_contains($h, 'AFDELING'));
     }
 
-    /**
-     * Mencegah nilai di luar batas jangkauan kolom database (Standard fault tolerance)
-     */
+    private function strictRound($value, $decimal = 2)
+    {
+        $val = trim($value ?? '');
+        if ($val === '' || str_contains($val, '#') || !is_numeric(str_replace(',', '.', $val))) return 0;
+        return round((float)str_replace(',', '.', $val), $decimal);
+    }
+
     private function limitValue($value)
     {
-        // Limit untuk tipe data INT (2 Miliar). Jika lebih, kemungkinan itu error format Excel.
-        if ($value > 2147483647) return null;
-        return $value;
-    }
+        $val = trim($value ?? '');
+        if ($val === '' || str_contains($val, '#') || $val === '-') return 0;
 
-    private function sanitizeRibuan($value)
-    {
-        if ($value === null || $value === '') return null;
-        $clean = str_replace([',', '.'], '', $value);
-        return is_numeric($clean) ? (int)$clean : null;
+        // Bersihkan karakter non-numerik kecuali titik/koma desimal
+        $clean = str_replace(',', '.', $val);
+
+        if (!is_numeric($clean)) return 0;
+
+        // Konversi ke float dulu baru integer
+        $num = (int)round((float)$clean);
+
+        // Validasi range agar tidak merusak database (BigInt/Int)
+        return ($num > 2000000 || $num < 0) ? 0 : $num;
     }
 
     private function sanitizeDesimal($value)
     {
-        if ($value === null || $value === '') return null;
-        $clean = str_replace(',', '.', $value);
-        return is_numeric($clean) ? (float)$clean : null;
+        return $this->strictRound($value, 2);
+    }
+
+    private function sanitizeRibuan($value)
+    {
+        return $this->limitValue($value);
+    }
+
+    private function sanitizeTeks($value)
+    {
+        $val = trim($value ?? '');
+        // JANGAN SAMPAI ADA ANGKA NYASAR (Akibat pergeseran kolom)
+        if (is_numeric($val) || str_contains($val, '.')) return '-';
+        return ($val === '' || $val === '0') ? '-' : $val;
     }
 
     private function sanitizeAfdeling($value)
     {
-        if (!$value || trim($value) === '-' || strtoupper(trim($value)) === 'TOTAL') return null;
-        return strtoupper(str_replace(' ', '', trim($value)));
+        $val = strtoupper(trim($value ?? ''));
+        if (!$val || $val === '-' || $val === 'TOTAL') return 'TOTAL';
+        return str_replace(' ', '', $val);
     }
 }

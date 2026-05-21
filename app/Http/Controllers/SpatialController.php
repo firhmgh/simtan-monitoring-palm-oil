@@ -2,23 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\SpatialDataService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
 
 /**
  * SpatialController
  * 
  * Mengelola permintaan API untuk penyajian data Geospasial (GeoJSON & XYZ Tiles).
  * Menghubungkan Frontend Peta (Leaflet.js) dengan dataset lapangan dan database produksi.
- * Sesuai Perancangan Bab 3.6.1.4 (Alur Kerja Spasial & Analisis).
  */
 class SpatialController extends Controller
 {
-    protected $spatialService;
+    /**
+     * Property $spatialService dengan Type Information.
+     */
+    protected SpatialDataService $spatialService;
 
     /**
      * Dependency Injection SpatialDataService.
-     * Menggunakan middleware 'auth' untuk menjamin keamanan akses aset spasial perusahaan.
      */
     public function __construct(SpatialDataService $spatialService)
     {
@@ -27,10 +29,34 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Konfigurasi Awal Peta (Center & Zoom).
-     * Mengintegrasikan koordinat lokasi kebun dari tabel 'lokasi_kebun' ke UI.
+     * API Secure Gatekeeper: Menyajikan file GeoJSON dari Private Storage.
+     * 
+     * @param string $kebun
+     * @param string $layer
+     * @return JsonResponse
      */
-    public function getConfig($kode_kebun)
+    public function serve(string $kebun, string $layer): JsonResponse
+    {
+        // Memanggil getGeoJSON dari Service agar data Sensus/Rekap ikut terbawa
+        $data = $this->spatialService->getGeoJSON($kebun, $layer);
+
+        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Dataset {$layer} untuk unit {$kebun} tidak ditemukan atau kosong."
+            ], 404);
+        }
+
+        return response()->json($data);
+    }
+
+    /**
+     * API: Mengambil Konfigurasi Awal Peta (Center & Zoom).
+     * 
+     * @param string $kode_kebun
+     * @return JsonResponse
+     */
+    public function getConfig(string $kode_kebun): JsonResponse
     {
         $config = $this->spatialService->getOrthophotoConfig($kode_kebun);
 
@@ -46,17 +72,20 @@ class SpatialController extends Controller
 
     /**
      * API: Mengambil Batas Administrasi (Afdeling/Blok) & Data Kesehatan.
-     * Mengembalikan fusi data antara properti GeoJSON (kanas_batas.geojson) 
-     * dengan metadata tooltip (Unit, Tahun Tanam, Luas Adm, Luas SHP).
+     * Menggunakan method universal getGeoJSON.
+     * 
+     * @param string $kode_kebun
+     * @return JsonResponse
      */
-    public function getBlocks($kode_kebun)
+    public function getBlocks(string $kode_kebun): JsonResponse
     {
-        $data = $this->spatialService->getBlockGeoJSON($kode_kebun);
+        // PERBAIKAN: Mengganti getBlockGeoJSON menjadi getGeoJSON
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'batas');
 
-        if (!$data) {
+        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Berkas GeoJSON Batas untuk unit {$kode_kebun} belum diintegrasikan."
+                'message' => "Berkas GeoJSON Batas untuk unit {$kode_kebun} belum tersedia."
             ], 404);
         }
 
@@ -65,17 +94,19 @@ class SpatialController extends Controller
 
     /**
      * API: Mengambil Layer Tanaman Penutup Tanah (Kacangan / LCC).
-     * Menyajikan data spasial (kanas_kacangan.geojson) dengan metadata: 
-     * ID Blok, Luas LCC, dan Status Aktif.
+     * 
+     * @param string $kode_kebun
+     * @return JsonResponse
      */
-    public function getLCC($kode_kebun)
+    public function getLCC(string $kode_kebun): JsonResponse
     {
-        $data = $this->spatialService->getExtraLayer($kode_kebun, 'kacangan');
+        // PERBAIKAN: Mengganti getExtraLayer menjadi getGeoJSON
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'kacangan');
 
-        if (!$data) {
+        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
             return response()->json([
                 'status' => 'warning',
-                'message' => "Data spasial LCC (Kacangan) untuk unit {$kode_kebun} tidak tersedia."
+                'message' => "Data spasial LCC untuk unit {$kode_kebun} tidak tersedia."
             ], 404);
         }
 
@@ -84,17 +115,19 @@ class SpatialController extends Controller
 
     /**
      * API: Mengambil Data Layer Pemeliharaan (Anomali Lapangan).
-     * Menyajikan temuan spasial (kanas_pemeliharaan.geojson) dengan metadata: 
-     * ID Blok, Jenis Temuan (Keterangan), dan Luas Terdampak.
+     * 
+     * @param string $kode_kebun
+     * @return JsonResponse
      */
-    public function getMaintenance($kode_kebun)
+    public function getMaintenance(string $kode_kebun): JsonResponse
     {
-        $data = $this->spatialService->getExtraLayer($kode_kebun, 'pemeliharaan');
+        // PERBAIKAN: Mengganti getExtraLayer menjadi getGeoJSON
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'pemeliharaan');
 
-        if (!$data) {
+        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
             return response()->json([
                 'status' => 'warning',
-                'message' => "Data temuan pemeliharaan (anomali) untuk unit {$kode_kebun} tidak ditemukan."
+                'message' => "Data temuan pemeliharaan untuk unit {$kode_kebun} tidak ditemukan."
             ], 404);
         }
 
@@ -102,10 +135,9 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Titik Koordinat Pohon (Point).
-     * (Roadmap: Mendukung sinkronisasi data sensus pohon biometrik ke dalam peta Live GIS).
+     * API: Mengambil Titik Koordinat Pohon.
      */
-    public function getTrees($kode_kebun)
+    public function getTrees(string $kode_kebun): JsonResponse
     {
         return response()->json([
             'status' => 'syncing',

@@ -5,15 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Model UploadLog - Berfungsi sebagai audit trail untuk transparansi data.
- * Sesuai prinsip Keterlacakan (Traceability).
- */
 class UploadLog extends Model
 {
     protected $table = 'upload_log';
 
-    // Karena tabel ini hanya mencatat histori (log), biasanya tidak butuh kolom updated_at
+    // Jika tabel hanya punya created_at tanpa updated_at
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -27,17 +23,18 @@ class UploadLog extends Model
     ];
 
     /**
-     * RELASI: Log ini milik Form yang mana?
-     * Menghubungkan simtan_form_id ke id di tabel simtan_form
+     * Casting data agar saat ditarik ke array/json formatnya konsisten
      */
+    protected $casts = [
+        'rows_imported' => 'integer',
+        'created_at' => 'datetime',
+    ];
+
     public function form(): BelongsTo
     {
         return $this->belongsTo(SimtanForm::class, 'simtan_form_id', 'id');
     }
 
-    /**
-     * RELASI: Siapa yang melakukan upload ini?
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

@@ -15,6 +15,7 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AI_Controller;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SpatialController; // Tambahan Import untuk Gatekeeper Spasial
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [MonitoringController::class, 'index'])->name('index');
 
     /**
+     * MODULE: SECURE SPATIAL DATA (Gatekeeper)
+     * Mengamankan file GeoJSON agar tidak bisa didownload publik.
+     * File dibaca dari storage/app/spatial/
+     */
+    Route::get('/spatial-data/{kebun}/{layer}', [SpatialController::class, 'serve'])
+        ->name('spatial.serve');
+
+    /**
      * MODULE: SETTINGS (Profile & Password)
      * Diakses melalui dropdown profil kanan atas
      */
@@ -54,8 +63,7 @@ Route::middleware('auth')->group(function () {
      */
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/data-kebun', [MonitoringController::class, 'dataKebun'])->name('data-kebun');
-        Route::get('/detail-kebun', [MonitoringController::class, 'detailKebun'])->name('detail-kebun');
-        Route::get('/detail/{id}', [MonitoringController::class, 'detailAreal'])->name('detail');
+        Route::get('/detail-areal/{id?}', [MonitoringController::class, 'detailAreal'])->name('detail');
         Route::get('/laporan', [MonitoringController::class, 'laporan'])->name('laporan');
         Route::get('/settings', [MonitoringController::class, 'settings'])->name('settings');
     });
@@ -73,7 +81,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/upload-data/store', [MonitoringController::class, 'importStore'])->name('import.store');
 
             // -- CRUD Metadata & Audit Trail Download --
-            // Catatan: Wajib di web.php karena butuh Session Auth & CSRF Protection
             Route::get('/import/download/{id}', [MonitoringController::class, 'downloadFile'])->name('import.download');
             Route::put('/import/{id}', [MonitoringController::class, 'importUpdate'])->name('import.update');
             Route::delete('/import/{id}', [MonitoringController::class, 'importDestroy'])->name('import.destroy');

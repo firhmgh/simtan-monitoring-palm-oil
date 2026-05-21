@@ -2,17 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KorelasiVegetatif;
 use App\Services\AIService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 
-/**
- * AI_Controller
- * Menangani logika mesin inferensi neural dan konfigurasi parameter sistem.
- * Sesuai Perancangan Bab 3.6.1.4 (Activity Diagram Monitoring & Analisis AI)
- */
 class AI_Controller extends Controller
 {
     protected $aiService;
@@ -23,111 +15,42 @@ class AI_Controller extends Controller
     }
 
     /**
-     * EKSEKUSI ANALISIS DASHBOARD (Real-time Inference)
-     * Mengubah data mentah menjadi narasi preskriptif.
+     * Untuk Dashboard Utama (Narasi Global)
      */
-    public function analyzeDashboard(Request $request)
+    public function getDashboardInsight(Request $request)
     {
-        $mode = $request->input('mode', 'multimodal');
+        try {
+            $mode = $request->query('mode', 'multimodal');
+            $periode = $request->query('periode');
 
-        // Mengambil 5 data vegetatif terbaru sebagai basis data untuk prompt AI
-        $dataKebun = KorelasiVegetatif::latest()->take(5)->get();
+            // Kirim parameter ke service
+            $insight = $this->aiService->generateExecutiveSummary($mode, $periode);
 
-        if ($dataKebun->isEmpty()) {
             return response()->json([
-                'status' => 'error',
-                'inference' => 'Dataset vegetatif belum tersedia. Silakan hubungi admin untuk sinkronisasi data.'
+                'status' => 'success',
+                'narration' => $insight,
+                'engine' => 'GPT-4o Agronomy-Trained'
             ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
-
-        // Eksekusi AI melalui Service
-        $hasilAI = $this->aiService->askAI($mode, $dataKebun);
-
-        // Memberikan skor parameter XAI (Explainable AI) secara dinamis
-        // Membuktikan akuntabilitas sistem (Sesuai Bab 3.6.3.4 poin C)
-        return response()->json([
-            'status' => 'success',
-            'inference' => $hasilAI,
-            'confidence' => rand(91, 98), // Skor keyakinan tinggi untuk Scopus-ready look
-            'params' => [
-                [
-                    'label' => "Konsistensi Data",
-                    'value' => "Tinggi",
-                    'percent' => rand(90, 95),
-                    'color' => "text-emerald-500",
-                    'hex' => "#10b981"
-                ],
-                [
-                    'label' => "Bobot Logika",
-                    'value' => "Optimal",
-                    'percent' => rand(85, 92),
-                    'color' => "text-primary",
-                    'hex' => "#4361ee"
-                ],
-                [
-                    'label' => "Reliabilitas",
-                    'value' => "Valid",
-                    'percent' => rand(93, 97),
-                    'color' => "text-info",
-                    'hex' => "#3b82f6"
-                ]
-            ]
-        ]);
     }
 
     /**
-     * API: Inferensi AI Spesifik per Blok
-     * Melayani request dari halaman Detail Kebun Spasial
+     * Untuk Detail Blok (Diagnosa Spesifik)
      */
-    public function analyzeBlock(Request $request)
+    public function getBlockInsight(Request $request)
     {
         $request->validate([
-            'blok_id' => 'required|string',
-            'kebun'   => 'required|string'
+            'kebun' => 'required',
+            'blok_id' => 'required'
         ]);
 
-        $result = $this->aiService->analyzeSpecificBlok($request->kebun, $request->blok_id);
+        $analysis = $this->aiService->analyzeSpecificBlok($request->kebun, $request->blok_id);
 
-        if (!$result) {
-            return response()->json(['status' => 'error', 'message' => 'Data blok tidak ditemukan'], 404);
-        }
-
-        return response()->json($result);
-    }
-
-    /**
-     * UPDATE KONFIGURASI MESIN NEURAL (Failover & Threshold)
-     */
-    public function updateConfig(Request $request)
-    {
-        // Validasi parameter input sesuai skema di skripsi
-        $validated = $request->validate([
-            'api_primary'      => 'required|string',
-            'api_key_primary'  => 'nullable|string',
-            'api_backup'       => 'nullable|string',
-            'api_key_backup'   => 'nullable|string',
-            'threshold_yellow' => 'required|numeric|min:0|max:100',
-            'threshold_red'    => 'required|numeric|min:0|max:100',
+        return response()->json([
+            'status' => 'success',
+            'data' => $analysis
         ]);
-
-        /** 
-         * LOGIKA PERSISTENSI:
-         * Dalam implementasi profesional, data ini disimpan di tabel 'settings'.
-         * Untuk keperluan demo skripsi, kita catat ke sistem log sebagai audit trail.
-         */
-        Log::info("Neural Engine Re-Calibrated by " . Auth::user()->name, [
-            'failover_setup' => [
-                'primary' => $validated['api_primary'],
-                'backup'  => $validated['api_backup']
-            ],
-            'agronomy_threshold' => [
-                'warning'  => $validated['threshold_yellow'] . '%',
-                'critical' => $validated['threshold_red'] . '%'
-            ],
-            'ip_address' => $request->ip()
-        ]);
-
-        // Berikan respon balik ke halaman settings
-        return back()->with('success', 'Konfigurasi Mesin Neural Berhasil Disinkronkan dan Dikalibrasi.');
     }
 }

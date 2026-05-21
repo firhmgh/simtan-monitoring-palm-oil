@@ -4,61 +4,81 @@ namespace App\Services;
 
 use App\Models\DetailRekap;
 use App\Models\LokasiKebun;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
 /**
  * SpatialDataService
- * Layanan khusus untuk mengolah data Geospasial (GeoJSON & XYZ Tiles).
- * Mendukung fusi data antara atribut file GIS (.geojson) dengan database operasional.
+ * 
+ * Layanan profesional untuk mengolah data Geospasial (GeoJSON & XYZ Tiles).
+ * Mendukung fusi data antara atribut file GIS dengan database operasional (Sensus Pohon).
+ * Menggunakan Private Storage untuk melindungi keamanan aset digital PTPN IV.
  */
 class SpatialDataService
 {
     /**
-     * 1. Ambil GeoJSON Batas (kanas_batas.geojson)
-     * Mengintegrasikan data: AFDELING, TAHUNTANAM, LUAS_ADM, LUAS_SHP
+     * 1. Ambil GeoJSON secara Dinamis (Universal untuk 26 Kebun)
+     * Mengambil path file dari database dan menggabungkan data statistik sensus.
+     * 
+     * @param string $kodeKebun Contoh: 1KAS, 1KDH
+     * @param string $layerType Contoh: batas, kacangan, pemeliharaan
      */
-    public function getBlockGeoJSON($kodeKebun)
+    public function getGeoJSON($kodeKebun, $layerType)
     {
-        $path = public_path("maps/geojson/{$kodeKebun}/kanas_batas.geojson");
+        $kode = strtoupper($kodeKebun);
+        $filePath = "spatial/{$kode}/{$layerType}.geojson";
 
-        if (!File::exists($path)) {
-            Log::error("GeoJSON Batas untuk kebun {$kodeKebun} tidak ditemukan di path: {$path}");
-            return null;
+        try {
+            $config = DB::table('kebun_layers')
+                ->where('kebun_code', $kode)
+                ->where('layer_type', $layerType)
+                ->where('is_active', 1)
+                ->first();
+            if ($config) {
+                $filePath = $config->file_path;
+            }
+        } catch (\Exception $e) {
+            Log::warning("Database fallback for {$kode}");
         }
 
-        $geojsonData = json_decode(File::get($path), true);
+        if (!Storage::exists($filePath)) return ['type' => 'FeatureCollection', 'features' => []];
 
-        // Ambil data statistik dari DB untuk fusi data kesehatan
-        $afdelingStats = DetailRekap::where('kebun', strtoupper($kodeKebun))
+        $geojsonData = json_decode(Storage::get($filePath), true);
+
+        // Ambil data statistik riil. 
+        // Berdasarkan SQL Dump Anda, ID unit tersimpan di kolom 'afdeling'
+        $blockStats = DetailRekap::where('kebun', $kode)
+            ->where('is_total', 0)
             ->get()
-            ->groupBy('afdeling');
+            ->keyBy('afdeling'); // Sesuaikan dengan kolom identitas di DB anda
 
         foreach ($geojsonData['features'] as &$feature) {
             $props = &$feature['properties'];
-            $afdName = $props['AFDELING'] ?? "N/A";
 
-            $props['display_name'] = $afdName;
-            $props['type_layer'] = 'Afdeling Boundary';
-
-            // INTEGRASI TOOLTIP: Menyusun data sesuai permintaan skripsi
-            $props['tooltip_meta'] = [
-                'Unit'         => $afdName,
-                'Tahun Tanam'  => $props['TAHUNTANAM'] ?? '-',
-                'Luas (Adm)'   => ($props['LUAS_ADM'] ?? 0) . ' Ha',
-                'Luas (SHP)'   => round(($props['LUAS_SHP'] ?? 0), 2) . ' Ha',
-                'Layer'        => 'Batas Administrasi'
-            ];
-
-            // Fusi Data: Jika ada data di database untuk afdeling ini
-            if (isset($afdelingStats[$afdName])) {
-                $avgHealth = $afdelingStats[$afdName]->avg('persen_pkk_normal');
-                $props['persen_sehat'] = round($avgHealth, 2);
-                $props['fill_color'] = $this->getColorByHealth($avgHealth);
-                $props['status_label'] = $this->getStatusLabel($avgHealth);
+            // 1. Ekstraksi Afdeling dari properti 'layer' (Sangat Penting untuk Kacangan)
+            if (!isset($props['AFDELING']) && isset($props['layer'])) {
+                preg_match('/AFD\d+/', $props['layer'], $matches);
+                $props['afdeling_id'] = $matches[0] ?? 'N/A';
             } else {
-                $props['fill_color'] = '#cbd5e1'; // Grey jika data kosong
-                $props['status_label'] = 'Data Tidak Tersedia';
+                $props['afdeling_id'] = $props['AFDELING'] ?? 'N/A';
+            }
+
+            // 2. Mapping Key untuk pencarian database
+            $blockKey = $props['BLOK'] ?? $props['AFDELING'] ?? $props['blok'] ?? null;
+
+            if ($blockKey && isset($blockStats[$blockKey])) {
+                $data = $blockStats[$blockKey];
+                $props['survival_rate'] = (float) $data->persen_pkk_normal;
+                $props['pkk_mati'] = (int) $data->pkk_mati;
+                $props['pkk_kerdil'] = (int) $data->pkk_kerdil_mati_kembali;
+                $props['fill_color'] = $this->getColorByHealth($data->persen_pkk_normal);
+                $props['display_name'] = $blockKey;
+            } else {
+                $props['survival_rate'] = 0;
+                $props['fill_color'] = '#cbd5e1';
+                $props['display_name'] = $blockKey ?? 'N/A';
             }
         }
 
@@ -66,76 +86,28 @@ class SpatialDataService
     }
 
     /**
-     * 2. Mengambil Layer tambahan (Kacangan / Pemeliharaan).
-     * Mengintegrasikan data BLOK, LUAS, KETERANGAN, dan S
-     * tatus.
-     */
-    public function getExtraLayer($kodeKebun, $layerName)
-    {
-        $path = public_path("maps/geojson/{$kodeKebun}/kanas_{$layerName}.geojson");
-
-        if (!File::exists($path)) {
-            Log::warning("Layer Spasial {$layerName} untuk kebun {$kodeKebun} tidak ditemukan.");
-            return null;
-        }
-
-        $geojsonData = json_decode(File::get($path), true);
-
-        foreach ($geojsonData['features'] as &$feature) {
-            $props = &$feature['properties'];
-            $blockName = $props['BLOK'] ?? "N/A";
-            $props['display_name'] = $blockName;
-
-            // INTEGRASI TOOLTIP: Logika pemisahan atribut berdasarkan file
-            if ($layerName === 'kacangan') {
-                $props['tooltip_meta'] = [
-                    'ID Blok'       => $blockName,
-                    'Luas Kacangan' => ($props['LUAS'] ?? 0) . ' Ha',
-                    'Status'        => 'Area LCC Aktif',
-                    'Layer'         => 'Legume Cover Crop'
-                ];
-                $props['type_layer'] = 'LCC Layer';
-            } elseif ($layerName === 'pemeliharaan') {
-                $props['tooltip_meta'] = [
-                    'ID Blok'        => $blockName,
-                    'Jenis Temuan'   => $props['KETERANGAN'] ?? 'N/A',
-                    'Luas Terdampak' => ($props['LUAS'] ?? 0) . ' Ha',
-                    'Status'         => 'Perlu Intervensi',
-                    'Layer'          => 'Anomali Lapangan'
-                ];
-                $props['type_layer'] = 'Maintenance Anomaly';
-            }
-        }
-
-        return $geojsonData;
-    }
-
-    /**
-     * 3. Logika Pewarnaan Tematik Berdasarkan Persentase Kesehatan
+     * 2. Logika Pewarnaan Tematik Berdasarkan Persentase Kesehatan (Standar PPKS)
      */
     private function getColorByHealth($percentage)
     {
-        if ($percentage >= 90) {
-            return '#10b981'; // Hijau (Optimal)
-        } elseif ($percentage >= 70) {
-            return '#f59e0b'; // Kuning (Warning)
-        } else {
-            return '#ef4444'; // Merah (Kritis)
-        }
+        if ($percentage >= 95) return '#10b981'; // Hijau (Optimal)
+        if ($percentage >= 90) return '#f59e0b'; // Kuning (Waspada)
+        return '#ef4444'; // Merah (Kritis)
     }
 
     /**
-     * Helper untuk label status kesehatan
+     * 3. Helper untuk Label Status Kesehatan
      */
     private function getStatusLabel($percentage)
     {
-        if ($percentage >= 90) return 'Sehat / Optimal';
-        if ($percentage >= 70) return 'Perlu Perhatian';
-        return 'Kritis';
+        if ($percentage >= 95) return 'Optimal / Sehat';
+        if ($percentage >= 90) return 'Waspada / Perlu Perhatian';
+        return 'Kritis / Perlu Intervensi';
     }
 
     /**
-     * 4. Menyediakan Konfigurasi XYZ Tiles (Orthophoto)
+     * 4. Menyediakan Konfigurasi XYZ Tiles (Orthophoto Drone)
+     * Mengintegrasikan koordinat pusat dari database 'lokasi_kebun'.
      */
     public function getOrthophotoConfig($kodeKebun)
     {
@@ -145,13 +117,12 @@ class SpatialDataService
         $lng = $kebun->longitude ?? 99.9952;
 
         return [
-            'url' => asset("tiles/{z}/{x}/{y}.jpg"),
+            'tile_url' => $kebun->tile_url ?? null, // Mengambil URL dari DB (bisa GitHub/Local)
             'latitude' => (float) $lat,
             'longitude' => (float) $lng,
             'minZoom' => 12,
             'maxZoom' => 22,
-            'maxNativeZoom' => 18,
-            'tile_exists' => File::isDirectory(public_path("tiles"))
+            'maxNativeZoom' => 18
         ];
     }
 }

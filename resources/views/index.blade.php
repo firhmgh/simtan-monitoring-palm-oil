@@ -1,323 +1,356 @@
 <x-layout.default>
-    <!-- Script ApexCharts -->
+    <!-- Script ApexCharts Engine & Font Inter -->
     <script defer src="/assets/js/apexcharts.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
 
-    <div x-data="dashboard" class="space-y-6">
-        <!-- 1. Breadcrumbs & Header -->
-        <div>
-            <ul class="flex space-x-2 rtl:space-x-reverse text-xs font-semibold mb-3">
-                <li><a href="javascript:;" class="text-primary hover:underline">Beranda</a></li>
-                <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 text-gray-400">
-                    <span>Dashboard</span>
-                </li>
-            </ul>
-        </div>
+    <div x-data="dashboard" class="space-y-5 pb-10 font-['Inter'] antialiased text-slate-800 dark:text-white-light"
+        x-init="initDashboard()">
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white-light font-heading">Dashboard Monitoring</h1>
-                <p class="text-gray-600 dark:text-white-dark mt-1">
-                    Selamat datang di sistem monitoring areal kelapa sawit TBM III PTPN IV Regional I
-                </p>
+        <!-- 1. HEADER & STATUS SISTEM -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+            <div class="space-y-1">
+                <nav class="flex text-[10px] font-black tracking-[0.2em] text-primary/80">
+                    <span>Beranda</span> <span class="mx-2 text-gray-400">/</span> <span>Dashboard Analytics</span>
+                </nav>
+                <h1 class="text-2xl md:text-3xl font-black tracking-tighter leading-none italic">
+                    Monitoring Panel <span class="text-primary underline decoration-primary/20">Presisi TBM III</span>
+                </h1>
             </div>
-            <!-- AI Status Badge -->
-            <div class="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
-                <span class="relative flex h-3 w-3">
+
+            <div
+                class="flex items-center gap-4 px-4 py-2 bg-white dark:bg-[#0e1726] border border-gray-100 dark:border-white-dark/10 rounded-xl shadow-sm">
+                <div class="text-right">
+                    <p class="text-[9px] font-black text-gray-400 leading-none mb-1 tracking-widest">Inference
+                        Engine</p>
+                    <p class="text-xs font-black text-emerald-500 italic">GPT-4o Terkoneksi</p>
+                </div>
+                <div class="relative flex h-3 w-3">
                     <span
                         class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                </span>
-                <span class="text-sm font-bold text-primary tracking-tighter font-mono">Neural API: Terhubung</span>
-            </div>
-        </div>
-
-        <!-- 2. KPI Summary Cards (Data Real) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Card 1: Luas Areal -->
-            <div class="panel border-0 p-0 overflow-hidden rounded-2xl shadow-md transform hover:scale-[1.02] transition-all duration-300 group"
-                style="background: linear-gradient(135deg, #00a76f 0%, #007b55 100%);">
-                <div class="p-6 relative text-white">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Spatial
-                                Coverage</p>
-                            <h3 class="text-white/90 text-xs font-bold">Total Luas Areal</h3>
-                        </div>
-                        <div
-                            class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex items-baseline gap-2">
-                        <span class="text-4xl font-black">{{ number_format($total_luas ?? 0, 1) }}</span>
-                        <span class="text-lg font-bold text-white/70 uppercase">Ha</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 2: Populasi Pokok -->
-            <div class="panel border-0 p-0 overflow-hidden rounded-2xl shadow-md transform hover:scale-[1.02] transition-all duration-300 group"
-                style="background: linear-gradient(135deg, #1c64f2 0%, #154ec1 100%);">
-                <div class="p-6 relative text-white">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Resource
-                                Inventory</p>
-                            <h3 class="text-white/90 text-xs font-bold">Populasi Pokok</h3>
-                        </div>
-                        <div
-                            class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex items-baseline gap-2">
-                        <span class="text-4xl font-black">{{ number_format($total_pokok ?? 0) }}</span>
-                        <span class="text-lg font-bold text-white/70 uppercase">Pkk</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 3: Health Index -->
-            <div class="panel border-0 p-0 overflow-hidden rounded-2xl shadow-md transform hover:scale-[1.02] transition-all duration-300 group"
-                style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
-                <div class="p-6 relative text-white">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Health Index
-                            </p>
-                            <h3 class="text-white/90 text-xs font-bold">Rata-rata Kesehatan</h3>
-                        </div>
-                        <div
-                            class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex items-baseline gap-2">
-                        <span class="text-4xl font-black">{{ $avg_health ?? 0 }}</span>
-                        <span class="text-lg font-bold text-white/70 uppercase">%</span>
-                    </div>
-                    <div class="mt-6 space-y-2">
-                        <div class="w-full bg-black/10 h-1.5 rounded-full overflow-hidden border border-white/5">
-                            <div class="bg-white h-full" style="width: {{ $avg_health ?? 0 }}%"></div>
-                        </div>
-                    </div>
+                    <span
+                        class="relative inline-flex rounded-full h-3 w-3 bg-primary shadow-[0_0_8px_rgba(67,97,238,0.5)]"></span>
                 </div>
             </div>
         </div>
 
-        <!-- 3. SMART AI DIAGNOSTIC HUB -->
-        <div
-            class="panel border-0 p-0 overflow-hidden shadow-xl bg-white dark:bg-[#0e1726] rounded-2xl border border-[#ebedf2] dark:border-[#1b2e4b]">
+        <!-- 2. FILTER DIMENSI WAKTU -->
+        <div class="panel border-none shadow-lg bg-white dark:bg-[#0e1726] rounded-2xl overflow-hidden relative group">
             <div
-                class="p-5 bg-gradient-to-r from-primary/10 to-purple-500/10 border-b border-[#ebedf2] dark:border-[#1b2e4b] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div class="flex items-center gap-3">
+                class="absolute right-0 top-0 opacity-[0.03] dark:opacity-[0.07] pointer-events-none transform translate-x-10 -translate-y-10">
+                <svg class="w-64 h-64 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                </svg>
+            </div>
+            <div class="relative z-10 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                    <h4 class="text-xl font-black italic tracking-tighter text-slate-800 dark:text-white">
+                        Filter Dimensi Temporal</h4>
+                    <p class="text-slate-500 dark:text-white/60 text-[10px] font-bold tracking-widest mt-1">
+                        Sinkronisasi Multimodal & Maturity Curve Analysis</p>
+                </div>
+                <div class="w-full md:w-80">
+                    <select x-model="selectedPeriode" @change="changePeriode" class="form-select ...">
+                        @foreach ($listPeriode as $slugKey => $info)
+                            <option value="{{ $slugKey }}">
+                                {{ strtoupper($info['label']) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        @if (isset($hasData) && $hasData == false)
+            <div
+                class="flex items-center p-5 mb-5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-500">
+                <svg class="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <span class="font-black italic tracking-widest text-xs">Informasi Sistem:</span>
+                    <p class="text-sm font-bold">
+                        {{ $message ?? 'Data untuk periode ini belum tersedia di database. Silakan pilih periode lain' }}
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        <!-- 3. EXECUTIVE KPI CARDS (Dinamis dari Backend) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <template x-for="kpi in kpiCards" :key="kpi.label">
+                <div class="panel bg-white dark:bg-[#0e1726] border-none shadow-sm p-4 relative overflow-hidden group hover:shadow-md transition-all border-b-4"
+                    :class="kpi.border">
+                    <div class="relative z-10 h-full flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div :class="`p-1.5 rounded-lg ${kpi.bg} ${kpi.color}`" x-html="kpi.icon"></div>
+                                <span class="text-[10px] font-black text-gray-400 tracking-widest"
+                                    x-text="kpi.label"></span>
+                            </div>
+                            <div class="flex items-baseline gap-1.5">
+                                <h2 class="text-3xl font-black tracking-tighter leading-none" x-text="kpi.value"></h2>
+                                <span class="text-[10px] font-bold text-gray-400" x-text="kpi.unit"></span>
+                            </div>
+                        </div>
+                        <!-- Micro-Metrics: Perbandingan Terhadap Standar Agronomi -->
+                        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-white-dark/5">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 leading-none mb-1">Compliance
+                                    Rate</p>
+                                <p class="text-xs font-black italic"
+                                    :class="parseFloat(kpi.compliance) >= 100 ? 'text-emerald-500' : 'text-rose-500'"
+                                    x-text="kpi.compliance + '%'"></p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 leading-none mb-1">Status
+                                    Standar</p>
+                                <p class="text-[10px] font-black italic"
+                                    :class="parseFloat(kpi.compliance) >= 100 && parseFloat(kpi.value) > 0 ?
+                                        'text-emerald-500' : 'text-amber-500'"
+                                    x-text="parseFloat(kpi.compliance) >= 100 && parseFloat(kpi.value) > 0 ? 'Optimal' : 'Deviation'">
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- 4. AI EXECUTIVE HUB (Narasi Otomatis) -->
+        <div
+            class="panel border-none p-0 overflow-hidden shadow-xl bg-white dark:bg-[#0e1726] rounded-2xl border border-gray-100 dark:border-white-dark/5">
+            <div
+                class="p-5 bg-gray-50/50 dark:bg-black/20 border-b border-gray-100 dark:border-white-dark/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
                     <div
-                        class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white animate-pulse"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        class="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+                        <svg class="w-7 h-7" :class="isThinking ? 'animate-spin' : 'animate-pulse'" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                     </div>
                     <div>
                         <h4
-                            class="text-[#3b3f5c] dark:text-white-light font-black text-lg leading-none tracking-tighter">
-                            Pusat Kendali Diagnostik AI</h4>
-                        <p class="text-[#888ea8] text-[10px] font-bold mt-1 tracking-widest uppercase">Neural Inference
-                            Engine v2.1</p>
+                            class="text-lg font-black text-gray-800 dark:text-white-light leading-none italic tracking-tighter">
+                            AI Executive Narrative</h4>
+                        <p class="text-[9px] font-bold text-gray-400 mt-1 tracking-widest">Inference for:
+                            <span class="text-primary" x-text="periodeLabels[selectedPeriode]"></span>
+                        </p>
                     </div>
                 </div>
-                <div
-                    class="flex items-center gap-4 bg-white dark:bg-black/20 p-2 rounded-lg border border-[#ebedf2] dark:border-white-dark/10">
-                    <div class="text-right border-r border-[#ebedf2] dark:border-white-dark/10 pr-3">
-                        <span class="text-[9px] font-black text-gray-400 block uppercase">Confidence Score</span>
-                        <span class="text-emerald-500 text-lg font-black font-mono"
-                            x-text="confidenceScore + '%'"></span>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-[9px] font-black text-gray-400 uppercase">Engine Status</span>
-                        <span class="flex items-center gap-1.5 text-[10px] font-bold text-primary">
-                            <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span> Optimized
-                        </span>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <select x-model="analysisMode"
+                        class="form-select py-2 text-[10px] font-black rounded-lg border-gray-200 dark:bg-black/20 w-40">
+                        <option value="multimodal">MULTIMODAL</option>
+                        <option value="growth">VIGOR TUMBUH</option>
+                        <option value="survival">MORTALITAS</option>
+                    </select>
+                    <button @click="runAIInference"
+                        class="btn btn-primary btn-sm rounded-lg px-4 font-black text-[10px] italic tracking-widest">Refresh
+                        AI</button>
                 </div>
             </div>
-
-            <div class="p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div class="lg:col-span-3 space-y-4">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-black text-gray-500 tracking-widest uppercase">1. Fokus
-                                Diagnostik</label>
-                            <select x-model="analysisMode"
-                                class="form-select text-xs font-bold bg-gray-50 dark:bg-black/20 border-[#ebedf2] dark:border-[#1b2e4b] rounded-xl py-3">
-                                <option value="multimodal">Fusi Multimodal Terpadu</option>
-                                <option value="growth">Analisis Vigor Pertumbuhan</option>
-                                <option value="survival">Risiko Mortalitas & Survival</option>
-                            </select>
+            <div class="p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                    <div class="lg:col-span-8">
+                        <div x-show="isThinking" class="space-y-3">
+                            <div class="h-5 bg-gray-100 dark:bg-gray-800 rounded-full w-full animate-pulse"></div>
+                            <div class="h-5 bg-gray-100 dark:bg-gray-800 rounded-full w-4/6 animate-pulse"></div>
                         </div>
-                        <button type="button" @click="runAIInference"
-                            class="btn btn-primary w-full py-4 text-xs font-black tracking-[0.2em] shadow-lg shadow-primary/20 transition-all">
-                            <span x-show="!isThinking">EKSEKUSI DIAGNOSIS AI →</span>
-                            <span x-show="isThinking">MEMPROSES...</span>
-                        </button>
+                        <p x-show="!isThinking"
+                            class="text-xl md:text-2xl text-gray-700 dark:text-white-light leading-relaxed font-bold italic tracking-tight"
+                            :class="aiInferenceText.includes('gagal') ? 'text-rose-500 opacity-60' : ''"
+                            x-text="aiInferenceText"></p>
                     </div>
-
-                    <div class="lg:col-span-6">
-                        <div
-                            class="h-full p-6 bg-gray-50 dark:bg-black/40 rounded-2xl border border-primary/20 flex flex-col justify-center">
-                            <h5
-                                class="text-primary text-[10px] font-black mb-4 tracking-[0.3em] flex items-center gap-2 font-mono uppercase">
-                                <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Output Inferensi
-                                Neural:
-                            </h5>
-                            <p class="text-lg text-slate-800 dark:text-white leading-relaxed font-bold italic"
-                                x-text="aiInferenceText"></p>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-3 space-y-5 border-l border-[#ebedf2] dark:border-[#1b2e4b] pl-4">
-                        <p class="text-[10px] font-black text-[#888ea8] tracking-[0.3em] mb-4 uppercase">Bukti
-                            Eksplanatori (XAI)</p>
-                        <div class="space-y-5">
-                            <template x-for="param in reasoningParams">
-                                <div class="group">
-                                    <div class="flex justify-between text-[10px] font-black mb-2 uppercase">
-                                        <span class="text-[#3b3f5c] dark:text-white-light"
-                                            x-text="param.label"></span>
-                                        <span x-text="param.value" :class="param.color"></span>
-                                    </div>
-                                    <div class="h-1.5 bg-[#ebedf2] dark:bg-[#1b2e4b] rounded-full overflow-hidden">
-                                        <div class="h-full transition-all duration-1000"
-                                            :style="`width: ${param.percent}%; background-color: ${param.hex}`"></div>
-                                    </div>
+                    <div class="lg:col-span-4 space-y-6 border-l border-gray-100 dark:border-white-dark/5 pl-8">
+                        <template x-for="param in reasoningParams" :key="param.label">
+                            <div>
+                                <div class="flex justify-between text-[10px] font-black mb-2 tracking-widest">
+                                    <span class="text-gray-400" x-text="param.label"></span>
+                                    <span x-text="param.value" :class="param.color"></span>
                                 </div>
-                            </template>
-                        </div>
+                                <div class="h-2 bg-gray-100 dark:bg-black/40 rounded-full overflow-hidden">
+                                    <div class="h-full transition-all duration-[1500ms]"
+                                        :style="`width: ${param.percent}%; background-color: ${param.hex}`"></div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 4. Performa Agregat Table -->
-        <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-xl">
-            <h3 class="text-lg font-bold text-[#3b3f5c] dark:text-white-light mb-6">Performa Agregat Keseluruhan</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+        <!-- 5. BENCHMARKING TABLE (Realisasi vs Standar Nasional) -->
+        <div
+            class="panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-t-4 border-primary overflow-hidden">
+            <h3 class="text-lg font-black text-gray-800 dark:text-white-light mb-6 italic tracking-tighter">
+                Benchmarking Performa Agregat Regional I (vs Standar PPKS)</h3>
+            <div class="table-responsive">
+                <table class="w-full text-sm font-bold">
                     <thead>
                         <tr
-                            class="bg-gray-50 dark:bg-black/20 text-[#888ea8] text-[10px] font-bold tracking-widest uppercase border-b border-[#ebedf2] dark:border-[#1b2e4b]">
-                            <th class="py-4 px-4 text-left">Indikator Performa</th>
-                            <th class="py-4 px-4 text-center">Rata-rata</th>
-                            <th class="py-4 px-4 text-center">Target</th>
-                            <th class="py-4 px-4 text-center">Deviasi</th>
-                            <th class="py-4 px-4 text-center">Status</th>
+                            class="bg-gray-50 dark:bg-black/20 text-[#888ea8] text-[10px] font-black tracking-widest border-b border-gray-100 dark:border-white-dark/5">
+                            <th class="py-4 px-4 text-left">Indikator Performa Utama</th>
+                            <th class="py-4 px-4 text-center">Rerata Realisasi</th>
+                            <th class="py-4 px-4 text-center">Standar Agronomi</th>
+                            <th class="py-4 px-4 text-center">Deviasi Komparatif</th>
+                            <th class="py-4 px-4 text-center">Tingkat Kepatuhan</th>
                         </tr>
                     </thead>
-                    <tbody
-                        class="divide-y divide-gray-100 dark:divide-white-dark/5 text-[#3b3f5c] dark:text-white-dark font-semibold">
+                    <tbody class="divide-y divide-gray-100 dark:divide-white-dark/5">
                         <tr>
-                            <td class="py-4 px-4">Laju Pertumbuhan Batang</td>
-                            <td class="py-4 px-4 text-center">{{ $agregat['avg_girth'] ?? 0 }} cm</td>
-                            <td class="py-4 px-4 text-center">12.0 cm</td>
-                            <td class="py-4 px-4 text-center text-emerald-500 font-black">
-                                +{{ round(($agregat['avg_girth'] ?? 0) - 12, 1) }}</td>
-                            <td class="py-4 px-4 text-center">✓</td>
+                            <td class="py-5 px-4 text-xs">Laju Pertumbuhan Lingkar Batang (Girth)</td>
+                            <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
+                                {{ $agregat['avg_girth'] }} cm</td>
+                            <td class="py-5 px-4 text-center opacity-50">{{ $benchmarks['std_girth'] }}.0 cm</td>
+                            <td class="py-5 px-4 text-center font-black text-lg"
+                                :class="{{ $agregat['deviasi_girth'] }} >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+                                {{ $agregat['deviasi_girth'] >= 0 ? '+' : '' }}{{ $agregat['deviasi_girth'] }}
+                            </td>
+                            <td class="py-5 px-4 text-center">
+                                <span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black">
+                                    {{ round(($agregat['avg_girth'] / $benchmarks['std_girth']) * 100, 1) }}%
+                                </span>
+                            </td>
                         </tr>
                         <tr>
-                            <td class="py-4 px-4">Survival Rate (Pokok Hidup)</td>
-                            <td class="py-4 px-4 text-center">{{ $agregat['survival_rate'] ?? 0 }}%</td>
-                            <td class="py-4 px-4 text-center">98.0%</td>
-                            <td class="py-4 px-4 text-center text-rose-500 font-black">
-                                {{ round(($agregat['survival_rate'] ?? 0) - 98, 1) }}</td>
-                            <td class="py-4 px-4 text-center">!</td>
+                            <td class="py-5 px-4 text-xs">Tingkat Kelangsungan Hidup (Survival Rate)</td>
+                            <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
+                                {{ $agregat['survival_rate'] }}%</td>
+                            <td class="py-5 px-4 text-center opacity-50">{{ $benchmarks['std_survival'] }}.0%</td>
+                            <td class="py-5 px-4 text-center font-black text-lg"
+                                :class="{{ $agregat['deviasi_survival'] }} >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+                                {{ $agregat['deviasi_survival'] >= 0 ? '+' : '' }}{{ $agregat['deviasi_survival'] }}
+                            </td>
+                            <td class="py-5 px-4 text-center">
+                                <span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black">
+                                    {{ $agregat['compliance_rate'] }}%
+                                </span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 5. Visualization Section (Data Real) -->
-        <div class="space-y-6">
-            <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-xl">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white-light mb-6">Analisis Efisiensi Kerapatan
-                    Tanaman (Target vs Realisasi)</h3>
+        <!-- 6. ANALYTICAL CHARTS GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Populasi Performance (Target 143 vs Real) -->
+            <div
+                class="lg:col-span-2 panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-l-4 border-primary">
+                <h5
+                    class="text-sm font-black text-gray-800 dark:text-white-light mb-6 italic tracking-widest border-b pb-2">
+                    Analisis Densitas Populasi: Standar 143 Pkk/Ha vs Lapangan</h5>
                 <div x-ref="populasiChart"></div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726]">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white-light mb-6">Trend Luas Areal per Tahun
-                        Tanam</h3>
-                    <div x-ref="luasTahunTanamChart"></div>
-                </div>
-                <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726]">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white-light mb-6">Sebaran Luas Areal per Unit
-                    </h3>
-                    <div x-ref="luasKebunChart"></div>
-                </div>
-            </div>
-
-            <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726]">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white-light mb-6">Peringkat Kondisi Pohon per Unit
-                </h3>
+            <!-- Kesehatan (Sorted Exception) -->
+            <div
+                class="panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-l-4 border-emerald-500">
+                <h5
+                    class="text-sm font-black text-gray-800 dark:text-white-light mb-6 italic tracking-widest border-b pb-2">
+                    Stratifikasi Kesehatan</h5>
                 <div x-ref="kondisiPohonChart"></div>
             </div>
 
-            <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726]">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white-light mb-6">Peringkat Pemeliharaan per Unit
-                </h3>
+            <!-- Pemeliharaan -->
+            <div
+                class="panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-l-4 border-amber-500">
+                <h5
+                    class="text-sm font-black text-gray-800 dark:text-white-light mb-6 italic tracking-widest border-b pb-2">
+                    Evaluasi Intensitas Pemeliharaan LCC & Gulma</h5>
                 <div x-ref="pemeliharaanChart"></div>
             </div>
 
-            <div class="panel border-0 shadow-md p-6 bg-white dark:bg-[#0e1726]">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white-light mb-6">Tren Pengukuran Vegetatif
-                    (Historis)</h3>
+            <!-- Dinamika Luas (DIUBAH KE BAR SESUAI ANALISA ILMIAH) -->
+            <div
+                class="panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-l-4 border-indigo-500">
+                <h5
+                    class="text-sm font-black text-gray-800 dark:text-white-light mb-6 italic tracking-widest border-b pb-2">
+                    Dinamika Luas Areal Per Tahun Tanam</h5>
+                <div x-ref="trendLuasChart"></div>
+            </div>
+
+            <!-- Vegetatif -->
+            <div
+                class="panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-l-4 border-blue-500">
+                <h5
+                    class="text-sm font-black text-gray-800 dark:text-white-light mb-6 italic tracking-widest border-b pb-2">
+                    Analisis Biometrik Vegetatif (Lingkar & Pelepah)</h5>
                 <div x-ref="vegetatifChart"></div>
+            </div>
+
+            <!-- Distribusi Spasial -->
+            <div
+                class="lg:col-span-2 panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-l-4 border-rose-500">
+                <h5
+                    class="text-sm font-black text-gray-800 dark:text-white-light mb-6 italic tracking-widest border-b pb-2">
+                    Distribusi Spasial Luas Areal Per Kebun</h5>
+                <div x-ref="luasPerKebunChart"></div>
             </div>
         </div>
 
-        <!-- 6. Monitoring Table Terkini (Data Real) -->
-        <div
-            class="bg-white dark:bg-[#0e1726] rounded-xl shadow-md border border-gray-200 dark:border-white-dark/10 p-6">
-            <div class="flex items-center justify-between mb-6 border-b border-[#ebedf2] pb-4">
+        <!-- 7. MONITORING TABLE (Exception: 5 Kebun Terburuk) -->
+        <div class="panel border-none bg-white dark:bg-[#0e1726] rounded-2xl shadow-xl p-8 overflow-hidden">
+            <div class="flex items-center justify-between mb-8 border-b border-gray-100 dark:border-white-dark/5 pb-5">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white-light tracking-tight font-heading">
-                        Monitoring Unit Terkini</h3>
-                    <p class="text-xs text-[#888ea8] font-semibold mt-1">Status terbaru 5 unit kebun Regional I</p>
+                    <h3 class="text-xl font-black text-gray-900 dark:text-white-light tracking-tighter italic">
+                        Unit Prioritas Intervensi (Exception Reporting)</h3>
+                    <p class="text-[10px] text-gray-400 font-black tracking-widest mt-1">Daftar 5 Unit dengan
+                        Deviasi Kesehatan Tertinggi Periode Saat Ini</p>
                 </div>
                 <a href="{{ route('monitoring.data-kebun') }}"
-                    class="btn btn-sm btn-outline-primary text-[10px] font-black tracking-widest px-4">LIHAT SEMUA
-                    →</a>
+                    class="btn btn-outline-primary border-2 px-6 py-2.5 rounded-xl font-black text-[10px] italic tracking-widest shadow-sm">Review
+                    Seluruh Areal</a>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm font-semibold">
+            <div class="table-responsive">
+                <table class="w-full text-xs font-bold tracking-tight">
                     <thead>
-                        <tr class="text-[#888ea8] text-[10px] tracking-widest uppercase">
-                            <th class="text-left py-4 px-4">ID Unit</th>
+                        <tr
+                            class="text-gray-400 text-[10px] border-b border-gray-50 dark:border-white-dark/5 font-black tracking-[0.1em]">
+                            <th class="text-left py-4 px-4">Unit</th>
                             <th class="text-left py-4 px-4">Nama Kebun</th>
-                            <th class="text-left py-4 px-4">Distrik</th>
-                            <th class="text-center py-4 px-4">Aksi</th>
+                            <th class="text-center py-4 px-4">Luas (Ha)</th>
+                            <th class="text-center py-4 px-4">Health Rate</th>
+                            <th class="text-center py-4 px-4">Status Diagnosa</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50 dark:divide-white-dark/5 text-gray-700 dark:text-white-dark">
-                        @foreach ($latestKebuns as $kebun)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-black/5 transition-colors cursor-pointer">
-                                <td class="py-4 px-4 font-black text-primary">{{ $kebun->kebun }}</td>
-                                <td class="py-4 px-4">{{ $kebun->nama_kebun }}</td>
-                                <td class="py-4 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                    {{ $kebun->nama_distrik }}</td>
-                                <td class="py-4 px-4 text-center">
-                                    <a href="{{ route('monitoring.detail', $kebun->id) }}"
-                                        class="btn btn-xs btn-primary">Detail</a>
+                    <tbody class="divide-y divide-gray-50 dark:divide-white-dark/5">
+                        @foreach ($latestKebun as $kebun)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-black/10 transition-colors cursor-pointer group">
+                                <td class="py-5 px-4 font-black tracking-widest text-sm">
+                                    @if ($kebun->kebun_id)
+                                        <a href="{{ route('monitoring.detail', ['id' => $kebun->kebun_id, 'periode' => $activeSlug]) }}"
+                                            class="text-primary hover:text-primary-dark hover:underline transition-all duration-300">
+                                            {{ $kebun->kebun }}
+                                        </a>
+                                    @else
+                                        <span class="text-slate-400 cursor-help"
+                                            title="Data master lokasi belum tersedia">{{ $kebun->kebun }}</span>
+                                    @endif
+                                </td>
+                                <td class="py-5 px-4 text-slate-700 dark:text-white-light">
+                                    {{ $kebun->nama_kebun }}</td>
+                                <td class="py-5 px-4 text-center font-black text-sm">
+                                    {{ number_format($kebun->luas_ha ?? 0, 1) }} </td>
+                                <td class="py-5 px-4 text-center">
+                                    <span
+                                        class="text-lg font-black {{ $kebun->persen_pkk_normal < 85 ? 'text-rose-500' : 'text-amber-500' }}">
+                                        {{ $kebun->persen_pkk_normal }}%
+                                    </span>
+                                </td>
+                                <td class="py-5 px-4 text-center">
+                                    <span
+                                        class="inline-block px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest 
+                                        {{ $kebun->status_kesehatan === 'Critical'
+                                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'
+                                            : ($kebun->status_kesehatan === 'Warning'
+                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400') }}">
+                                        {{ strtoupper($kebun->status_kesehatan) }}
+                                    </span>
                                 </td>
                             </tr>
                         @endforeach
@@ -325,245 +358,536 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- Data Binding Script -->
-    <script>
-        const populasiLabels = @json($populasiLabels ?? []);
-        const populasiTarget = @json($populasiTarget ?? []);
-        const populasiActual = @json($populasiActual ?? []);
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-        const tahunTanam = @json($tahunTanam ?? []);
-        const totalLuas = @json($totalLuas ?? []);
+        <script>
+            document.addEventListener("alpine:init", () => {
+                Alpine.data("dashboard", () => ({
+                    selectedPeriode: '{{ $activeSlug }}',
+                    periodeLabels: @json(collect($listPeriode)->mapWithKeys(fn($v, $k) => [$k => $v['label']])),
+                    hasData: {{ $hasData ? 'true' : 'false' }},
+                    isThinking: false,
+                    analysisMode: 'multimodal',
+                    aiInferenceText: "{{ $hasData ? 'Sinkronisasi Neural Dashboard...' : 'Sistem Standby: Dataset untuk periode ini belum tersedia di database.' }}",
 
-        const kondisiPohonData = @json($peringkatKondisiPohonChartData ?? []);
-        const pemeliharaanData = @json($peringkatPemeliharaanChartData ?? []);
+                    kpiCards: [{
+                            label: 'Cakupan Areal Total',
+                            value: '{{ number_format($total_luas ?? 0, 2) }}',
+                            unit: 'Ha',
+                            bg: 'bg-blue-500/10',
+                            color: 'text-blue-500',
+                            border: 'border-blue-500/30',
+                            compliance: '100.0', // Luas selalu 100% terhadap dirinya sendiri
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>'
+                        },
+                        {
+                            label: 'Populasi Aktif',
+                            value: '{{ number_format($total_pokok ?? 0) }}',
+                            unit: 'Pkk',
+                            bg: 'bg-indigo-500/10',
+                            color: 'text-indigo-500',
+                            border: 'border-indigo-500/30',
+                            // AMBIL VARIABEL YANG SUDAH DIHITUNG DI CONTROLLER
+                            compliance: '{{ $populasi_compliance }}',
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>'
+                        },
+                        {
+                            label: 'Indeks Kesehatan',
+                            value: '{{ $avg_health }}',
+                            unit: '%',
+                            bg: 'bg-emerald-500/10',
+                            color: 'text-emerald-500',
+                            border: 'border-emerald-500/30',
+                            // AMBIL VARIABEL YANG SUDAH DIHITUNG DI CONTROLLER
+                            compliance: '{{ $health_compliance }}',
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>'
+                        },
+                        {
+                            label: 'Agronomy Compliance',
+                            value: '{{ $agregat['compliance_rate'] }}',
+                            unit: '%',
+                            bg: 'bg-purple-500/10',
+                            color: 'text-purple-500',
+                            border: 'border-purple-500/30',
+                            compliance: '{{ $agregat['compliance_rate'] }}',
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                        }
+                    ],
 
-        const vegetatifLabels = @json($korelasiVegetatifLabels ?? []);
-        const lingkarBatang = @json($korelasiVegetatifLingkarBatang ?? []);
-        const jmlPelepah = @json($korelasiVegetatifJumlahPelepah ?? []);
-        const panjPelepah = @json($korelasiVegetatifPanjangPelepah ?? []);
+                    reasoningParams: [{
+                            label: "Data Quality",
+                            value: "{{ $hasData ? 'Verified' : 'Unverified' }}",
+                            percent: {{ $hasData ? 94 : 0 }}, // JIKA DATA TIDAK ADA, SET KE 0
+                            color: "{{ $hasData ? 'text-emerald-500' : 'text-gray-400' }}",
+                            hex: "{{ $hasData ? '#10b981' : '#94a3b8' }}"
+                        },
+                        {
+                            label: "Standard Match",
+                            value: "{{ $hasData ? 'Optimal' : 'N/A' }}",
+                            percent: {{ $hasData ? 88 : 0 }}, // JIKA DATA TIDAK ADA, SET KE 0
+                            color: "{{ $hasData ? 'text-primary' : 'text-gray-400' }}",
+                            hex: "{{ $hasData ? '#4361ee' : '#94a3b8' }}"
+                        }
+                    ],
 
-        const stackedSeries = @json($series ?? []);
-        const namaKebunTerluas = @json($namaKebunTerluas ?? []);
-
-        document.addEventListener("alpine:init", () => {
-            Alpine.data("dashboard", () => ({
-                isThinking: false,
-                analysisMode: 'multimodal',
-                confidenceScore: 0,
-                aiInferenceText: "Neural engine siaga. Lakukan diagnosa untuk mendapatkan wawasan agronomis.",
-                reasoningParams: [{
-                        label: "Konsistensi Data",
-                        value: "Siap",
-                        percent: 100,
-                        color: "text-primary",
-                        hex: "#4361ee"
+                    changePeriode() {
+                        this.isThinking = true;
+                        window.location.href = window.location.pathname + "?periode=" + this
+                            .selectedPeriode;
                     },
-                    {
-                        label: "Bobot Logika",
-                        value: "Siap",
-                        percent: 100,
-                        color: "text-primary",
-                        hex: "#4361ee"
+
+                    initDashboard() {
+                        this.renderCharts();
+
+                        // Jika data tidak ada, munculkan notifikasi mengambang (Toast)
+                        @if (!$hasData)
+                            const toast = window.Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 4000,
+                                timerProgressBar: true,
+                            });
+                            toast.fire({
+                                icon: 'warning',
+                                title: 'Data Kosong',
+                                text: 'Periode {{ $activeSlug }} tidak ditemukan di database.',
+                                padding: '10px 20px'
+                            });
+                        @else
+                            setTimeout(() => this.runAIInference(), 1500);
+                        @endif
                     },
-                    {
-                        label: "Mesin Validasi",
-                        value: "Aktif",
-                        percent: 100,
-                        color: "text-primary",
-                        hex: "#4361ee"
-                    }
-                ],
 
-                init() {
-                    const isDark = this.$store.app.theme === "dark" || this.$store.app.isDarkMode;
-
-                    // 1. Chart Populasi
-                    new ApexCharts(this.$refs.populasiChart, {
-                        series: [{
-                                name: 'Target (143/Ha)',
-                                data: populasiTarget
-                            },
-                            {
-                                name: 'Realisasi (Normal)',
-                                data: populasiActual
-                            }
-                        ],
-                        chart: {
-                            type: 'bar',
-                            height: 350,
-                            fontFamily: 'Inter'
-                        },
-                        colors: ['#e2e8f0', '#4361ee'],
-                        xaxis: {
-                            categories: populasiLabels
-                        },
-                        plotOptions: {
-                            bar: {
-                                horizontal: true,
-                                borderRadius: 4
-                            }
+                    // Update runAIInference agar tidak error jika data kosong
+                    async runAIInference() {
+                        if (!this.hasData) {
+                            this.aiInferenceText =
+                                "Analisis dihentikan: Dataset periode ini kosong. Sila pilih dimensi waktu lain.";
+                            return;
                         }
-                    }).render();
-
-                    // 2. Chart Trend Luas
-                    new ApexCharts(this.$refs.luasTahunTanamChart, {
-                        series: [{
-                            name: 'Luas Areal',
-                            data: totalLuas
-                        }],
-                        chart: {
-                            type: 'area',
-                            height: 300
-                        },
-                        xaxis: {
-                            categories: tahunTanam
-                        },
-                        colors: ['#00a76f'],
-                        stroke: {
-                            curve: 'smooth'
+                        this.isThinking = true;
+                        try {
+                            const res = await fetch(
+                                `/api/ai/dashboard-insight?mode=${this.analysisMode}&periode=${this.selectedPeriode}`
+                            );
+                            const data = await res.json();
+                            this.aiInferenceText = data.status === 'success' ? data.narration :
+                                "Neural Engine gagal sinkronisasi.";
+                        } catch (e) {
+                            this.aiInferenceText = "Error memproses narasi biometrik.";
+                        } finally {
+                            this.isThinking = false;
                         }
-                    }).render();
+                    },
 
-                    // 3. Chart Sebaran per Unit (Stacked)
-                    new ApexCharts(this.$refs.luasKebunChart, {
-                        series: stackedSeries,
-                        chart: {
-                            type: 'bar',
-                            height: 350,
-                            stacked: true
-                        },
-                        xaxis: {
-                            categories: namaKebunTerluas
-                        },
-                        plotOptions: {
-                            bar: {
-                                horizontal: true,
-                                barHeight: '80%'
-                            }
+                    async runAIInference() {
+                        this.isThinking = true;
+                        try {
+                            const res = await fetch(
+                                `/api/ai/dashboard-insight?mode=${this.analysisMode}&periode=${this.selectedPeriode}`
+                            );
+                            const data = await res.json();
+                            this.aiInferenceText = data.status === 'success' ? data.narration :
+                                "Neural Engine gagal sinkronisasi.";
+                        } catch (e) {
+                            this.aiInferenceText = "Error memproses narasi.";
+                        } finally {
+                            this.isThinking = false;
                         }
-                    }).render();
+                    },
 
-                    // 4. Chart Kondisi Pohon
-                    new ApexCharts(this.$refs.kondisiPohonChart, {
-                        series: [{
-                                name: 'NORMAL',
-                                data: kondisiPohonData.map(i => i.normal)
+                    renderCharts() {
+                        const isDark = this.$store.app.theme === "dark" || this.$store.app.isDarkMode;
+                        const premiumTooltip = {
+                            theme: 'dark',
+                            style: {
+                                fontFamily: 'Inter, sans-serif'
                             },
-                            {
-                                name: 'NON VALUER',
-                                data: kondisiPohonData.map(i => i.non_valuer)
+                            x: {
+                                show: true
                             },
-                            {
-                                name: 'MATI',
-                                data: kondisiPohonData.map(i => i.mati)
+                            marker: {
+                                show: true
                             }
-                        ],
-                        chart: {
-                            type: 'bar',
-                            height: 400,
-                            stacked: true
-                        },
-                        xaxis: {
-                            categories: kondisiPohonData.map(i => i.kebun)
-                        },
-                        colors: ['#27ae60', '#f39c12', '#FF0000'],
-                        plotOptions: {
-                            bar: {
-                                horizontal: true
-                            }
-                        }
-                    }).render();
-
-                    // 5. Chart Pemeliharaan
-                    new ApexCharts(this.$refs.pemeliharaanChart, {
-                        series: [{
-                                name: 'Kacangan',
-                                data: pemeliharaanData.map(i => i.kacangan)
-                            },
-                            {
-                                name: 'Pemeliharaan',
-                                data: pemeliharaanData.map(i => i.pemeliharaan)
-                            },
-                            {
-                                name: 'Tergenang',
-                                data: pemeliharaanData.map(i => i.tergenang)
-                            },
-                            {
-                                name: 'Anak Kayu',
-                                data: pemeliharaanData.map(i => i.anak_kayu)
-                            }
-                        ],
-                        chart: {
-                            type: 'bar',
-                            height: 400,
-                            stacked: true
-                        },
-                        xaxis: {
-                            categories: pemeliharaanData.map(i => i.kebun)
-                        },
-                        colors: ['#27ae60', '#f39c12', '#3498db', '#8B4513'],
-                        plotOptions: {
-                            bar: {
-                                horizontal: true
-                            }
-                        }
-                    }).render();
-
-                    // 6. Chart Vegetatif
-                    new ApexCharts(this.$refs.vegetatifChart, {
-                        series: [{
-                                name: 'Lingkar Batang',
-                                data: lingkarBatang
-                            },
-                            {
-                                name: 'Jml Pelepah',
-                                data: jmlPelepah
-                            },
-                            {
-                                name: 'Panj Pelepah',
-                                data: panjPelepah
-                            }
-                        ],
-                        chart: {
-                            type: 'bar',
-                            height: 400
-                        },
-                        xaxis: {
-                            categories: vegetatifLabels,
+                        };
+                        const commonAxis = {
                             labels: {
-                                rotate: -45,
+                                style: {
+                                    colors: isDark ? '#888ea8' : '#475569',
+                                    fontSize: '10px',
+                                    fontWeight: 700
+                                }
+                            }
+                        };
+
+                        // 1. Populasi Chart (Target 143 vs Actual)
+                        new ApexCharts(this.$refs.populasiChart, {
+                            series: [{
+                                name: 'Standar (143/Ha)',
+                                data: @json($populasiTarget ?? [])
+                            }, {
+                                name: 'Realisasi Lapangan',
+                                data: @json($populasiActual ?? [])
+                            }],
+                            chart: {
+                                type: 'bar',
+                                height: (@json($populasiLabels ?? []).length * 40) + 100,
+                                toolbar: {
+                                    show: false
+                                }
+                            },
+                            colors: [isDark ? '#334155' : '#e2e8f0', '#4361ee'],
+                            plotOptions: {
+                                bar: {
+                                    horizontal: true,
+                                    barHeight: '65%',
+                                    borderRadius: 4,
+                                    dataLabels: {
+                                        position: 'top'
+                                    }
+                                }
+                            },
+                            dataLabels: {
+                                enabled: false
+                            },
+                            xaxis: {
+                                ...commonAxis,
+                                categories: @json($populasiLabels ?? []),
+                                title: {
+                                    text: 'Jumlah Pokok (Pkk)',
+                                    style: {
+                                        color: isDark ? '#888ea8' : '#475569',
+                                        fontWeight: 700
+                                    }
+                                }
+                            },
+                            yaxis: {
+                                labels: {
+                                    style: {
+                                        fontSize: '10px',
+                                        fontWeight: 800,
+                                        colors: isDark ? '#cbd5e1' : '#1e293b'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                ...premiumTooltip,
+                                y: {
+                                    formatter: (val) => new Intl.NumberFormat('id-ID').format(val) +
+                                        ' Pkk'
+                                }
+                            },
+                            legend: {
+                                position: 'top',
+                                horizontalAlign: 'right',
+                                labels: {
+                                    colors: isDark ? '#fff' : '#000'
+                                }
+                            }
+                        }).render();
+
+                        // 2. Kondisi Pohon 
+                        const kData = @json($peringkatKondisiPohonChartData ?? []);
+                        new ApexCharts(this.$refs.kondisiPohonChart, {
+                            series: [{
+                                    name: 'NORMAL',
+                                    data: kData.map(i => i.normal)
+                                },
+                                {
+                                    name: 'KERDIL (WARNING)',
+                                    data: kData.map(i => i.non_valuer)
+                                },
+                                {
+                                    name: 'MATI (CRITICAL)',
+                                    data: kData.map(i => i.mati)
+                                }
+                            ],
+                            chart: {
+                                type: 'bar',
+                                height: kData.length * 45 + 100,
+                                stacked: true,
+                                toolbar: {
+                                    show: false
+                                }
+                            },
+                            colors: ['#2ecc71', '#f39c12', '#ef4444'],
+                            plotOptions: {
+                                bar: {
+                                    horizontal: true,
+                                    barHeight: '75%'
+                                }
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: v => v > 5 ? v.toFixed(1) + '%' : '',
                                 style: {
                                     fontSize: '9px'
                                 }
+                            },
+                            xaxis: {
+                                ...commonAxis,
+                                categories: kData.map(i => i.kebun),
+                                max: 100
+                            },
+                            yaxis: commonAxis,
+                            tooltip: {
+                                ...premiumTooltip,
+                                y: {
+                                    formatter: v => v.toFixed(2) + '%'
+                                }
                             }
-                        },
-                        colors: ['#1E90FF', '#32CD32', '#FF8C00']
-                    }).render();
-                },
+                        }).render();
 
-                runAIInference() {
-                    this.isThinking = true;
-                    setTimeout(() => {
-                        let text = "";
-                        if (this.analysisMode === 'multimodal') {
-                            text = "Hasil Diagnosa: Fokus pada Unit " + (populasiLabels[0] ||
-                                    "Utama") + ". Terdapat deviasi populasi sebesar " + (
-                                    populasiTarget[0] - populasiActual[0]) +
-                                " pokok dari standar agronomi.";
-                            this.confidenceScore = 96;
-                        } else {
-                            text =
-                                "Analisis Agregat Selesai: Laju pertumbuhan lingkar batang mencapai rata-rata regional " +
-                                lingkarBatang[0] + " cm. Efisiensi piringan di atas 90%.";
-                            this.confidenceScore = 92;
-                        }
-                        this.aiInferenceText = text;
-                        this.isThinking = false;
-                    }, 1500);
-                }
-            }));
-        });
-    </script>
+                        // 3. Pemeliharaan
+                        const pData = @json($peringkatPemeliharaanChartData ?? []);
+                        new ApexCharts(this.$refs.pemeliharaanChart, {
+                            series: [{
+                                    name: 'Kacangan (LCC)',
+                                    data: pData.map(i => i.kacangan)
+                                },
+                                {
+                                    name: 'Kurang Baik',
+                                    data: pData.map(i => i.pemeliharaan)
+                                },
+                                {
+                                    name: 'Tergenang',
+                                    data: pData.map(i => i.tergenang)
+                                },
+                                {
+                                    name: 'Anak Kayu',
+                                    data: pData.map(i => i.anak_kayu)
+                                }
+                            ],
+                            chart: {
+                                type: 'bar',
+                                height: pData.length * 45 + 100,
+                                stacked: true,
+                                toolbar: {
+                                    show: false
+                                }
+                            },
+                            colors: ['#2ecc71', '#f39c12', '#3498db', '#795548'],
+                            plotOptions: {
+                                bar: {
+                                    horizontal: true,
+                                    barHeight: '75%'
+                                }
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: v => v > 5 ? v.toFixed(1) + '%' : '',
+                                style: {
+                                    fontSize: '9px'
+                                }
+                            },
+                            xaxis: {
+                                ...commonAxis,
+                                categories: pData.map(i => i.kebun),
+                                max: 100
+                            },
+                            yaxis: commonAxis,
+                            tooltip: {
+                                ...premiumTooltip,
+                                y: {
+                                    formatter: v => v.toFixed(2) + '%'
+                                }
+                            }
+                        }).render();
+
+                        // 4. Vegetatif 
+                        new ApexCharts(this.$refs.vegetatifChart, {
+                            series: [{
+                                name: 'Lingkar Batang',
+                                data: @json($korelasiVegetatifLingkarBatang ?? [])
+                            }, {
+                                name: 'Jumlah Pelepah',
+                                data: @json($korelasiVegetatifJumlahPelepah ?? [])
+                            }, {
+                                name: 'Panjang Pelepah',
+                                data: @json($korelasiVegetatifPanjangPelepah ?? [])
+                            }],
+                            chart: {
+                                type: 'bar',
+                                height: 450,
+                                toolbar: {
+                                    show: true
+                                }
+                            },
+                            colors: ['#3498db', '#2ecc71', '#e67e22'],
+                            plotOptions: {
+                                bar: {
+                                    horizontal: false,
+                                    columnWidth: '65%',
+                                    dataLabels: {
+                                        position: 'top'
+                                    }
+                                }
+                            },
+                            xaxis: {
+                                categories: @json($korelasiVegetatifLabels ?? []),
+                                labels: {
+                                    rotate: -45,
+                                    rotateAlways: true,
+                                    minHeight: 100,
+                                    style: {
+                                        fontSize: '10px',
+                                        fontWeight: 700,
+                                        colors: isDark ? '#888ea8' : '#475569'
+                                    }
+                                }
+                            },
+                            yaxis: {
+                                labels: {
+                                    formatter: (val) => val.toFixed(3),
+                                    style: {
+                                        colors: isDark ? '#888ea8' : '#475569'
+                                    }
+                                }
+                            },
+                            dataLabels: {
+                                enabled: false,
+                            },
+                            tooltip: {
+                                ...premiumTooltip,
+                                y: {
+                                    formatter: (val) => val.toFixed(3)
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    colors: isDark ? '#fff' : '#000'
+                                }
+                            }
+                        }).render();
+
+                        // 5. Trend Luas (DIUBAH KE BAR)
+                        new ApexCharts(this.$refs.trendLuasChart, {
+                            series: [{
+                                name: 'Luas Areal (Ha)',
+                                data: @json($totalLuas ?? [])
+                            }],
+                            chart: {
+                                type: 'bar',
+                                height: 350,
+                                toolbar: {
+                                    show: false
+                                }
+                            },
+                            colors: ['#10b981'],
+                            plotOptions: {
+                                bar: {
+                                    borderRadius: 10,
+                                    columnWidth: '50%',
+                                    dataLabels: {
+                                        position: 'top'
+                                    }
+                                }
+                            },
+                            xaxis: {
+                                ...commonAxis,
+                                categories: @json($tahunTanam ?? [])
+                            },
+                            yaxis: commonAxis,
+                            dataLabels: {
+                                enabled: true,
+                                offsetY: -25,
+                                formatter: v => v.toFixed(0) + ' Ha',
+                                style: {
+                                    fontSize: '10px',
+                                    colors: [isDark ? '#fff' : '#000']
+                                }
+                            },
+                            tooltip: {
+                                ...premiumTooltip,
+                                y: {
+                                    formatter: v => v.toFixed(2) + ' Ha'
+                                }
+                            }
+                        }).render();
+
+                        // 6. Luas Per Kebun
+                        new ApexCharts(this.$refs.luasPerKebunChart, {
+                            series: @json($series ?? []),
+                            chart: {
+                                type: 'bar',
+                                height: 500,
+                                stacked: true,
+                                toolbar: {
+                                    show: false
+                                }
+                            },
+                            plotOptions: {
+                                bar: {
+                                    horizontal: true,
+                                    barHeight: '80%',
+                                    borderRadius: 4
+                                }
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: function(val) {
+                                    return val > 100 ? `${val.toFixed(2)} Ha` : '';
+                                }
+                            },
+                            xaxis: {
+                                ...commonAxis,
+                                categories: @json($namaKebunTerluas ?? [])
+                            },
+                            yaxis: commonAxis,
+                            tooltip: {
+                                ...premiumTooltip,
+                                y: {
+                                    formatter: v => v.toFixed(2) + ' Ha'
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    colors: isDark ? '#fff' : '#000'
+                                }
+                            }
+                        }).render();
+                    }
+                }));
+            });
+        </script>
+
+        <style>
+            .panel {
+                @apply shadow-[0_10px_30px_rgba(0, 0, 0, 0.04)] dark:shadow-[0_10px_30px_rgba(0, 0, 0, 0.2)];
+            }
+
+            .apexcharts-canvas {
+                margin: 0 auto;
+            }
+
+            .apexcharts-tooltip.apexcharts-theme-dark {
+                background: #000000 !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+                border-radius: 12px !important;
+            }
+
+            .apexcharts-tooltip-title {
+                background: #111111 !important;
+                border-bottom: 1px solid #333 !important;
+                font-weight: 900 !important;
+                text-transform: !important;
+            }
+
+            .table-responsive::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .table-responsive::-webkit-scrollbar-thumb {
+                background: #e2e8f0;
+                border-radius: 10px;
+            }
+
+            .dark .table-responsive::-webkit-scrollbar-thumb {
+                background: #1b2e4b;
+            }
+        </style>
+    </div>
 </x-layout.default>

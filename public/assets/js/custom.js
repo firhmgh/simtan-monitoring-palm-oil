@@ -23,11 +23,17 @@
         Alpine.store('app').setRTLLayout();
     });
 
-    // remove animation after complete
     const element = document.querySelector('.dvanimation');
-    element.addEventListener('animationend', () => {
-        element.classList.remove(Alpine.store('app').animation);
-    });
+    if (element) {
+        // Cek apakah elemen ada
+        element.addEventListener('animationend', () => {
+            const anim = Alpine.store('app').animation;
+            if (anim && anim.trim() !== '') {
+                // Cek apakah string animasi tidak kosong
+                element.classList.remove(anim);
+            }
+        });
+    }
 
     // set current year in footer
     const yearEle = document.querySelector('#footer-year');

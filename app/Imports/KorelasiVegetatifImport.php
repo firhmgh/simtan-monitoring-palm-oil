@@ -16,17 +16,17 @@ use Illuminate\Support\Facades\Log;
  */
 class KorelasiVegetatifImport implements ToCollection, WithStartRow, WithMultipleSheets
 {
-    protected $simtanFormId;
-    protected $kodeUpload;
+    protected $simtanFormId, $kodeUpload, $labelPeriode;
 
     /**
      * Constructor menerima ID (Integer) untuk relasi database
      * dan Kode (String) untuk identitas dokumen (Audit Trail).
      */
-    public function __construct($simtanFormId, $kodeUpload)
+    public function __construct($simtanFormId, $kodeUpload, $labelPeriode)
     {
         $this->simtanFormId = $simtanFormId;
         $this->kodeUpload = $kodeUpload;
+        $this->labelPeriode = $labelPeriode;
     }
 
     /**
@@ -92,6 +92,7 @@ class KorelasiVegetatifImport implements ToCollection, WithStartRow, WithMultipl
                 KorelasiVegetatif::create([
                     'simtan_form_id'  => $this->simtanFormId, // Integer
                     'kode_upload'     => $this->kodeUpload,    // String (Audit Trail)
+                    'periode'         => $this->labelPeriode,
                     'tahun'           => $tahun,
                     'kebun'           => $kebun,
                     'topografi'       => $topografi,

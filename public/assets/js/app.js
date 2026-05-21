@@ -1,6 +1,7 @@
 /**
  * SIMTAN Monitoring - Vristo Dashboard Core Application
  * High-performance Alpine.js initialization and global state management.
+ * Integrated with Global Typography & Design System.
  */
 
 document.addEventListener('alpine:init', () => {
@@ -9,13 +10,30 @@ document.addEventListener('alpine:init', () => {
         Alpine.store('app', {
             sidebar: window.innerWidth > 1024,
             theme: localStorage.getItem('theme') || 'light',
+            
+            // Inisialisasi tema saat aplikasi dimuat
+            init() {
+                this.refreshTheme();
+            },
+
             toggleSidebar() {
                 this.sidebar = !this.sidebar;
             },
+
             toggleTheme(val) {
                 this.theme = val || (this.theme === 'light' ? 'dark' : 'light');
                 localStorage.setItem('theme', this.theme);
+                this.refreshTheme();
             },
+
+            // Fungsi sinkronisasi class ke HTML element untuk Tailwind Dark Mode
+            refreshTheme() {
+                if (this.theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
         });
     }
 
@@ -49,7 +67,7 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    // 4. CLOCK component (Indonesian Format)
+    // 4. CLOCK component (Indonesian Format for Enterprise Dashboard)
     Alpine.data('clock', () => ({
         date: '',
         time: '',
@@ -78,7 +96,9 @@ document.addEventListener('alpine:init', () => {
 
     // 5. HEADER component (Notification Support)
     Alpine.data('header', () => ({
-        notifications: [{ id: 1, message: 'Sistem siap menerima dataset', time: 'Baru saja' }],
+        notifications: [
+            { id: 1, message: 'Sistem SIMTAN siap menerima dataset', time: 'Baru saja' }
+        ],
         removeNotification(id) {
             this.notifications = this.notifications.filter((n) => n.id !== id);
         },
@@ -86,10 +106,11 @@ document.addEventListener('alpine:init', () => {
 });
 
 /**
- * Defensive Patching for Vristo Template Compatibility
- * Prevents common DOM manipulation errors during theme transitions.
+ * Defensive Patching & Initial Theme Setup
+ * Menjamin konsistensi sebelum Alpine.js selesai loading sepenuhnya.
  */
 (function () {
+    // 1. Fix for Vristo Template compatibility
     const originalRemove = DOMTokenList.prototype.remove;
     DOMTokenList.prototype.remove = function (...tokens) {
         const filteredTokens = tokens.filter((token) => token !== '');
@@ -98,9 +119,15 @@ document.addEventListener('alpine:init', () => {
         }
     };
 
-    // Auto-detect theme based on system preference if not set
-    if (!localStorage.getItem('theme')) {
-        const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        localStorage.setItem('theme', darkQuery.matches ? 'dark' : 'light');
+    // 2. Immediate Theme Apply (Mencegah Layar Putih Berkedip/Flash)
+    const savedTheme = localStorage.getItem('theme');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+        document.documentElement.classList.add('dark');
+        if (!savedTheme) localStorage.setItem('theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+        if (!savedTheme) localStorage.setItem('theme', 'light');
     }
 })();

@@ -1,434 +1,336 @@
 <x-layout.default>
-    <!-- Alpine.js Component Wrapper -->
-    <div x-data="riwayatData()" class="space-y-6">
+    <div x-data="riwayatData({{ json_encode($logsJson) }})" class="relative text-gray-900   dark:text-white-light" x-cloak>
 
-        <!-- Page Header -->
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Riwayat Data Masuk</h1>
-            <p class="text-gray-500 text-sm mt-1 dark:text-gray-400">Lacak dan kelola semua aktivitas log konsolidasi
-                data</p>
+        <!-- 1. HEADER SECTION -->
+        <div
+            class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+            <div class="text-left">
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark uppercase tracking-widest font-black">
+                    <li><a href="javascript:;" class="text-primary hover:underline">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black">Riwayat Data</li>
+                </ul>
+                <h1
+                    class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-none uppercase italic">
+                    Log Konsolidasi Data</h1>
+                <p
+                    class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mt-2 border-l-2 border-primary pl-2 uppercase tracking-widest">
+                    Audit Trail & Transparansi Aktivitas Ingesti Multimoda
+                </p>
+            </div>
         </div>
 
-        <!-- Stats Cards (Sesuai Desain Gambar Pertama) -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <!-- 2. ANALYTICAL STATS CARDS (Dynamic Counters) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 font-black">
             <!-- Total -->
             <div
-                class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Import</p>
-                    <p class="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white" x-text="statusCounts.total"></p>
+                class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all rounded-xl">
+                <div class="text-left">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1 font-black">
+                        Total Ingesti</p>
+                    <p class="text-4xl font-black text-gray-900 dark:text-white leading-none tracking-tighter"
+                        x-text="statusCounts.total"></p>
                 </div>
                 <div
-                    class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <path d="M14 2v6h6" />
-                        <path d="M16 13H8" />
-                        <path d="M16 17H8" />
-                        <path d="M10 9H8" />
+                    class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                 </div>
             </div>
 
-            <!-- Successful -->
+            <!-- Success -->
             <div
-                class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Sukses</p>
-                    <p class="mt-2 text-4xl font-extrabold text-emerald-600" x-text="statusCounts.success"></p>
+                class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all rounded-xl">
+                <div class="text-left">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1 font-black">
+                        Data Sinkron</p>
+                    <p class="text-4xl font-black text-emerald-600 leading-none tracking-tighter"
+                        x-text="statusCounts.success"></p>
                 </div>
                 <div
-                    class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100/60 text-emerald-500 dark:bg-emerald-900/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
+                    class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
             </div>
 
             <!-- Failed -->
             <div
-                class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Gagal</p>
-                    <p class="mt-2 text-4xl font-extrabold text-red-600" x-text="statusCounts.error"></p>
+                class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all rounded-xl">
+                <div class="text-left">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1 font-black">
+                        Anomali/Gagal</p>
+                    <p class="text-4xl font-black text-rose-600 leading-none tracking-tighter"
+                        x-text="statusCounts.error"></p>
                 </div>
                 <div
-                    class="flex h-12 w-12 items-center justify-center rounded-full bg-red-100/60 text-red-500 dark:bg-red-900/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
+                    class="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </div>
             </div>
 
             <!-- Processing -->
             <div
-                class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Diproses</p>
-                    <p class="mt-2 text-4xl font-extrabold text-blue-600" x-text="statusCounts.processing"></p>
+                class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all rounded-xl">
+                <div class="text-left">
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1 font-black">
+                        Queue / Antrean</p>
+                    <p class="text-4xl font-black text-blue-600 leading-none tracking-tighter"
+                        x-text="statusCounts.processing"></p>
                 </div>
                 <div
-                    class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100/60 text-blue-500 dark:bg-blue-900/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round" class="animate-spin">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                    <svg class="w-7 h-7 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        stroke-width="2.5">
+                        <path
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Filter Section -->
+        <!-- 3. SMART FILTER PANEL (Vristo Standard) -->
         <div
-            class="rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:border-gray-800 dark:bg-gray-900">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-                <!-- Cari File -->
-                <div class="relative w-full">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" x2="16.65" y1="21" y2="16.65" />
-                        </svg>
-                    </div>
-                    <!-- pl-10 (padding-left 40px) memastikan text tidak menyentuh ikon yang ada di w-10 (lebar 40px) -->
-                    <input type="text" x-model="searchQuery" placeholder="Cari File..."
-                        class="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+            class="panel bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-[#1b2e4b] shadow-sm p-5 mb-8 rounded-xl">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end font-black">
+                <div class="text-left">
+                    <label
+                        class="text-[10px] uppercase text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Search
+                        Files</label>
+                    <input type="text" x-model="searchQuery" placeholder="INPUT FILENAME..."
+                        class="form-input py-2.5 text-xs">
                 </div>
 
-                <!-- Filter Pengunggah -->
-                <div class="relative w-full">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                    </div>
-                    <select x-model="filterPengunggah"
-                        class="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-gray-700 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer">
-                        <option value="all">Semua Pengunggah</option>
-                        <option value="Admin">Admin</option>
-                        <option value="SuperAdmin">SuperAdmin</option>
+                <div class="text-left">
+                    <label
+                        class="text-[10px] uppercase text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Authority</label>
+                    <select x-model="filterPengunggah" class="form-select py-2.5 text-xs uppercase">
+                        <option value="all">SEMUA PENGUNGGAH</option>
+                        @foreach ($listPengunggah as $name)
+                            <option value="{{ $name }}">{{ strtoupper($name) }}</option>
+                        @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
-                    </div>
                 </div>
 
-                <!-- Filter Periode -->
-                <div class="relative w-full">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                            <line x1="16" x2="16" y1="2" y2="6" />
-                            <line x1="8" x2="8" y1="2" y2="6" />
-                            <line x1="3" x2="21" y1="10" y2="10" />
-                        </svg>
-                    </div>
-                    <select x-model="filterPeriode"
-                        class="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-gray-700 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer">
-                        <option value="all">Semua Periode</option>
-                        <option value="01/26">Jan-2026</option>
-                        <option value="02/26">Feb-2026</option>
-                        <option value="03/26">Mar-2026</option>
+                <div class="text-left">
+                    <label
+                        class="text-[10px] uppercase text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Dataset
+                        Type</label>
+                    <select x-model="filterJenis" class="form-select py-2.5 text-xs uppercase">
+                        <option value="all">SEMUA JENIS</option>
+                        @foreach ($listJenis as $jenis)
+                            <option value="{{ $jenis }}">{{ strtoupper($jenis) }}</option>
+                        @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
-                    </div>
                 </div>
 
-                <!-- Filter Jenis Dataset -->
-                <div class="relative w-full">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                            <polyline points="2 17 12 22 22 17" />
-                            <polyline points="2 12 12 17 22 12" />
-                        </svg>
-                    </div>
-                    <select x-model="filterJenis"
-                        class="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-gray-700 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer">
-                        <option value="all">Semua Jenis</option>
-                        <option value="Vegetatif">Vegetatif</option>
-                        <option value="Rekap TBM III">Rekap TBM III</option>
-                        <option value="Map Tiles">Map Tiles</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center justify-center w-10">
-                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
-                    </div>
+                <div class="flex gap-2">
+                    <button @click="resetFilters()"
+                        class="btn btn-primary w-full py-2.5 text-xs font-black uppercase tracking-widest italic shadow-lg shadow-primary/20 transition-all hover:scale-95">
+                        Refresh
+                    </button>
                 </div>
-            </div>
-
-            <!-- Action Buttons for Filter -->
-            <div class="mt-5 flex justify-end border-t border-gray-100 dark:border-gray-800 pt-5">
-                <button @click="resetFilters()"
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                        <path d="M3 3v5h5" />
-                    </svg>
-                    Segarkan Log
-                </button>
             </div>
         </div>
 
-        <!-- History Table Card -->
-        <div
-            class="rounded-2xl border border-gray-100 bg-white shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
-            <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
-                <div
-                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <line x1="8" y1="6" x2="21" y2="6" />
-                        <line x1="8" y1="12" x2="21" y2="12" />
-                        <line x1="8" y1="18" x2="21" y2="18" />
-                        <line x1="3" y1="6" x2="3.01" y2="6" />
-                        <line x1="3" y1="12" x2="3.01" y2="12" />
-                        <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Log Konsolidasi Data</h3>
-            </div>
-
-            <div class="overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse">
+        <!-- 4. DATA LOG TABLE (Adaptive Mode) -->
+        <div class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-0 overflow-hidden rounded-xl">
+            <div class="table-responsive">
+                <table class="w-full text-left border-collapse table-hover">
                     <thead>
-                        <tr class="border-b border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-800/50">
-                            <th class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">Tgl
-                                Upload</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
-                                Nama File</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
-                                Pengunggah</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
-                                Jenis Dataset</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
-                                Baris</th>
-                            <th class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
-                                Status</th>
-                            <th
-                                class="whitespace-nowrap px-6 py-4 text-sm font-bold text-gray-900 dark:text-white text-center">
-                                Aksi</th>
+                        <tr
+                            class="bg-gray-50 dark:bg-black/20 text-gray-700 dark:text-gray-300 border-b dark:border-[#1b2e4b]">
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic">Timestamp</th>
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic">Laporan /
+                                Berkas</th>
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic text-center">
+                                Otoritas</th>
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic text-center">
+                                Dataset</th>
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic text-center">
+                                Volume</th>
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic text-center">
+                                Integrasi</th>
+                            <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest italic text-center">
+                                Navigasi</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-[13px] font-bold">
                         <template x-for="item in filteredData" :key="item.id">
-                            <tr
-                                class="border-b border-gray-50 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-gray-800/50 transition-colors">
-                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"
+                            <tr class="hover:bg-gray-50/50 dark:hover:bg-black/10 transition-all">
+                                <td class="px-6 py-5 text-gray-500 dark:text-gray-400 font-black italic tracking-tighter"
                                     x-text="item.tglUpload"></td>
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="font-semibold text-gray-900 dark:text-white max-w-[200px] truncate block"
-                                        x-text="item.namaFile"></span>
+                                <td class="px-6 py-5">
+                                    <div class="text-gray-900 dark:text-white font-black truncate max-w-[250px] leading-none mb-1.5 uppercase"
+                                        x-text="item.namaFile"></div>
+                                    <div class="text-[9px] text-gray-400 font-bold uppercase tracking-widest"
+                                        x-text="'UID: #' + item.id"></div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"
-                                    x-text="item.pengunggah"></td>
-                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"
-                                    x-text="item.jenisDataset"></td>
-                                <td class="px-6 py-4">
-                                    <span class="font-bold text-gray-900 dark:text-white" x-text="item.baris"></span>
-                                </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-5 text-center">
                                     <span
-                                        class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold w-fit whitespace-nowrap"
+                                        class="text-primary dark:text-primary-light font-black uppercase tracking-tighter leading-none"
+                                        x-text="item.pengunggah"></span>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span
+                                        class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded border border-primary/20 uppercase"
+                                        x-text="item.jenisDataset"></span>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span
+                                        class="text-gray-900 dark:text-white font-black italic shadow-inner px-2 py-0.5 bg-gray-50 dark:bg-gray-800 rounded"
+                                        x-text="numberFormat(item.baris) + ' Baris'"></span>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[9px] font-black uppercase tracking-widest border"
                                         :class="{
-                                            'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': item
+                                            'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800': item
                                                 .status === 'Sukses',
-                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': item
+                                            'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800': item
                                                 .status === 'Gagal',
-                                            'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': item
+                                            'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800': item
                                                 .status === 'Diproses'
                                         }">
-
-                                        <svg x-show="item.status === 'Sukses'" class="w-3.5 h-3.5"
-                                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                            fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-
-                                        <svg x-show="item.status === 'Gagal'" class="w-3.5 h-3.5"
-                                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                            fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-
-                                        <svg x-show="item.status === 'Diproses'" class="w-3.5 h-3.5 animate-spin"
-                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
-
+                                        <span class="w-1.5 h-1.5 rounded-full"
+                                            :class="{
+                                                'bg-emerald-500': item.status === 'Sukses',
+                                                'bg-rose-500': item
+                                                    .status === 'Gagal',
+                                                'bg-blue-500 animate-ping': item
+                                                    .status === 'Diproses'
+                                            }"></span>
                                         <span x-text="item.status"></span>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center justify-center">
-                                        <button
-                                            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                            Detail
-                                        </button>
+                                <td class="px-6 py-5 text-center">
+                                    <template x-if="item.formId">
+                                        <a :href="'/monitoring/detail-areal/' + item.formId"
+                                            class="btn btn-sm btn-outline-primary uppercase font-black text-[9px] tracking-[0.1em] py-1.5 px-4 rounded-md transition-all hover:scale-95 shadow-sm">
+                                            Analisa
+                                        </a>
+                                    </template>
+                                    <template x-if="!item.formId">
+                                        <span class="text-[9px] text-gray-400 italic">No Reference</span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <!-- Empty State -->
+                        <template x-if="filteredData.length === 0">
+                            <tr>
+                                <td colspan="7" class="py-24 text-center">
+                                    <div class="flex flex-col items-center opacity-30">
+                                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.5">
+                                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        <p class="text-xl font-black uppercase tracking-[0.4em] italic">Zero Records
+                                            Found</p>
                                     </div>
                                 </td>
                             </tr>
                         </template>
-                        <tr x-show="filteredData.length === 0">
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">Data tidak ditemukan.</td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Bottom Action Buttons (Ekspor / Cetak) -->
-        <div class="flex flex-col sm:flex-row gap-4 pt-2">
+        <!-- 5. BOTTOM ACTIONS -->
+        <div class="flex flex-wrap gap-4 mt-8 justify-start font-black">
             <button
-                class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" x2="12" y1="15" y2="3" />
-                </svg>
-                Ekspor Data Masuk (CSV)
+                class="btn btn-dark uppercase text-[10px] tracking-widest italic py-3 px-8 rounded-lg shadow-xl transition-all active:scale-95">
+                Download Master CSV
             </button>
             <button
-                class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <polyline points="6 9 6 2 18 2 18 9" />
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <rect width="12" height="8" x="6" y="14" />
-                </svg>
-                Cetak Log (PDF)
+                class="btn btn-outline-dark uppercase text-[10px] tracking-widest italic py-3 px-8 rounded-lg shadow-sm transition-all active:scale-95">
+                Print Official PDF
             </button>
         </div>
-
     </div>
 
-    <!-- Script Data Alpine.js -->
+    <!-- REFACTOR SCRIPTS -->
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('riwayatData', () => ({
+            Alpine.data('riwayatData', (initialData) => ({
                 searchQuery: '',
                 filterPengunggah: 'all',
-                filterPeriode: 'all',
                 filterJenis: 'all',
-
-                historyData: [{
-                        id: 1,
-                        tglUpload: '12/02/26 14:20',
-                        namaFile: 'KorelasiVeg_Jan26.xlsx',
-                        pengunggah: 'Admin',
-                        jenisDataset: 'Vegetatif',
-                        baris: '1.250',
-                        status: 'Sukses',
-                    },
-                    {
-                        id: 2,
-                        tglUpload: '10/03/26 09:15',
-                        namaFile: 'Rekap_JanFebMar26.xlsx',
-                        pengunggah: 'Admin',
-                        jenisDataset: 'Rekap TBM III',
-                        baris: '1.500',
-                        status: 'Sukses',
-                    },
-                    {
-                        id: 3,
-                        tglUpload: '18/01/26 10:00',
-                        namaFile: 'Map_Tiles.zip',
-                        pengunggah: 'SuperAdmin',
-                        jenisDataset: 'Map Tiles',
-                        baris: '-',
-                        status: 'Gagal',
-                    },
-                    {
-                        id: 4,
-                        tglUpload: '11/03/26 11:30',
-                        namaFile: 'Data_Vegetasi_Baru.xlsx',
-                        pengunggah: 'Admin',
-                        jenisDataset: 'Vegetatif',
-                        baris: '850',
-                        status: 'Diproses',
-                    }
-                ],
+                // Pastikan historyData selalu array, jika null jadikan []
+                historyData: Array.isArray(initialData) ? initialData : [],
 
                 get filteredData() {
                     return this.historyData.filter((item) => {
-                        const matchesSearch = item.namaFile.toLowerCase().includes(this
-                            .searchQuery.toLowerCase());
-                        const matchesPengunggah = this.filterPengunggah === 'all' || item
-                            .pengunggah === this.filterPengunggah;
-                        const matchesPeriode = this.filterPeriode === 'all' || item
-                            .tglUpload.includes(this.filterPeriode);
-                        const matchesJenis = this.filterJenis === 'all' || item
-                            .jenisDataset === this.filterJenis;
+                        // Safety check jika properti undefined
+                        const namaFile = item.namaFile ? item.namaFile.toLowerCase() : '';
+                        const search = this.searchQuery.toLowerCase();
 
-                        return matchesSearch && matchesPengunggah && matchesPeriode &&
-                            matchesJenis;
+                        const matchesSearch = namaFile.includes(search);
+
+                        const matchesPengunggah = this.filterPengunggah === 'all' ||
+                            item.pengunggah === this.filterPengunggah;
+
+                        const matchesJenis = this.filterJenis === 'all' ||
+                            item.jenisDataset === this.filterJenis;
+
+                        return matchesSearch && matchesPengunggah && matchesJenis;
                     });
                 },
 
                 get statusCounts() {
                     return {
                         total: this.historyData.length,
-                        success: this.historyData.filter((d) => d.status === 'Sukses').length,
-                        error: this.historyData.filter((d) => d.status === 'Gagal').length,
-                        processing: this.historyData.filter((d) => d.status === 'Diproses').length,
+                        success: this.historyData.filter(d => d.status === 'Sukses').length,
+                        error: this.historyData.filter(d => d.status === 'Gagal').length,
+                        processing: this.historyData.filter(d => d.status === 'Diproses').length,
                     };
+                },
+
+                numberFormat(x) {
+                    if (!x || x === 0) return '0';
+                    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                 },
 
                 resetFilters() {
                     this.searchQuery = '';
                     this.filterPengunggah = 'all';
-                    this.filterPeriode = 'all';
                     this.filterJenis = 'all';
                 }
             }));
         });
     </script>
+
+    <style>
+        .table-responsive::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            @apply bg-slate-200 dark:bg-slate-800 rounded-full transition-all;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            @apply bg-primary/30;
+        }
+
+        .panel {
+            @apply transition-all duration-300;
+        }
+
+        .form-input,
+        .form-select {
+            @apply dark:bg-[#1b2e4b] dark:border-[#253b5c] dark:text-white-light rounded-lg transition-all duration-300 !important;
+            @apply focus:border-primary focus:ring-0 !important;
+        }
+
+        .table-hover tr:hover {
+            @apply cursor-pointer !important;
+        }
+    </style>
 </x-layout.default>
