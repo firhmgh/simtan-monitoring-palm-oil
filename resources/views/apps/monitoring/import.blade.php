@@ -6,7 +6,7 @@
         <div
             class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
             <div class="text-left font-bold">
-                <ul class="flex space-x-2 text-xs mb-2 text-gray-500 dark:text-gray-400 tracking-widest uppercase">
+                <ul class="flex space-x-2 text-xs mb-2 text-gray-500 dark:text-gray-400 tracking-widest">
                     <li><a href="javascript:;" class="text-primary hover:underline">Monitoring</a></li>
                     <li
                         class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 text-gray-900 dark:text-white font-black">
@@ -15,7 +15,7 @@
                 <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">
                     Pusat Ingesti Data</h1>
                 <p
-                    class="text-xs font-bold italic text-gray-500 dark:text-gray-400 mt-1 border-l-2 border-primary pl-2 uppercase tracking-tight">
+                    class="text-xs font-bold italic text-gray-500 dark:text-gray-400 mt-1 border-l-2 border-primary pl-2 tracking-tight">
                     Sistem Integrasi Multimoda - PTPN IV Regional I</p>
             </div>
         </div>
@@ -34,7 +34,7 @@
                             </svg>
                         </div>
                         <div class="flex-1 text-left">
-                            <p class="text-[9px] text-gray-500 dark:text-gray-400 font-black tracking-widest uppercase">
+                            <p class="text-[9px] text-gray-500 dark:text-gray-400 font-black tracking-widest">
                                 Success</p>
                             <p class="text-xs text-gray-900 dark:text-white font-bold leading-tight">
                                 {{ session('success') }}</p>
@@ -50,7 +50,7 @@
                             <span class="font-black">!</span>
                         </div>
                         <div class="flex-1 text-left">
-                            <p class="text-[9px] text-gray-500 dark:text-gray-400 font-black tracking-widest uppercase">
+                            <p class="text-[9px] text-gray-500 dark:text-gray-400 font-black tracking-widest">
                                 Error Ingesti</p>
                             <p class="text-xs text-gray-900 dark:text-white font-bold leading-tight">
                                 {{ $errors->first() }}</p>
@@ -73,14 +73,14 @@
                             <div
                                 class="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center font-black italic shadow-md">
                                 1</div>
-                            <h3 class="text-gray-900 dark:text-white font-black uppercase tracking-tight">Identifikasi
+                            <h3 class="text-gray-900 dark:text-white font-black tracking-tight">Identifikasi
                             </h3>
                         </div>
 
                         <div class="space-y-4">
                             <div>
                                 <label
-                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic uppercase">Judul
+                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic">Judul
                                     Laporan</label>
                                 <input type="text" name="judul_file" value="{{ old('judul_file') }}"
                                     class="form-input" placeholder="INPUT JUDUL..." required>
@@ -88,7 +88,7 @@
 
                             <div>
                                 <label
-                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic uppercase">Penanggung
+                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic">Penanggung
                                     Jawab</label>
                                 <input type="text" name="personel" value="{{ old('personel') }}" class="form-input"
                                     placeholder="NAMA PERSONEL..." required>
@@ -96,7 +96,7 @@
 
                             <div>
                                 <label
-                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic uppercase">Kategori
+                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic">Kategori
                                     Dataset</label>
                                 <select x-model="kategori" name="kategori_file" class="form-select" required>
                                     <option value="">PILIH KATEGORI...</option>
@@ -121,7 +121,7 @@
 
                             <div>
                                 <label
-                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic uppercase">Keterangan
+                                    class="text-[11px] text-gray-500 dark:text-gray-400 tracking-widest mb-1 block italic">Keterangan
                                     Khusus</label>
                                 <textarea name="notes" rows="3" class="form-textarea" placeholder="Catatan tambahan..."></textarea>
                             </div>
@@ -137,7 +137,7 @@
                             <div
                                 class="w-8 h-8 bg-success text-white rounded-lg flex items-center justify-center font-black italic shadow-md">
                                 2</div>
-                            <h3 class="text-gray-900 dark:text-white uppercase leading-none font-black tracking-tight">
+                            <h3 class="text-gray-900 dark:text-white leading-none font-black tracking-tight">
                                 Berkas Sumber (Excel)</h3>
                         </div>
 
@@ -159,11 +159,10 @@
                                             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
                                 </div>
-                                <h4
-                                    class="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
+                                <h4 class="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
                                     Drop Berkas Disini</h4>
                                 <p
-                                    class="text-xs text-slate-400 dark:text-slate-500 mt-2 font-bold tracking-[0.2em] uppercase leading-none">
+                                    class="text-xs text-slate-400 dark:text-slate-500 mt-2 font-bold tracking-[0.2em] leading-none">
                                     Max 20MB (.xlsx / .xls)</p>
                             </div>
                         </div>
@@ -179,18 +178,18 @@
                                     <div class="text-left leading-none">
                                         <p class="text-sm font-black truncate max-w-[200px]"
                                             x-text="uploadedFile ? uploadedFile.name : ''"></p>
-                                        <p class="text-[9px] opacity-80 tracking-widest uppercase italic mt-1"
+                                        <p class="text-[9px] opacity-80 tracking-widest italic mt-1"
                                             x-text="uploadedFile ? formatSize(uploadedFile.size) : ''"></p>
                                     </div>
                                 </div>
                                 <div class="flex gap-2 w-full md:w-auto">
                                     <button type="submit" :disabled="isProcessing"
-                                        class="btn bg-white text-primary hover:bg-gray-100 flex-1 md:px-8 rounded-lg font-black border-none py-3 text-[11px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50">
+                                        class="btn bg-white text-primary hover:bg-gray-100 flex-1 md:px-8 rounded-lg font-black border-none py-3 text-[11px] tracking-widest transition-all active:scale-95 disabled:opacity-50">
                                         <span x-show="!isProcessing">Integrasikan</span>
                                         <span x-show="isProcessing">Loading...</span>
                                     </button>
                                     <button type="button" @click="resetUpload"
-                                        class="btn bg-rose-500 text-white hover:bg-rose-600 px-6 rounded-lg font-black border-none py-3 text-[11px] uppercase tracking-widest transition-all active:scale-95">Batal</button>
+                                        class="btn bg-rose-500 text-white hover:bg-rose-600 px-6 rounded-lg font-black border-none py-3 text-[11px] tracking-widest transition-all active:scale-95">Batal</button>
                                 </div>
                             </div>
                         </div>
@@ -201,15 +200,14 @@
 
         <!-- 4. RIWAYAT TABEL SECTION -->
         <div class="mt-12 text-left">
-            <h3
-                class="text-xl font-black text-gray-900 dark:text-white mb-4 italic tracking-widest uppercase leading-none">
+            <h3 class="text-xl font-black text-gray-900 dark:text-white mb-4 italic tracking-widest leading-none">
                 Riwayat Ingesti</h3>
             <div
                 class="table-responsive bg-white dark:bg-[#0f172a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#334155] overflow-hidden ring-1 ring-black/5">
                 <table class="w-full min-w-[1000px] border-collapse font-black">
                     <thead>
                         <tr
-                            class="text-[10px] font-black tracking-widest text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-[#1e293b] bg-gray-50 dark:bg-black/40 uppercase italic">
+                            class="text-[10px] font-black tracking-widest text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-[#1e293b] bg-gray-50 dark:bg-black/40 italic">
                             <th class="py-4 px-4 text-left">ID Transaksi</th>
                             <th class="py-4 px-4 text-left">Dokumen Laporan</th>
                             <th class="py-4 px-4 text-center">Jenis Dataset</th>
@@ -228,28 +226,28 @@
                                     <div class="text-sm font-black leading-tight">
                                         {{ $item->judul_file ?? 'Invalid Metadata' }}</div>
                                     <div
-                                        class="text-[9px] text-gray-500 dark:text-gray-400 font-bold mt-1 uppercase tracking-tighter italic">
+                                        class="text-[9px] text-gray-500 dark:text-gray-400 font-bold mt-1 tracking-tighter italic">
                                         {{ $log->nama_file }} • {{ $log->created_at->format('d/m/Y H:i') }} •
                                         {{ number_format($log->rows_imported ?? 0) }} Baris
                                     </div>
                                 </td>
                                 <td class="text-center px-4">
                                     <span
-                                        class="badge bg-primary/10 text-primary dark:text-primary-light text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-primary/20">
+                                        class="badge bg-primary/10 text-primary dark:text-primary-light text-[9px] px-3 py-1 rounded-full font-black tracking-widest border border-primary/20">
                                         {{ $log->jenis_dataset }}
                                     </span>
                                 </td>
                                 <td class="text-center px-4">
                                     @if ($log->status == 'Success')
                                         <span
-                                            class="badge bg-success/10 text-success font-black text-[9px] px-4 py-1 rounded-full border border-success/20 uppercase tracking-widest">SUCCESS</span>
+                                            class="badge bg-success/10 text-success font-black text-[9px] px-4 py-1 rounded-full border border-success/20 tracking-widest">SUCCESS</span>
                                     @else
                                         <div class="flex flex-col items-center gap-1">
                                             <span
-                                                class="badge bg-danger/10 text-danger font-black text-[9px] px-4 py-1 rounded-full border border-danger/20 uppercase tracking-widest font-black">FAILED</span>
+                                                class="badge bg-danger/10 text-danger font-black text-[9px] px-4 py-1 rounded-full border border-danger/20 tracking-widest font-black">FAILED</span>
                                             <button type="button" @click="viewErrorLog($el.dataset.msg)"
                                                 data-msg="{{ $log->message }}"
-                                                class="text-[8px] text-rose-500 hover:underline italic font-black uppercase tracking-widest">Detail
+                                                class="text-[8px] text-rose-500 hover:underline italic font-black tracking-widest">Detail
                                                 Log</button>
                                         </div>
                                     @endif
@@ -290,7 +288,7 @@
                         @empty
                             <tr>
                                 <td colspan="5"
-                                    class="py-20 text-center text-gray-400 font-black opacity-30 tracking-widest italic uppercase font-black uppercase">
+                                    class="py-20 text-center text-gray-400 font-black opacity-30 tracking-widest italic font-black">
                                     Belum ada riwayat ingesti</td>
                             </tr>
                         @endforelse
@@ -308,10 +306,10 @@
                     class="w-24 h-24 md:w-32 border-[12px] border-primary/10 border-t-primary rounded-full animate-spin mb-6 shadow-2xl shadow-primary/20">
                 </div>
                 <h2
-                    class="text-xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-tighter animate-pulse leading-none">
+                    class="text-xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tighter animate-pulse leading-none">
                     Sedang Memproses...</h2>
                 <p
-                    class="text-gray-500 dark:text-gray-400 font-black tracking-[0.5em] text-[11px] md:text-xs mt-4 italic uppercase">
+                    class="text-gray-500 dark:text-gray-400 font-black tracking-[0.5em] text-[11px] md:text-xs mt-4 italic">
                     Integrasi Multimoda Berjalan...</p>
             </div>
         </template>
@@ -327,12 +325,12 @@
                         <div
                             class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-600 shadow-inner italic text-5xl font-black leading-none rotate-3">
                             !</div>
-                        <h4 class="mb-4 text-2xl text-gray-900 dark:text-white tracking-tighter uppercase font-black">
+                        <h4 class="mb-4 text-2xl text-gray-900 dark:text-white tracking-tighter font-black">
                             Integrasi Gagal</h4>
                         <div class="bg-rose-50 dark:bg-black/40 p-6 rounded-2xl text-left mb-8 text-rose-700 dark:text-rose-400 font-mono text-[11px] leading-relaxed shadow-inner border border-rose-100 dark:border-rose-900/20 overflow-x-auto max-h-[300px]"
                             x-text="errorLogContent"></div>
                         <button type="button"
-                            class="btn btn-danger w-full rounded-2xl py-5 font-black text-xs uppercase tracking-widest shadow-xl italic"
+                            class="btn btn-danger w-full rounded-2xl py-5 font-black text-xs tracking-widest shadow-xl italic"
                             @click="showErrorModal = false">Tutup Laporan</button>
                     </div>
                 </div>
@@ -348,10 +346,9 @@
                     <!-- Fixed Header -->
                     <div class="bg-primary px-8 py-8 text-white flex justify-between items-center shadow-lg shrink-0">
                         <div class="text-left font-black">
-                            <h5 class="text-2xl font-black uppercase tracking-tighter italic leading-none">Koreksi
+                            <h5 class="text-2xl font-black tracking-tighter italic leading-none">Koreksi
                                 Metadata</h5>
-                            <p
-                                class="text-[10px] opacity-70 font-bold tracking-[0.2em] mt-2 uppercase italic leading-none">
+                            <p class="text-[10px] opacity-70 font-bold tracking-[0.2em] mt-2 italic leading-none">
                                 Audit Trail & Adjustments</p>
                         </div>
                         <button @click="showEditModal = false"
@@ -369,14 +366,14 @@
                             <div class="space-y-6">
                                 <div>
                                     <label
-                                        class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic tracking-widest uppercase leading-none">Judul
+                                        class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic tracking-widest leading-none">Judul
                                         Laporan Baru</label>
                                     <input type="text" name="judul_file" x-model="editForm.judul"
                                         class="form-input shadow-inner py-4" required>
                                 </div>
                                 <div>
                                     <label
-                                        class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic tracking-widest uppercase leading-none">Penanggung
+                                        class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic tracking-widest leading-none">Penanggung
                                         Jawab Baru</label>
                                     <input type="text" name="personel" x-model="editForm.personel"
                                         class="form-input shadow-inner py-4" required>
@@ -384,7 +381,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label
-                                            class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic uppercase leading-none">Kategori</label>
+                                            class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic leading-none">Kategori</label>
                                         <select name="kategori_file" x-model="editForm.kategori"
                                             class="form-select shadow-inner" required>
                                             <option value="Rekap TBM">Rekap TBM III</option>
@@ -394,7 +391,7 @@
                                     </div>
                                     <div x-show="editForm.kategori !== 'Lokasi Kebun'">
                                         <label
-                                            class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic uppercase leading-none">Periode
+                                            class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic leading-none">Periode
                                             Baru</label>
                                         <select name="periode_data" x-model="editForm.periode"
                                             class="form-select shadow-inner" required>
@@ -407,7 +404,7 @@
                                 </div>
                                 <div>
                                     <label
-                                        class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic uppercase leading-none">Catatan
+                                        class="text-[11px] font-black text-gray-500 dark:text-gray-400 mb-1.5 block italic leading-none">Catatan
                                         Perubahan</label>
                                     <textarea name="notes" x-model="editForm.notes" rows="3" class="form-textarea shadow-inner"></textarea>
                                 </div>
@@ -415,10 +412,10 @@
                             <!-- Buttons -->
                             <div class="flex flex-col sm:flex-row gap-4 pt-4 shrink-0">
                                 <button type="button"
-                                    class="btn bg-gray-100 dark:bg-black/30 text-gray-600 dark:text-gray-300 flex-1 py-5 font-black rounded-2xl uppercase tracking-widest border-none transition-all italic shadow-sm leading-none"
+                                    class="btn bg-gray-100 dark:bg-black/30 text-gray-600 dark:text-gray-300 flex-1 py-5 font-black rounded-2xl tracking-widest border-none transition-all italic shadow-sm leading-none"
                                     @click="showEditModal = false">Batalkan</button>
                                 <button type="submit"
-                                    class="btn btn-primary flex-1 py-5 font-black rounded-2xl uppercase shadow-2xl tracking-[0.2em] transition-all hover:scale-[1.02] leading-none italic">Update
+                                    class="btn btn-primary flex-1 py-5 font-black rounded-2xl shadow-2xl tracking-[0.2em] transition-all hover:scale-[1.02] leading-none italic">Update
                                     Data</button>
                             </div>
                         </form>
@@ -437,20 +434,20 @@
                     <div
                         class="mx-auto mb-6 h-16 w-16 bg-rose-50 dark:bg-rose-900/30 text-rose-600 flex items-center justify-center rounded-3xl text-4xl font-black shadow-inner animate-bounce ring-4 ring-rose-500/10 italic font-black">
                         !</div>
-                    <h4 class="text-xl font-black uppercase tracking-tight text-gray-900 dark:text-white leading-none">
+                    <h4 class="text-xl font-black tracking-tight text-gray-900 dark:text-white leading-none">
                         Hapus Dataset?</h4>
                     <p
-                        class="text-[10px] text-gray-500 dark:text-gray-400 font-bold tracking-widest mt-4 uppercase italic leading-tight">
+                        class="text-[10px] text-gray-500 dark:text-gray-400 font-bold tracking-widest mt-4 italic leading-tight">
                         Dataset rill & berkas fisik akan hilang permanen dari server!</p>
                     <div class="mt-8 flex gap-3">
                         <button type="button"
-                            class="btn btn-outline-danger flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic leading-none"
+                            class="btn btn-outline-danger flex-1 py-4 rounded-xl font-black text-[10px] tracking-widest transition-all italic leading-none"
                             @click="showDeleteModal = false">Batal</button>
                         <form :action="`/monitoring/import/${selectedItemId}`" method="POST" class="flex-1"
                             @submit="isProcessing = true">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                class="btn btn-danger w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-500/20 italic transition-all hover:bg-rose-700 leading-none font-black uppercase">Eksekusi</button>
+                                class="btn btn-danger w-full py-4 rounded-xl font-black text-[10px] tracking-widest shadow-lg shadow-rose-500/20 italic transition-all hover:bg-rose-700 leading-none font-black">Eksekusi</button>
                         </form>
                     </div>
                 </div>

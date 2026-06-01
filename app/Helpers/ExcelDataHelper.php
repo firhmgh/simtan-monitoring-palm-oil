@@ -110,6 +110,46 @@ class ExcelDataHelper
         ];
     }
 
+    public static function getDaftarKebunFull()
+    {
+        return [
+            '1KSM' => 'Kebun Sei Meranti',
+            '1KBT' => 'Kebun Batang Toru',
+            '1KSD' => 'Kebun Sei Daun',
+            '1KTO' => 'Kebun Tanjung Olak',
+            '1KAT' => 'Kebun Aek Torop',
+            '1KSK' => 'Kebun Sei Kebara',
+            '1KSB' => 'Kebun Sei Baruhur',
+            '1KAR' => 'Kebun Air Merah',
+            '1KSU' => 'Kebun Sei Unit',
+            '1KAS' => 'Kebun Aek Nabara Selatan',
+            '1KAN' => 'Kebun Aek Nabara Utara',
+            '1KRP' => 'Kebun Rantau Prapat',
+            '1KMS' => 'Kebun Merbau Selatan',
+            '1KLJ' => 'Kebun Labuhan Haji',
+            '1KMM' => 'Kebun Mambang Muda',
+            '1KSL' => 'Kebun Sei Silau',
+            '1KDP' => 'Kebun Sei Dadap',
+            '1KPM' => 'Kebun Pulau Mandi',
+            '1KAM' => 'Kebun Ambalutu',
+            '1KHP' => 'Kebun Huta Padang',
+            '1KBS' => 'Kebun Bandar Selamat',
+            '1KBN' => 'Kebun Bangun',
+            '1KGR' => 'Kebun Gunung Para',
+            '1KGP' => 'Kebun Gunung Pamela',
+            '1KGM' => 'Kebun Gunung Monaco',
+            '1KSA' => 'Kebun Silau Dunia',
+            '1KBB' => 'Kebun Bandar Betsy',
+            '1KDH' => 'Kebun Dusun Hulu',
+            '1KRB' => 'Kebun Rambutan',
+            '1KTR' => 'Kebun Tanah Raja',
+            '1KSG' => 'Kebun Sarang Giting',
+            '1KSP' => 'Kebun Sei Putih',
+            '1KBU' => 'Kebun Bukit Tujuh',
+            '1KHG' => 'Kebun Hapesong',
+        ];
+    }
+
     /**
      * Memformat data peringkat kondisi pohon untuk chart global.
      */

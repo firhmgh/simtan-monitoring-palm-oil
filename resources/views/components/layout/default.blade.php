@@ -43,56 +43,58 @@
         </svg>
     </div>
 
-    <!-- GLOBAL NOTIFICATION SYSTEM (TOAST ONLY) - Z-INDEX 99999 -->
+    <!-- GLOBAL NOTIFICATION SYSTEM (TOAST TOP-CENTER) -->
     <div x-data="{ show: false, message: '', type: 'success' }" x-cloak
         @toast.window="
-            message = $event.detail.message;
-            type = $event.detail.type || 'success';
-            show = true;
-            setTimeout(() => show = false, 5000);
-        "
-        class="fixed inset-0 pointer-events-none z-[99999]">
+        message = $event.detail.message;
+        type = $event.detail.type || 'success';
+        show = true;
+        setTimeout(() => show = false, 5000);
+    "
+        class="fixed inset-x-0 top-8 flex justify-center pointer-events-none z-[999999]">
 
-        <!-- Floating Corner Toast (Berlaku untuk Success, Error, dan Info) -->
-        <div x-show="show" x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-x-12" x-transition:enter-end="opacity-100 translate-x-0"
-            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0"
-            x-transition:leave-end="opacity-0 translate-x-12"
-            class="fixed top-8 right-8 w-full max-w-sm pointer-events-auto">
+        <!-- Floating Premium Toast -->
+        <div x-show="show" x-transition:enter="transition ease-out duration-500"
+            x-transition:enter-start="-translate-y-20 opacity-0 scale-90"
+            x-transition:enter-end="translate-y-0 opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="-translate-y-20 opacity-0 scale-90" class="pointer-events-auto w-full max-w-md">
 
             <div :class="{
-                'border-emerald-500 bg-emerald-50 dark:bg-emerald-950': type === 'success',
-                'border-rose-500 bg-rose-50 dark:bg-rose-950': type === 'error',
-                'border-blue-500 bg-blue-50 dark:bg-blue-950': type === 'info'
+                'border-emerald-500 bg-white/90 dark:bg-emerald-950/90': type === 'success',
+                'border-rose-500 bg-white/90 dark:bg-rose-950/90': type === 'error'
             }"
-                class="border-l-[6px] rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.2)] p-6 flex items-center gap-5 border border-white/20 backdrop-blur-md">
+                class="border-l-[6px] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-5 flex items-center gap-5 border border-white/20 backdrop-blur-xl">
 
-                <!-- Icons -->
-                <div class="flex-shrink-0">
+                <!-- Icon -->
+                <div :class="type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'"
+                    class="p-3 text-white rounded-2xl shadow-lg shrink-0">
                     <template x-if="type === 'success'">
-                        <div class="p-2 bg-emerald-500 text-white rounded-xl shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3"
-                                viewBox="0 0 24 24">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </div>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
                     </template>
                     <template x-if="type === 'error'">
-                        <div class="p-2 bg-rose-500 text-white rounded-xl shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3"
-                                viewBox="0 0 24 24">
-                                <path d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </template>
                 </div>
 
-                <!-- Text -->
+                <!-- Text Content -->
                 <div class="flex-1">
-                    <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1" x-text="type"></p>
-                    <p class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-snug"
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1"
+                        x-text="type === 'success' ? 'System Integrated' : 'Security Alert'"></p>
+                    <p class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-tight leading-tight"
                         x-text="message"></p>
                 </div>
+
+                <!-- Close Button -->
+                <button @click="show = false" class="opacity-30 hover:opacity-100 transition-opacity">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                        <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
         </div>
     </div>

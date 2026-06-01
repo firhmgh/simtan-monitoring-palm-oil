@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Services\AIService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+// Import Model untuk ekstraksi context data
+use App\Models\DetailRekap;
+use App\Models\KorelasiVegetatif;
 
 /**
  * AI_Controller - Decision Support System Interface
@@ -31,20 +34,19 @@ class AI_Controller extends Controller
     }
 
     /**
-     * DASHBOARD INSIGHT: Narasi Global Tren Regional
-     * Mendukung pemrosesan berdasarkan MODE (Multimodal/Growth/Survival)
-     * dan fitur Force Refresh untuk bypass cache.
+     * DASHBOARD & REPORT INSIGHT: Narasi Global Tren Regional atau Spesifik Kebun
+     * Terintegrasi dengan parameter 'kebun' untuk akurasi data & logging.
      */
     public function getDashboardInsight(Request $request)
     {
         try {
             $selectedSlug = $request->query('periode');
-
-            // INTEGRASI: Tangkap mode dari dropdown frontend (default: multimodal)
-            $mode = $request->query('mode', 'multimodal');
-
-            // Cek apakah user menekan tombol Refresh AI (Manual)
+            $kebun = $request->query('kebun'); // Tangkap parameter kebun dari frontend
             $refresh = $request->has('refresh');
+
+            // Logika penentuan mode otomatis: 
+            // Jika ada parameter kebun -> kebun_summary, jika tidak -> multimodal (Global)
+            $mode = $kebun ? 'kebun_summary' : 'multimodal';
 
             $dbKey = $this->mapPeriode[$selectedSlug] ?? $selectedSlug;
 
@@ -52,44 +54,72 @@ class AI_Controller extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Dimensi waktu tidak valid.']);
             }
 
-            // INTEGRASI: Kirim dbKey, mode, dan flag refresh ke service
-            $insight = $this->aiService->generateExecutiveSummary($dbKey, $mode, $refresh);
+            // Memanggil logic analitik dengan parameter kebun (param ke-4)
+            // Hal ini memastikan AIService melakukan filtering data dan logging yang benar
+            $insight = $this->aiService->generateExecutiveSummary($dbKey, $mode, $refresh, $kebun);
 
             return response()->json([
                 'status' => 'success',
                 'narration' => $insight,
-                'engine' => 'Hybrid Agronomy Engine'
+                'engine' => $kebun ? 'Unit Diagnostic Engine' : 'Hybrid Regional Engine'
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
      * BLOCK INSIGHT: Diagnosa & Prediksi Spesifik Per Blok
+     * Terintegrasi dengan Scopus Standard Enrichment (Topografi, Drainase, & MAP Age)
      */
     public function getBlockInsight(Request $request)
     {
         try {
             $request->validate([
                 'kebun' => 'required',
-                'blok_id' => 'required',
+                'blok_id' => 'required', // ID dari GeoJSON (Afdeling/Blok)
                 'periode' => 'required'
             ]);
 
             $dbKey = $this->mapPeriode[$request->periode] ?? $request->periode;
-            $refresh = $request->has('refresh');
 
+            // 1. Ekstraksi Raw Data dari Database untuk Context Enrichment
+            $rekap = DetailRekap::where('kebun', $request->kebun)
+                ->where('afdeling', $request->blok_id)
+                ->where('periode', $dbKey)
+                ->first();
+
+            if (!$rekap) {
+                return response()->json([
+                    'status' => 'success',
+                    'data' => ['rekomendasi_ai' => "Data sensus untuk unit {$request->blok_id} tidak ditemukan pada periode ini."]
+                ]);
+            }
+
+            // 2. Integrasi Struktur Data Tambahan (Logic Literatur Agronomi)
+            // Menggunakan enrichedContext spesifik untuk dikirim ke AIService
+            $enrichedContext = [
+                'unit' => $request->blok_id,
+                'risiko_topografi' => $rekap->topografi,
+                'status_drainase' => $rekap->persen_area_tergenang > 2 ? 'KRITIS' : 'NORMAL',
+                'map_age' => ($rekap->tahun_tanam) ? (date('Y') - $rekap->tahun_tanam) . ' Tahun' : 'Tidak Terdata',
+            ];
+
+            // 3. Eksekusi Analisis via AIService dengan Enriched Context
             $analysis = $this->aiService->analyzeSpecificBlok(
                 $request->kebun,
                 $request->blok_id,
                 $dbKey,
-                $refresh
+                $request->has('refresh'),
+                $enrichedContext
             );
 
             return response()->json([
                 'status' => 'success',
-                'data' => $analysis
+                'data' => [
+                    'rekomendasi_ai' => $analysis,
+                    'metadata' => $enrichedContext
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
@@ -98,12 +128,10 @@ class AI_Controller extends Controller
 
     /**
      * AI CONFIGURATION: Manajemen API Keys & Threshold Agronomi
-     * Sinkron dengan form pada settings.blade.php
      */
     public function updateConfig(Request $request)
     {
         try {
-            // Validasi Input
             $request->validate([
                 'api_primary' => 'required',
                 'api_key_primary' => 'required',
@@ -113,7 +141,6 @@ class AI_Controller extends Controller
                 'threshold_red' => 'required|numeric|min:0|max:100',
             ]);
 
-            // Melakukan update pada row pertama tabel ai_configs
             DB::table('ai_configs')->updateOrInsert(
                 ['id' => 1],
                 [

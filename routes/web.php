@@ -62,6 +62,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/detail-areal/{id?}', [MonitoringController::class, 'detailAreal'])->name('detail');
         Route::get('/laporan', [MonitoringController::class, 'laporan'])->name('laporan');
 
+        // API Preview (Gunakan awalan /api agar jelas ini jalur data)
+        Route::get('/laporan/preview-html', [MonitoringController::class, 'previewHTML'])->name('laporan.preview');
+
+        // Download PDF
+        Route::get('/laporan/export-pdf', [MonitoringController::class, 'exportPDF'])->name('laporan.pdf');
+
         // Alias untuk menjaga kecocokan dengan navigasi sidebar lama
         Route::get('/settings-main', [MonitoringController::class, 'settings'])->name('settings');
     });

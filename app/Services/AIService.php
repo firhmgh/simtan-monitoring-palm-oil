@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * AIService - Smart Decision Support System Engine
- * Mengelola inferensi neural menggunakan Google Gemini & Groq API.
- * Mendukung analisis multimodal, pertumbuhan (growth), dan mortalitas (survival).
+ * AIService - Expert Decision Support System Engine
+ * Mengelola inferensi neural dengan pola pikir Senior Agronomist Auditor PTPN IV.
+ * Fokus: Causal Analysis (Sebab-Akibat), Vigor Evaluation, dan Predictive Risk.
+ * Scopus Standard: Terintegrasi dengan Hukum Minimum Liebig & Teori Nutrient Leaching.
  */
 class AIService
 {
@@ -21,33 +22,44 @@ class AIService
 
     public function __construct()
     {
-        // Mengambil konfigurasi engine (API Key & Provider) dari database
+        // Konfigurasi engine dari database ai_configs
         $this->config = DB::table('ai_configs')->first();
     }
 
     /**
-     * DASHBOARD LEVEL: Narasi Berdasarkan Mode Analisis yang Dipilih User
+     * DASHBOARD / REPORT LEVEL: Narasi Tren (Global Regional atau Per Kebun)
      */
-    public function generateExecutiveSummary($periode, $mode = 'multimodal', $forceRefresh = false)
+    public function generateExecutiveSummary($periode, $mode = 'multimodal', $forceRefresh = false, $kebunCode = null)
     {
-        // 1. Pre-processing: Ambil data statistik populasi
-        $stats = DetailRekap::where('periode', $periode)->where('is_total', 1)->get();
-        if ($stats->isEmpty()) {
-            return "Dataset monitoring untuk periode ini belum tersedia untuk dianalisis oleh AI.";
+        // 1. Filter dataset berdasarkan cakupan (Regional I atau Kebun Tertentu)
+        $query = DetailRekap::where('periode', $periode)->where('is_total', 1);
+        if ($kebunCode) {
+            $query->where('kebun', $kebunCode);
+            $mode = 'kebun_summary';
         }
 
+        $stats = $query->get();
+        if ($stats->isEmpty()) {
+            return "Dataset untuk " . ($kebunCode ?? "Regional I") . " belum tersedia di database utama.";
+        }
+
+        // 2. Kalkulasi statistik dasar untuk context AI
         $avgHealth = $stats->avg('persen_pkk_normal');
         $worstUnit = DetailRekap::where('periode', $periode)
             ->where('is_total', 1)
             ->orderBy('persen_pkk_mati', 'desc')
             ->first();
 
-        // 2. Ambil data vegetatif (Biometrik Growth) asli dari database
-        $veg = KorelasiVegetatif::where('periode', $periode)->get();
+        // 3. Filter data biometrik vegetatif
+        $vegQuery = KorelasiVegetatif::where('periode', $periode);
+        if ($kebunCode) $vegQuery->where('kebun', $kebunCode);
+        $veg = $vegQuery->get();
 
-        // 3. Susun Konteks (Fusi Data) - FIX: Menggunakan key 'avg_girth' agar sinkron dengan buildPrompt
+        $unitLabel = $kebunCode ?: 'Regional I';
+
         $context = [
             'mode_analisis' => $mode,
+            'unit_scope' => $unitLabel,
             'periode' => $periode,
             'data_populasi' => [
                 'avg_survival_rate' => round($avgHealth, 2) . '%',
@@ -62,138 +74,161 @@ class AIService
             ]
         ];
 
-        // INTEGRASI: Gunakan variabel $mode agar tercatat dengan benar di database
-        return $this->askAI($mode, $context, $forceRefresh, 'Regional I');
+        return $this->askAI($mode, $context, $forceRefresh, $unitLabel);
     }
 
     /**
-     * BLOCK LEVEL: Diagnosa Preskriptif per Unit Blok
+     * BLOCK LEVEL: Diagnosa Audit Spesifik per Blok
      */
-    public function analyzeSpecificBlok($kebun, $blokId, $periode, $forceRefresh = false)
+    public function analyzeSpecificBlok($kebun, $blokId, $periode, $forceRefresh = false, $enrichedContext = [])
     {
-        $data = DetailRekap::where('kebun', $kebun)
-            ->where('blok', $blokId)
-            ->where('periode', $periode)
-            ->first();
+        $rekap = DetailRekap::where('kebun', $kebun)->where('afdeling', $blokId)->where('periode', $periode)->first();
+        $veg = KorelasiVegetatif::where('kebun', $kebun)->where('blok', $blokId)->where('periode', $periode)->first();
 
-        if (!$data) return null;
+        if (!$rekap) return "Data primer untuk unit $blokId tidak ditemukan.";
 
         $context = [
-            'unit' => $kebun,
-            'blok' => $blokId,
-            'sr' => $data->persen_pkk_normal . '%',
-            'lcc_coverage' => $data->persen_tutupan_kacangan . '%',
-            'dead_rate' => $data->persen_pkk_mati . '%'
+            'periode' => $periode,
+            'unit' => $blokId,
+            'metadata_risiko' => $enrichedContext,
+            'kondisi_sensus' => [
+                'survival_rate' => $rekap->persen_pkk_normal . '%',
+                'pohon_mati' => $rekap->pkk_mati . ' pokok',
+                'pohon_kerdil' => $rekap->persen_pkk_non_valuer . '%',
+                'tutupan_lcc' => $rekap->persen_tutupan_kacangan . '%',
+                'area_tergenang' => $rekap->persen_area_tergenang . '%',
+                'piringan_gulma' => $rekap->persen_pir_pkk_kurang_baik . '%',
+            ],
+            'pertumbuhan_vegetatif' => $veg ? [
+                'lingkar_batang_m' => $veg->lingkar_batang,
+                'jumlah_pelepah' => $veg->jumlah_pelepah,
+                'panjang_pelepah_m' => $veg->panjang_pelepah
+            ] : 'Data biometrik belum tersedia'
         ];
 
         return $this->askAI('block_diagnostic', $context, $forceRefresh, $kebun . '-' . $blokId);
     }
 
     /**
-     * Core Engine Logic dengan Mode-Specific Caching & Failsafe
+     * Caching & Failsafe Controller
      */
     public function askAI($mode, $contextData, $forceRefresh = false, $unitLabel = null)
     {
         if (!$this->config) return "Konfigurasi AI tidak ditemukan. Sila atur di menu Settings.";
 
         $prompt = $this->buildPrompt($mode, $contextData);
+        $cacheKey = "ai_audit_" . $mode . "_" . md5($prompt);
 
-        // Cache key menyertakan MODE agar hasil tidak tertukar saat ganti dropdown
-        $cacheKey = "ai_res_" . $mode . "_" . md5($prompt);
-
-        if ($forceRefresh) {
-            Cache::forget($cacheKey);
-        }
+        if ($forceRefresh) Cache::forget($cacheKey);
 
         return Cache::remember($cacheKey, 3600, function () use ($prompt, $mode, $unitLabel, $contextData) {
-
-            // LOG PENGGUNAAN KE DATABASE (Audit Trail Scopus)
+            // Logging Audit Trail (Scopus Requirement)
             try {
                 DB::table('ai_usage_logs')->insert([
-                    'user_id'    => Auth::id() ?? 1,
-                    'kebun'      => $unitLabel ?? 'Global',
-                    'mode'       => $mode,
-                    'periode'    => $contextData['periode'] ?? 'Custom',
+                    'user_id' => Auth::id() ?? 1,
+                    'kebun' => $unitLabel ?? 'Global',
+                    'mode' => $mode,
+                    'periode' => $contextData['periode'] ?? 'Unknown',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
             } catch (\Exception $e) {
-                Log::error("Gagal mencatat log AI: " . $e->getMessage());
+                Log::error("Log AI Error: " . $e->getMessage());
             }
 
             try {
-                // Mencoba Layanan Utama (L1)
                 return $this->requestToLLM($this->config->provider_primary, $this->config->key_primary, $prompt);
             } catch (\Exception $e) {
-                Log::warning("AI Primary Provider Gagal, mencoba backup. Error: " . $e->getMessage());
+                Log::warning("Primary AI failed: " . $e->getMessage());
                 try {
-                    // Failsafe ke Layanan Cadangan (L2)
                     return $this->requestToLLM($this->config->provider_backup, $this->config->key_backup, $prompt);
                 } catch (\Exception $e2) {
-                    return "Gagal melakukan analisis neural. Silakan periksa validitas API Key di Settings.";
+                    return "Neural Engine Error: " . $e2->getMessage();
                 }
             }
         });
     }
 
     /**
-     * Request Machine: Menangani integrasi ke API Gemini (v1) dan Groq
+     * Logic Inference Engine (Logika Ilmiah Paling Lengkap)
      */
     private function requestToLLM($provider, $key, $prompt)
     {
-        if (empty($key)) throw new \Exception("API Key untuk $provider kosong.");
+        if (empty($key)) throw new \Exception("API Key belum dikonfigurasi.");
 
-        $systemInstructions = "Anda adalah Pakar Agronomi PTPN IV. Berikan analisis teknis yang tajam, sangat singkat (maks 3 kalimat) dalam Bahasa Indonesia profesional.";
+        $systemInstructions = "Anda adalah Senior Agronomist Auditor PTPN IV Regional I. 
+        Tugas Anda: Melakukan audit diagnostik TBM III secara kritis dan scientific berbasis literatur berikut:
+        1. Fisiologi Akar: 'Area Tergenang' > 2% memicu kondisi hipoksia yang menghambat respirasi akar dan penyerapan hara hara makro (N, P, K).
+        2. Konservasi Tanah: LCC < 90% pada topografi 'Berbukit' secara ilmiah meningkatkan laju erosi dan Nutrient Leaching (pencucian hara).
+        3. Kompetisi Hara: Piringan bergulma (Pir Pkk Kurang Baik) menyebabkan kompetisi unsur hara yang mengakibatkan pertumbuhan vegetatif Underperform.
+        4. Gejala Etiolasi: Jika 'Lingkar Batang' < 0.70m namun 'Panjang Pelepah' normal, diagnosa sebagai ketidakseimbangan Rasio C/N atau kurangnya intensitas cahaya.
+        Karakteristik: Kritis, berbasis bukti (evidence-based), dan berikan rekomendasi preskriptif spesifik.";
 
         if ($provider === 'gemini') {
             $url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={$key}";
             $response = Http::withoutVerifying()->post($url, [
-                'contents' => [
-                    ['parts' => [['text' => $systemInstructions . "\n\nInstruksi: " . $prompt]]]
-                ],
+                'contents' => [['parts' => [['text' => $systemInstructions . "\n\nInstruksi Audit: " . $prompt]]]],
                 'generationConfig' => ['temperature' => 0.4]
             ]);
 
-            if ($response->failed()) throw new \Exception("Gemini Error: " . ($response->json()['error']['message'] ?? 'Unknown'));
-
-            return $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? "Respon Gemini Kosong";
+            $result = $response->json();
+            if (isset($result['error'])) throw new \Exception($result['error']['message']);
+            return $result['candidates'][0]['content']['parts'][0]['text'] ?? "Gagal memproses respon Google.";
         }
 
         if ($provider === 'groq') {
             $response = Http::withoutVerifying()->withToken($key)->post("https://api.groq.com/openai/v1/chat/completions", [
                 'model' => 'llama-3.1-8b-instant',
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemInstructions],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
+                'messages' => [['role' => 'system', 'content' => $systemInstructions], ['role' => 'user', 'content' => $prompt]],
                 'temperature' => 0.3,
             ]);
 
-            if ($response->failed()) throw new \Exception("Groq Error: " . ($response->json()['error']['message'] ?? 'Unknown'));
-
-            return $response->json()['choices'][0]['message']['content'] ?? "Respon Groq Kosong";
+            $result = $response->json();
+            if (isset($result['error'])) throw new \Exception($result['error']['message']);
+            return $result['choices'][0]['message']['content'] ?? "Gagal memproses respon Groq.";
         }
 
-        throw new \Exception("Provider $provider tidak didukung.");
+        throw new \Exception("Provider tidak didukung.");
     }
 
     /**
-     * Prompt Engineering: Switch logic berdasarkan pilihan mode di Frontend
+     * Prompt Engineering (Logika Kausalitas Terlengkap)
      */
     private function buildPrompt($mode, $data)
     {
+        $std = "Standar TBM III: Girth > 0.70m, Pelepah > 32, LCC > 90%, Mortality < 2%.";
+
         switch ($mode) {
+            case 'block_diagnostic':
+                return "AUDIT AGRONOMI BLOK {$data['unit']}: " . json_encode($data) . "
+                REFERENSI STANDAR: $std
+                INSTRUKSI ANALISIS CAUSAL:
+                1. Hubungkan variabel 'metadata_risiko' (Topografi: " . ($data['metadata_risiko']['risiko_topografi'] ?? 'N/A') . ") dengan kondisi LCC.
+                2. Evaluasi status 'Area Tergenang'. Jika kritis, wajib berikan instruksi perbaikan sistem drainase untuk mencegah root rot.
+                3. Identifikasi apakah faktor penghambat pertumbuhan adalah kompetisi hara (gulma) atau lingkungan.
+                4. Kesimpulan harus bersifat Preskriptif (Solusi teknis).";
+
+            case 'kebun_summary':
+                return "AUDIT RINGKASAN KEBUN {$data['unit_scope']}: " . json_encode($data) . "
+                Tugas: Lakukan evaluasi spesifik terhadap performa agronomi unit kebun ini secara mandiri. 
+                Bandingkan biometrik vegetatif dengan standar PPKS. 
+                Berikan rekomendasi preskriptif langsung untuk manajer unit kebun tersebut.";
+
             case 'growth':
-                return "Analisis pertumbuhan VIGOR TUMBUH. Data: " . json_encode($data['data_vegetatif']) . ". Bandingkan lingkar batang terhadap standar TBM III (min 0.70 m). Evaluasi apakah pertumbuhan tergolong vigor atau stagnan.";
+                return "ANALISIS VIGOR VEGETATIF PER REGIONAL: " . json_encode($data['data_vegetatif']) . "
+                Bandingkan rata-rata Girth terhadap target 0.70m. 
+                Jika terdapat deviasi, jelaskan kemungkinan faktor dominan (Genetik vs Environment). 
+                Tentukan kategori: Superior, Average, atau Underperform.";
 
             case 'survival':
-                return "Analisis MORTALITAS. Data: " . json_encode($data['data_populasi']) . ". Fokus pada unit " . $data['data_populasi']['unit_terburuk'] . " dan risiko kematian pohon berdasarkan populasi kerdil.";
-
-            case 'block_diagnostic':
-                return "Analisis Blok Spesifik: " . json_encode($data) . ". Berikan 1 alasan ilmiah potensi masalah dan 1 instruksi prioritas bagi asisten kebun.";
+                return "AUDIT MORTALITAS & KONSOLIDASI BLOK: " . json_encode($data['data_populasi']) . "
+                Gunakan Hukum Minimum Liebig: Identifikasi variabel mana yang paling membatasi kelangsungan hidup pohon. 
+                Analisis risiko opportunity loss jika unit " . $data['data_populasi']['unit_terburuk'] . " tidak segera ditangani.";
 
             default: // multimodal
-                return "Analisis MULTIMODAL. Korelasikan SR (" . $data['data_populasi']['avg_survival_rate'] . ") dengan rata-rata lingkar batang (" . $data['data_vegetatif']['avg_girth'] . "). Sebutkan satu insight strategis untuk Regional I.";
+                return "EXECUTIVE MULTIMODAL INFERENCE: " . json_encode($data) . "
+                Tugas: Menghubungkan kualitas perawatan lapangan (Sensus) dengan output biologis tanaman (Girth). 
+                Jelaskan dampak anomali di unit terburuk terhadap masa TM (Tanaman Menghasilkan) di masa depan.";
         }
     }
 }

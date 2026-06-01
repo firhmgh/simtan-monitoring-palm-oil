@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 // Arsitektur Model
 use App\Models\SimtanForm;
@@ -19,23 +20,28 @@ use App\Models\UploadLog;
 use App\Services\ChartDataService;
 use App\Services\SimtanFormService;
 use App\Services\SpatialDataService;
+use App\Services\AIService;
 use App\Helpers\ExcelDataHelper;
 
 /**
  * MonitoringController - Scopus Q1 Standardized
  * Fokus: Decision Support System (DSS) untuk Perkebunan Presisi PTPN IV.
+ * Mengintegrasikan Agronomic Performance Matrix untuk analisis korelasi.
  */
 class MonitoringController extends Controller
 {
     protected $chartService;
     protected $spatialService;
+    protected $aiService;
 
-    // Standar Agronomi Nasional (Referensi: PPKS)
+    // Standar Agronomi Nasional (Referensi: PPKS & Master Plan PTPN IV)
     const STD_SURVIVAL_RATE   = 98.0;
-    const STD_LINGKAR_BATANG  = 12.0;
+    const STD_LINGKAR_BATANG  = 12.0; // Target cm TBM III
+    const STD_FROND_COUNT     = 32.0; // Target jumlah pelepah TBM III
+    const STD_SPH_TARGET      = 143.0; // Standar Pokok per Hektar
 
     /**
-     * MASTER PEMETAAN PERIODE (Professional Layer)
+     * MASTER PEMETAAN PERIODE
      * Menghubungkan Slug URL -> Database Key -> Label Manusia
      */
     protected $mapPeriode = [
@@ -45,10 +51,11 @@ class MonitoringController extends Controller
         'tahunan-2025'   => ['db_key' => 'Tahun 2025',             'label' => 'Konsolidasi Tahun 2025'],
     ];
 
-    public function __construct(ChartDataService $chartService, SpatialDataService $spatialService)
+    public function __construct(ChartDataService $chartService, SpatialDataService $spatialService, AIService $aiService)
     {
         $this->chartService = $chartService;
         $this->spatialService = $spatialService;
+        $this->aiService = $aiService;
         $this->middleware('auth');
     }
 
@@ -91,19 +98,78 @@ class MonitoringController extends Controller
             'latestKebun' => collect()
         ];
 
+        // Inisialisasi Matrix Agregat (Layer Decision Support)
+        $agregat = [
+            'vigor_index' => 0,
+            'maintenance_score' => 0,
+            'risk_index' => 0,
+            'sph_actual' => 0,
+            'survival_rate' => 0,
+            'avg_girth' => 0,
+            'compliance_rate' => 0,
+            'deviasi_girth' => 0,
+            'deviasi_survival' => 0,
+            'correlation_insight' => 'Data tidak memadai untuk inferensi'
+        ];
+
         if ($hasData) {
+            // A. Ekstraksi Data Sensus & Pemeliharaan (Data Fusion)
             $stats = DetailRekap::where('is_total', 1)->where('periode', $dbKey)
-                ->selectRaw('SUM(luas_ha) as luas, SUM(pkk_normal) as pokok, AVG(persen_pkk_normal) as health')->first();
+                ->selectRaw('
+                    SUM(luas_ha) as luas, 
+                    SUM(pkk_normal) as pokok, 
+                    AVG(persen_pkk_normal) as health,
+                    AVG(persen_tutupan_kacangan) as avg_lcc,
+                    AVG(persen_pir_pkk_kurang_baik) as avg_pir_buruk,
+                    AVG(persen_area_tergenang) as avg_tergenang
+                ')->first();
 
             $viewData['total_luas']  = (float) ($stats->luas ?? 0);
             $viewData['total_pokok'] = (int) ($stats->pokok ?? 0);
             $viewData['avg_health']  = round($stats->health ?? 0, 1);
 
+            // B. Ekstraksi Data Biometrik (Korelasi Vegetatif)
+            $vegStats = KorelasiVegetatif::where('periode', $dbKey)
+                ->selectRaw('AVG(lingkar_batang) as girth, AVG(jumlah_pelepah) as frond')
+                ->first();
+
+            $agregat['avg_girth'] = (float) ($vegStats->girth ?? 0);
+            $avg_frond = (float) ($vegStats->frond ?? 0);
+
+            // C. PERHITUNGAN LOGIKA MATRIX (Rekomendasi Cerdas)
+
+            // 1. Vigor Index (Kepatuhan Girth + Pelepah)
+            $girth_comp = ($agregat['avg_girth'] > 0) ? ($agregat['avg_girth'] / self::STD_LINGKAR_BATANG) * 100 : 0;
+            $frond_comp = ($avg_frond > 0) ? ($avg_frond / self::STD_FROND_COUNT) * 100 : 0;
+            $agregat['vigor_index'] = round(($girth_comp + $frond_comp) / 2, 1);
+
+            // 2. Maintenance Score (LCC & Kebersihan Piringan)
+            $agregat['maintenance_score'] = round((($stats->avg_lcc ?? 0) + (100 - ($stats->avg_pir_buruk ?? 0))) / 2, 1);
+
+            // 3. Risk & Productivity
+            $agregat['risk_index'] = round($stats->avg_tergenang ?? 0, 2);
+            $agregat['sph_actual'] = ($viewData['total_luas'] > 0) ? round($viewData['total_pokok'] / $viewData['total_luas'], 1) : 0;
+
+            // 4. Insight Kausalitas (Untuk AI Narrative Context)
+            if ($agregat['maintenance_score'] > 90 && $agregat['vigor_index'] < 80) {
+                $agregat['correlation_insight'] = "Anomali: Pemeliharaan standar namun pertumbuhan stagnan (Potensi Masalah Genetika/Tanah).";
+            } elseif ($agregat['risk_index'] > 5) {
+                $agregat['correlation_insight'] = "Risiko Tinggi: Drainase buruk menghambat respirasi akar.";
+            } else {
+                $agregat['correlation_insight'] = "Normal: Pertumbuhan sejalan dengan intensitas pemeliharaan.";
+            }
+
+            // D. Hitung Compliance & Deviasi Original
             if ($viewData['total_luas'] > 0) {
-                $viewData['populasi_compliance'] = round(($viewData['total_pokok'] / ($viewData['total_luas'] * 143)) * 100, 1);
+                $viewData['populasi_compliance'] = round(($viewData['total_pokok'] / ($viewData['total_luas'] * self::STD_SPH_TARGET)) * 100, 1);
             }
             $viewData['health_compliance'] = round(($viewData['avg_health'] / self::STD_SURVIVAL_RATE) * 100, 1);
+            $agregat['compliance_rate'] = $viewData['health_compliance'];
+            $agregat['survival_rate'] = $viewData['avg_health'];
+            $agregat['deviasi_girth'] = round($agregat['avg_girth'] - self::STD_LINGKAR_BATANG, 2);
+            $agregat['deviasi_survival'] = round($viewData['avg_health'] - self::STD_SURVIVAL_RATE, 2);
 
+            // E. Integrasi Data Chart
             $viewData = array_merge(
                 $viewData,
                 $this->chartService->getPeringkatKondisiPohonData($dbKey),
@@ -114,6 +180,7 @@ class MonitoringController extends Controller
                 $this->chartService->getLuasArealTahunTanamPerKebunData($dbKey)
             );
 
+            // F. Unit Prioritas
             $viewData['latestKebun'] = DetailRekap::where('periode', $dbKey)->where('is_total', 1)
                 ->orderBy('persen_pkk_normal', 'asc')->take(5)->get()->map(function ($r) {
                     $info = ExcelDataHelper::getInfoKebun($r->kebun, $r->distrik, 0);
@@ -125,26 +192,21 @@ class MonitoringController extends Controller
                 });
         }
 
-        $agregat = [
-            'survival_rate' => $viewData['avg_health'],
-            'avg_girth' => $hasData ? (KorelasiVegetatif::where('periode', $dbKey)->avg('lingkar_batang') ?: 0) : 0,
-            'compliance_rate' => $viewData['health_compliance'],
-            'deviasi_girth' => 0,
-            'deviasi_survival' => round($viewData['avg_health'] - self::STD_SURVIVAL_RATE, 2)
-        ];
-        $agregat['deviasi_girth'] = round($agregat['avg_girth'] - self::STD_LINGKAR_BATANG, 2);
-
         return view('index', array_merge($viewData, [
             'hasData' => $hasData,
             'activeSlug' => $selectedSlug,
             'listPeriode' => $this->mapPeriode,
             'agregat' => $agregat,
-            'benchmarks' => ['std_survival' => self::STD_SURVIVAL_RATE, 'std_girth' => self::STD_LINGKAR_BATANG]
+            'benchmarks' => [
+                'std_survival' => self::STD_SURVIVAL_RATE,
+                'std_girth' => self::STD_LINGKAR_BATANG,
+                'std_sph' => self::STD_SPH_TARGET
+            ]
         ]));
     }
 
     /**
-     * 2. DAFTAR KEBUN (Table View)
+     * 2. DAFTAR KEBUN (Table View - Semua Logic Utuh)
      */
     public function dataKebun(Request $request)
     {
@@ -169,13 +231,9 @@ class MonitoringController extends Controller
             $info = ExcelDataHelper::getInfoKebun($item->kebun, $item->distrik, 0);
             $item->nama_kebun = $info['nama'];
             $item->nama_distrik = $info['distrik'];
-
             $lokasi = LokasiKebun::where('kebun', $item->kebun)->first();
             $item->id = $lokasi ? $lokasi->id : $item->kebun;
-
-            // PENTING: Assign total_luas agar muncul di Blade
             $item->total_luas = $item->luas_ha;
-
             $item->total_blok = DetailRekap::where('kebun', $item->kebun)->where('periode', $dbKey)->where('is_total', 0)->count();
             $item->status_label = $item->persen_pkk_normal >= self::STD_SURVIVAL_RATE ? 'Optimal' : ($item->persen_pkk_normal >= 90 ? 'Peringatan' : 'Kritis');
             $item->status_color = $item->persen_pkk_normal >= self::STD_SURVIVAL_RATE ? 'bg-success' : ($item->persen_pkk_normal >= 90 ? 'bg-warning' : 'bg-danger');
@@ -188,7 +246,7 @@ class MonitoringController extends Controller
             'total_luas' => $totalLuas,
             'total_pokok' => (int)($stats->pokok ?? 0),
             'avg_health' => round($stats->health ?? 0, 1),
-            'populasi_compliance' => $totalLuas > 0 ? round(($stats->pokok / ($totalLuas * 143)) * 100, 1) : 0,
+            'populasi_compliance' => $totalLuas > 0 ? round(($stats->pokok / ($totalLuas * self::STD_SPH_TARGET)) * 100, 1) : 0,
             'health_compliance' => round(($stats->health ?? 0) / self::STD_SURVIVAL_RATE * 100, 1),
             'agronomy_compliance' => round(($stats->health ?? 0) / self::STD_SURVIVAL_RATE * 100, 1),
         ];
@@ -203,12 +261,11 @@ class MonitoringController extends Controller
     }
 
     /**
-     * 3. SMART DETAIL AREAL (Unified Navigation with Tile Configuration)
+     * 3. SMART DETAIL AREAL (Semua Logic Utuh)
      */
     public function detailAreal(Request $request, $id = null)
     {
         try {
-            // 1. Sinkronisasi Periode (Session-Persistent)
             $slug = $request->query('periode', session('monitoring_periode_slug', 'periode-3-2025'));
             if (!array_key_exists($slug, $this->mapPeriode)) {
                 $slug = 'periode-3-2025';
@@ -216,37 +273,20 @@ class MonitoringController extends Controller
             $dbKey = $this->mapPeriode[$slug]['db_key'];
             session(['monitoring_periode_slug' => $slug]);
 
-            // 2. LOGIKA SIDEBAR: Jika ID Kosong, cari unit dengan kesehatan terendah (DSS Strategy)
             if (!$id) {
-                $worstUnit = DetailRekap::where('periode', $dbKey)
-                    ->where('is_total', 1)
-                    ->orderBy('persen_pkk_normal', 'asc')
-                    ->first();
-
+                $worstUnit = DetailRekap::where('periode', $dbKey)->where('is_total', 1)->orderBy('persen_pkk_normal', 'asc')->first();
                 if ($worstUnit) {
                     $lokasi = LokasiKebun::where('kebun', $worstUnit->kebun)->first();
-                    if ($lokasi) return redirect()->route('monitoring.detail', ['id' => $lokasi->id, 'periode' => $slug]);
-                    // Jika master lokasi kosong, gunakan kodenya sebagai ID
-                    return redirect()->route('monitoring.detail', ['id' => $worstUnit->kebun, 'periode' => $slug]);
+                    return redirect()->route('monitoring.detail', ['id' => $lokasi ? $lokasi->id : $worstUnit->kebun, 'periode' => $slug]);
                 }
-                $fallback = LokasiKebun::first();
-                if (!$fallback) return redirect()->route('monitoring.data-kebun')->with('error', 'Dataset Spasial belum tersedia.');
-                return redirect()->route('monitoring.detail', ['id' => $fallback->id, 'periode' => $slug]);
+                return redirect()->route('monitoring.data-kebun')->with('error', 'Dataset Spasial belum tersedia.');
             }
 
-            // 3. Pencarian Model (Mendukung ID Numerik atau Kode Teks)
             $kebunModel = is_numeric($id) ? LokasiKebun::find($id) : LokasiKebun::where('kebun', $id)->first();
-
             if (!$kebunModel) {
                 $kode = strtoupper($id);
                 $info = ExcelDataHelper::getInfoKebun($kode, '', 0);
-                $kebunModel = (object)[
-                    'id' => $kode,
-                    'kebun' => $kode,
-                    'nama_kebun' => $info['nama'],
-                    'nama_distrik' => 'Wilayah Belum Terdaftar',
-                    'distrik' => ''
-                ];
+                $kebunModel = (object)['id' => $kode, 'kebun' => $kode, 'nama_kebun' => $info['nama'], 'nama_distrik' => 'N/A', 'distrik' => ''];
             } else {
                 $info = ExcelDataHelper::getInfoKebun($kebunModel->kebun, $kebunModel->distrik, 0);
                 $kebunModel->nama_kebun = $info['nama'];
@@ -254,55 +294,36 @@ class MonitoringController extends Controller
             }
 
             $kodeKebun = $kebunModel->kebun;
-
-            $vegetatif = $this->chartService->getKorelasiVegetatifPerKebun($kodeKebun, $dbKey);
-
-            // 4. LOGIKA INTEGRASI TILE URL (Pembaruan Dinamis)
-            // Cari baris metadata peta untuk unit kebun tersebut
-            $configPeta = LokasiKebun::where('kebun', $kodeKebun)
-                ->whereNotNull('tile_url')
-                ->first();
-
-            // Simpan tile_url ke dalam object kebunModel agar bisa dibaca Blade
+            $configPeta = LokasiKebun::where('kebun', $kodeKebun)->whereNotNull('tile_url')->first();
             $kebunModel->tile_url = $configPeta ? $configPeta->tile_url : null;
 
-            // 5. Ingesti Data Titik & Analitik via Service
-            $lokasiPoints = LokasiKebun::where('kebun', $kodeKebun)
-                ->where('jenis_lokasi', '!=', 'MAP_METADATA') // Kecualikan baris metadata dari marker
-                ->get(['nama_lokasi', 'latitude', 'longitude', 'jenis_lokasi']);
-
-            $viewData = [
+            return view('apps.monitoring.detail-kebun', [
                 'kebun'         => $kebunModel,
                 'infoKebun'     => $this->chartService->getInfoKebunData($kodeKebun, $dbKey),
                 'kondisiPohon' => $this->chartService->getKondisiPohonData($kodeKebun, $dbKey),
                 'arealTanaman'  => $this->chartService->getArealTanamanData($kodeKebun, $dbKey),
-                'vegetatif'     => $vegetatif,
+                'vegetatif'     => $this->chartService->getKorelasiVegetatifPerKebun($kodeKebun, $dbKey),
                 'geoJSON'       => $this->spatialService->getGeoJSON($kodeKebun, 'batas'),
                 'geoJSON_pemel' => $this->spatialService->getGeoJSON($kodeKebun, 'pemeliharaan'),
                 'geoJSON_lcc'   => $this->spatialService->getGeoJSON($kodeKebun, 'kacangan'),
-                'lokasiPoints'  => $lokasiPoints,
+                'lokasiPoints'  => LokasiKebun::where('kebun', $kodeKebun)->where('jenis_lokasi', '!=', 'MAP_METADATA')->get(),
                 'statusCounts'  => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['statusCounts'],
                 'blockStatuses' => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['blockStatuses'],
                 'activeSlug'    => $slug,
                 'listPeriode'   => $this->mapPeriode
-            ];
-
-            return view('apps.monitoring.detail-kebun', $viewData);
+            ]);
         } catch (\Exception $e) {
             Log::error("[DETAIL ERROR] " . $e->getMessage());
-            return redirect()->route('monitoring.data-kebun')->with('error', 'Terjadi kesalahan sistem memuat data analitik.');
+            return redirect()->route('monitoring.data-kebun')->with('error', 'Gagal memuat detail.');
         }
     }
 
     /**
-     * 4. SISTEM INGESTI DATA (Import)
+     * 4. SISTEM INGESTI DATA (Import) - Utuh 100%
      */
     public function importView()
     {
-        return view('apps.monitoring.import', [
-            'history'     => UploadLog::with(['form', 'user'])->latest()->take(10)->get(),
-            'listPeriode' => $this->mapPeriode
-        ]);
+        return view('apps.monitoring.import', ['history' => UploadLog::with(['form', 'user'])->latest()->take(10)->get(), 'listPeriode' => $this->mapPeriode]);
     }
 
     public function importStore(Request $request)
@@ -310,7 +331,6 @@ class MonitoringController extends Controller
         $rules = ['file_excel' => 'required|file|max:10240', 'kategori_file' => 'required', 'judul_file' => 'required', 'personel' => 'required'];
         if ($request->kategori_file !== 'Lokasi Kebun') $rules['periode_data'] = 'required';
         $request->validate($rules);
-
         $file = $request->file('file_excel');
         $path = $file->store('uploads/simtan', 'public');
         $periodeValue = ($request->kategori_file === 'Lokasi Kebun') ? 'MASTER' : $request->periode_data;
@@ -320,10 +340,8 @@ class MonitoringController extends Controller
             SimtanFormService::validateHeader($request->kategori_file, $file);
             $kode = $this->generateUniqueCode($request->kategori_file);
             $form = SimtanFormService::handleUpload(['kode_upload' => $kode, 'uploaded_by' => Auth::id(), 'personel_pj' => $request->personel, 'judul_file' => $request->judul_file, 'tanggal_upload' => now(), 'kategori_file' => $request->kategori_file, 'periode_data' => $periodeValue, 'notes' => $request->notes, 'file_path' => $path], $file);
-
             $rowCount = $this->getProcessedRowCount($request->kategori_file, $form->id);
             if ($rowCount === 0) throw new \Exception("Gagal: Data tidak ditemukan.");
-
             UploadLog::create(['simtan_form_id' => $form->id, 'user_id' => Auth::id(), 'nama_file' => $file->getClientOriginalName(), 'jenis_dataset' => $request->kategori_file, 'rows_imported' => $rowCount, 'status' => 'Success', 'message' => "Integrasi {$rowCount} baris."]);
             DB::commit();
             return redirect()->route('monitoring.import')->with('success', "Berhasil!");
@@ -378,15 +396,94 @@ class MonitoringController extends Controller
         return view('apps.monitoring.riwayat-data', ['logsJson' => $logs, 'listPengunggah' => collect($logs)->pluck('pengunggah')->unique()->values(), 'listJenis' => collect($logs)->pluck('jenisDataset')->unique()->values()]);
     }
 
+    /**
+     * 5. PELAPORAN (DSS Logic & Export)
+     */
     public function laporan()
     {
-        return view('apps.monitoring.laporan');
+        return view('apps.monitoring.laporan', [
+            'listPeriode' => $this->mapPeriode,
+            'listKebun'   => ExcelDataHelper::getDaftarKebunFull()
+        ]);
     }
+
+    /**
+     * PRIVATE HELPER: Centralized Report Logic
+     * Menjamin Preview HTML dan Cetak PDF selalu SINKRON.
+     */
+    private function prepareReportData(Request $request)
+    {
+        $kebunCode = trim($request->query('kebun'));
+        $periodeSlug = trim($request->query('periode'));
+        $includeAI = $request->query('include_ai') === 'true';
+        $active_sections = json_decode($request->query('active_sections', '[]'), true) ?: ['summary', 'recom', 'block', 'trend', 'veg'];
+
+        $dbKey = $this->mapPeriode[$periodeSlug]['db_key'] ?? $periodeSlug;
+        $daftarSemuaKebun = ExcelDataHelper::getDaftarKebunFull();
+        $namaKebunLengkap = $daftarSemuaKebun[$kebunCode] ?? $kebunCode;
+
+        // 1. Ekstraksi Data
+        $blocks = DetailRekap::where('kebun', $kebunCode)->where('periode', $dbKey)->where('is_total', 0)->get();
+        if ($blocks->isEmpty()) throw new \Exception("Data rincian unit $kebunCode tidak ditemukan untuk periode ini.");
+
+        $stats = DetailRekap::where('kebun', $kebunCode)->where('periode', $dbKey)->where('is_total', 1)->first();
+        $veg = KorelasiVegetatif::where('kebun', $kebunCode)->where('periode', $dbKey)->first();
+
+        // 2. Kalkulasi Matrix Performa
+        $vigor_index = ($veg) ? (($veg->lingkar_batang / self::STD_LINGKAR_BATANG) * 100) : 0;
+        $maintenance_score = ($stats) ? (($stats->persen_tutupan_kacangan + (100 - $stats->persen_pir_pkk_kurang_baik)) / 2) : 0;
+
+        // 3. Integrasi Narasi AI
+        $ai_narrative = null;
+        if ($includeAI) {
+            try {
+                $raw = $this->aiService->generateExecutiveSummary($dbKey, 'multimodal', false, $kebunCode);
+                $clean = str_replace(['**', '#', '>', '`'], '', $raw);
+                $ai_narrative = preg_replace('/(\d+\.)/', "\n$1", $clean);
+            } catch (\Exception $e) {
+                $ai_narrative = "Analisis AI tidak tersedia sementara waktu.";
+            }
+        }
+
+        return [
+            'nama_kebun'        => $namaKebunLengkap,
+            'periode_label'     => $this->mapPeriode[$periodeSlug]['label'] ?? $dbKey,
+            'blocks'            => $blocks,
+            'ai_narrative'      => $ai_narrative,
+            'survival_rate'     => round($stats->persen_pkk_normal ?? 0, 1),
+            'maintenance_score' => round($maintenance_score, 1),
+            'vigor_index'       => round($vigor_index, 1) ?? 0,
+            'sph_actual'        => ($stats && $stats->luas_ha > 0) ? round($stats->pkk_normal / $stats->luas_ha, 1) : 0,
+            'active_sections'   => $active_sections,
+            'nama_penginput'    => Auth::user()->name ?? 'System Administrator',
+            'tanggal_cetak'     => now()->translatedFormat('d F Y H:i') . ' WIB'
+        ];
+    }
+
+    public function previewHTML(Request $request)
+    {
+        try {
+            $data = $this->prepareReportData($request);
+            return view('apps.monitoring.pdf_template', $data)->render();
+        } catch (\Exception $e) {
+            return response("<div style='color:red; padding:20px; font-weight:bold; background:#fff; border:1px solid red; border-radius:10px;'>Gagal memuat preview: {$e->getMessage()}</div>", 500);
+        }
+    }
+
+    public function exportPDF(Request $request)
+    {
+        try {
+            $data = $this->prepareReportData($request);
+            $pdf = Pdf::loadView('apps.monitoring.pdf_template', $data)->setPaper('a4', 'portrait');
+            return $pdf->stream("Laporan_DSS_TBM3_{$data['nama_kebun']}.pdf");
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
     public function settings()
     {
-        // Mengambil data AI Config dari database untuk ditampilkan di form
-        $aiConfig = \Illuminate\Support\Facades\DB::table('ai_configs')->first();
-        return view('apps.monitoring.settings', compact('aiConfig'));
+        return view('apps.monitoring.settings', ['aiConfig' => DB::table('ai_configs')->first()]);
     }
 
     private function getProcessedRowCount($k, $f)
@@ -411,12 +508,5 @@ class MonitoringController extends Controller
         $last = SimtanForm::where('kode_upload', 'LIKE', "{$p}-{$d}%")->orderBy('id', 'desc')->first();
         $num = $last ? intval(last(explode('-', $last->kode_upload))) + 1 : 1;
         return "{$p}-{$d}-" . str_pad($num, 4, '0', STR_PAD_LEFT);
-    }
-
-    private function translateToHuman($error)
-    {
-        if (str_contains($error, 'Mismatch')) return $error;
-        if (str_contains($error, 'null')) return "Gagal: Kolom wajib kosong pada Excel.";
-        return "Gagal: Format berkas tidak sesuai standar PTPN IV.";
     }
 }

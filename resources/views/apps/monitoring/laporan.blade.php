@@ -1,453 +1,276 @@
 <x-layout.default>
-    <div x-data="reportGenerator()">
+    <!-- Script html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-        <!-- 1. Header & Quick Actions -->
-        <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4 pt-5">
+    <div x-data="pusatLaporanDSS" class="relative">
+
+        <!-- 1. Overlay Loading (Gunakan x-teleport agar selalu paling depan) -->
+        <template x-teleport="body">
+            <div x-show="isLoading" x-transition.opacity
+                class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[99999] flex items-center justify-center pointer-events-auto">
+                <div
+                    class="panel p-10 rounded-[2.5rem] flex flex-col items-center gap-6 shadow-2xl bg-white dark:bg-[#0e1726]">
+                    <span
+                        class="animate-spin border-4 border-primary border-l-transparent rounded-full w-14 h-14 block"></span>
+                    <p class="font-black text-xs uppercase tracking-[0.3em] text-primary text-center">Sinkronisasi Basis
+                        Data &<br>Rendering Dokumen Digital...</p>
+                </div>
+            </div>
+        </template>
+
+        <!-- 2. Header Strategis -->
+        <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 pt-5 no-print">
             <div>
-                <ul class="flex space-x-2 rtl:space-x-reverse mb-1">
-                    <li>
-                        <a href="javascript:;" class="text-primary hover:underline">Monitoring</a>
-                    </li>
-                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                        <span>Generate Laporan</span>
-                    </li>
-                </ul>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Generate Laporan</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm">Analisis cerdas dan ringkasan performa kebun TBM III
-                </p>
+                <nav class="flex text-[10px] font-black tracking-[0.2em] text-primary/80 uppercase mb-2">
+                    <span>Manajemen Strategis</span> <span class="mx-2 text-gray-400">/</span> <span>Pelaporan
+                        DSS</span>
+                </nav>
+                <h1
+                    class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter leading-none">
+                    Pusat Generasi Laporan <span class="text-primary underline decoration-primary/20">Presisi TBM
+                        III</span>
+                </h1>
             </div>
 
-            <div class="flex items-center gap-3">
-                <button type="button" @click="exportPDF()" :disabled="!showPreview"
-                    class="btn btn-outline-danger flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold disabled:opacity-50">
-                    <template x-if="!isGenerating">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 16V8M12 16L9 13M12 16L15 13" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M3 15V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V15"
-                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                    </template>
-                    <span x-show="isGenerating"
-                        class="animate-spin border-2 border-danger border-l-transparent rounded-full w-5 h-5"></span>
-                    <span x-text="isGenerating ? 'Generating...' : 'Export PDF'"></span>
-                </button>
-            </div>
+            <button type="button" @click="eksporPDF()" :disabled="!showPreview"
+                class="btn btn-primary flex items-center gap-2 px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-30">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.5">
+                    <path
+                        d="M12 16V8M12 16L9 13M12 16L15 13M3 15V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V15"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Unduh Dokumen PDF
+            </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- SIDEBAR KONFIGURASI -->
+            <div class="lg:col-span-4 space-y-6 no-print">
+                <div class="panel rounded-[2rem] border-none shadow-2xl bg-white dark:bg-[#0e1726] p-8">
+                    <h5
+                        class="font-black text-sm mb-8 text-gray-800 dark:text-white uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 pb-5 italic text-justify">
+                        Konfigurasi Laporan</h5>
 
-            <!-- 2. Configuration Sidebar (Left) -->
-            <div class="lg:col-span-4 space-y-6">
-                <!-- Main Config -->
-                <div class="panel rounded-2xl border-0 shadow-sm">
-                    <h5 class="font-bold text-lg mb-5 flex items-center gap-2 text-gray-800 dark:text-white">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="text-primary">
-                            <path d="M12 4V20M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        Konfigurasi Laporan
-                    </h5>
-
-                    <div class="space-y-4">
+                    <div class="space-y-6">
                         <div>
-                            <label class="text-sm font-semibold mb-2 block">Pilih Kebun</label>
-                            <select x-model="selectedKebun"
-                                class="form-select bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700 py-2.5">
-                                <option value="">Pilih Kebun...</option>
-                                <template x-for="item in listKebun" :key="item.id">
-                                    <option :value="item.id" x-text="item.name"></option>
+                            <label
+                                class="text-[10px] font-black uppercase text-gray-400 mb-2 block tracking-[0.2em]">Unit
+                                Kerja</label>
+                            <select x-model="form.kebun"
+                                class="form-select border-2 border-gray-50 dark:border-gray-800 py-3.5 rounded-2xl font-bold text-sm bg-gray-50/50">
+                                <option value="">Pilih Unit...</option>
+                                <template x-for="unit in daftarKebun" :key="unit.kode">
+                                    <option :value="unit.kode" x-text="`${unit.nama} (${unit.kode})`"></option>
                                 </template>
                             </select>
                         </div>
 
                         <div>
-                            <label class="text-sm font-semibold mb-2 block">Pilih Periode</label>
-                            <select x-model="selectedPeriode"
-                                class="form-select bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700 py-2.5">
+                            <label
+                                class="text-[10px] font-black uppercase text-gray-400 mb-2 block tracking-[0.2em]">Periode
+                                Sensus</label>
+                            <select x-model="form.periode"
+                                class="form-select border-2 border-gray-50 dark:border-gray-800 py-3.5 rounded-2xl font-bold text-sm bg-gray-50/50">
                                 <option value="">Pilih Periode...</option>
-                                <option value="2026-03">Maret 2026</option>
-                                <option value="2026-02">Februari 2026</option>
+                                <template x-for="(info, slug) in listPeriode" :key="slug">
+                                    <option :value="slug" x-text="info.label"></option>
+                                </template>
                             </select>
                         </div>
 
-                        <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <div class="p-2 bg-purple-100 dark:bg-purple-500/10 rounded-lg text-purple-600">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <path
-                                                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                        </svg>
-                                    </div>
-                                    <span class="text-sm font-bold">Include AI Analysis</span>
-                                </div>
-                                <label class="w-12 h-6 relative shrink-0">
-                                    <input type="checkbox"
-                                        class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                        x-model="includeAI" />
-                                    <span
-                                        class="bg-[#ebedf2] dark:bg-dark block h-full rounded-full before:absolute before:left-1 before:bg-white before:bottom-1 before:w-4 before:h-4 before:rounded-full peer-checked:before:left-7 peer-checked:bg-primary before:transition-all duration-300"></span>
-                                </label>
-                            </div>
+                        <div class="flex items-center justify-between bg-slate-50 dark:bg-black/40 p-4 rounded-2xl">
+                            <span
+                                class="text-xs font-black uppercase tracking-tighter text-gray-600 dark:text-white-dark">Injeksi
+                                Analisis AI</span>
+                            <input type="checkbox" x-model="form.includeAI" class="custom_switch" />
                         </div>
-                    </div>
 
-                    <button @click="generatePreview"
-                        class="btn btn-primary w-full mt-6 py-3 rounded-xl shadow-lg shadow-primary/20 gap-2">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                            <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        Preview Report
-                    </button>
+                        <button type="button" @click.prevent="inisialisasiLaporan()" :disabled="isLoading"
+                            class="btn btn-primary w-full py-4 rounded-2xl font-black uppercase text-xs shadow-lg shadow-primary/20">
+                            <span x-show="!isLoading">Tampilkan Preview Laporan</span>
+                            <span x-show="isLoading"
+                                class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 mr-2"></span>
+                            <span x-show="isLoading">Memproses...</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Sections Switcher -->
-                <div class="panel rounded-2xl border-0 shadow-sm">
-                    <h5 class="font-bold text-base mb-4">Section Laporan</h5>
+                <!-- OPSI OUTPUT -->
+                <div class="panel rounded-[2rem] border-none shadow-sm bg-white dark:bg-[#0e1726] p-8">
+                    <h5 class="font-black text-[10px] uppercase text-gray-400 mb-6 tracking-[0.2em]">Section Laporan
+                        (Opsi Output)</h5>
                     <div class="space-y-4">
-                        <template x-for="section in sections" :key="section.id">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400" x-text="section.label"></span>
-                                <label class="inline-flex">
-                                    <input type="checkbox" class="form-checkbox outline-primary rounded" checked />
-                                </label>
-                            </div>
+                        <template x-for="s in sections" :key="s.id">
+                            <label class="flex items-center justify-between cursor-pointer group">
+                                <span
+                                    class="text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest"
+                                    x-text="s.label"></span>
+                                <input type="checkbox" x-model="s.active"
+                                    class="form-checkbox outline-primary rounded-md w-5 h-5 text-primary border-2" />
+                            </label>
                         </template>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. Report Preview Area (Right) -->
-            <div class="lg:col-span-8">
-                <!-- No Preview State -->
-                <template x-if="!showPreview">
-                    <div
-                        class="panel h-[500px] flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 dark:border-gray-800 bg-transparent rounded-2xl">
-                        <div class="p-6 bg-gray-50 dark:bg-gray-900 rounded-full mb-4">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                                class="text-gray-300 dark:text-gray-700" stroke="currentColor" stroke-width="1.5">
-                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" x2="8" y1="13" y2="13" />
-                                <line x1="16" x2="8" y1="17" y2="17" />
-                                <line x1="10" x2="8" y1="9" y2="9" />
-                            </svg>
-                        </div>
-                        <h5 class="text-xl font-bold text-gray-800 dark:text-white">Belum Ada Preview</h5>
-                        <p class="text-gray-500 max-w-xs mx-auto text-sm">Pilih kebun dan periode untuk melihat
-                            pratinjau laporan otomatis.</p>
-                    </div>
-                </template>
+            <!-- AREA PRATINJAU (DIGITAL PAPER) -->
+            <div class="lg:col-span-8 overflow-hidden">
+                <div x-show="!showPreview"
+                    class="panel h-[700px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-[3rem]">
+                    <h5 class="text-xl font-black text-gray-400 uppercase italic tracking-tighter text-center">Tentukan
+                        Parameter Input<br>Untuk Merender Dokumen Formal</h5>
+                </div>
 
-                <!-- Active Report State -->
-                <template x-if="showPreview">
-                    <div class="space-y-6 animate__animated animate__fadeIn">
-
-                        <!-- Report Branding Header -->
-                        <div class="panel p-0 overflow-hidden rounded-2xl border-0 shadow-sm">
-                            <div class="bg-gradient-to-r from-emerald-600 to-teal-500 p-8 text-white">
-                                <div class="flex items-center gap-4 mb-4">
-                                    <div class="bg-white/20 p-3 rounded-xl backdrop-blur-sm border border-white/30">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <path
-                                                d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2a1 1 0 0 1-.8-1.7L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z" />
-                                            <path d="M12 22v-3" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h2 class="text-2xl font-bold">Laporan Monitoring TBM III</h2>
-                                        <p class="opacity-80 font-medium" x-text="reportData.kebun"></p>
-                                    </div>
-                                </div>
-                                <div class="flex gap-5 text-sm font-medium opacity-90">
-                                    <span>Periode: <span x-text="reportData.periode"></span></span>
-                                    <span>Generated: {{ date('d F Y') }}</span>
-                                </div>
-                            </div>
-
-                            <!-- KPI Summary Cards (Styled like your example) -->
-                            <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 bg-white dark:bg-[#0e1726]">
-                                <div class="rounded-xl p-4 text-white" style="background-color: #00a76f;">
-                                    <div class="text-[10px] uppercase font-bold opacity-80 mb-1">Total Blok</div>
-                                    <div class="text-2xl font-bold" x-text="reportData.summary.totalBlok"></div>
-                                </div>
-                                <div class="rounded-xl p-4 text-white" style="background-color: #1c64f2;">
-                                    <div class="text-[10px] uppercase font-bold opacity-80 mb-1">Total Areal</div>
-                                    <div class="text-2xl font-bold"><span
-                                            x-text="reportData.summary.totalAreal"></span> Ha</div>
-                                </div>
-                                <div class="rounded-xl p-4 text-white" style="background-color: #8b5cf6;">
-                                    <div class="text-[10px] uppercase font-bold opacity-80 mb-1">Avg NDVI</div>
-                                    <div class="text-2xl font-bold" x-text="reportData.summary.averageNDVI"></div>
-                                </div>
-                                <div class="rounded-xl p-4 text-white bg-orange-500">
-                                    <div class="text-[10px] uppercase font-bold opacity-80 mb-1">Health Score</div>
-                                    <div class="text-2xl font-bold"><span
-                                            x-text="reportData.summary.healthScore"></span>%</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Charts Section -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="panel rounded-2xl border-0 shadow-sm">
-                                <h5 class="font-bold text-base mb-5">Performance per Blok</h5>
-                                <div id="blockChart"></div>
-                            </div>
-                            <div class="panel rounded-2xl border-0 shadow-sm">
-                                <h5 class="font-bold text-base mb-5">Trend Vegetasi (6 Bulan)</h5>
-                                <div id="trendChart"></div>
-                            </div>
-                        </div>
-
-                        <!-- AI Recommendations (Styled Elegantly) -->
-                        <div x-show="includeAI"
-                            class="panel rounded-2xl border-0 shadow-sm border-l-4 border-purple-500 animate__animated animate__fadeInUp">
-                            <div class="flex items-center gap-2 mb-6 text-purple-600">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path
-                                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                </svg>
-                                <h5 class="font-bold text-lg">AI Smart Recommendations</h5>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div
-                                    class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex gap-4">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0"></div>
-                                    <div>
-                                        <h6 class="font-bold text-emerald-900 dark:text-emerald-400">Overall
-                                            Assessment: Excellent</h6>
-                                        <p class="text-sm text-emerald-700 dark:text-emerald-500/80 mt-1">Kebun Sei
-                                            Rampah menunjukkan stabilitas NDVI di atas 0.8. Tidak diperlukan tindakan
-                                            korektif mendesak.</p>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 flex gap-4">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0"></div>
-                                    <div>
-                                        <h6 class="font-bold text-amber-900 dark:text-amber-400">Peringatan: Blok B-02
-                                        </h6>
-                                        <p class="text-sm text-amber-700 dark:text-amber-500/80 mt-1">Terjadi penurunan
-                                            skor kesehatan di Blok B-02 (70%). Disarankan pengecekan lapangan terkait
-                                            ketersediaan air.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </template>
+                <div x-show="showPreview" x-transition.opacity class="digital-paper-container shadow-inner">
+                    <!-- Preview Container -->
+                    <div class="digital-paper shadow-2xl bg-white text-black mx-auto overflow-auto"
+                        x-html="htmlContent"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Script Section -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.addEventListener("alpine:init", () => {
-            Alpine.data("reportGenerator", () => ({
-                selectedKebun: '',
-                selectedPeriode: '',
-                includeAI: true,
-                showPreview: false,
+            // MENGGUNAKAN Alpine.data UNTUK ISOLASI
+            Alpine.data("pusatLaporanDSS", () => ({
+                form: {
+                    kebun: '',
+                    periode: '',
+                    includeAI: true
+                },
+                isLoading: false,
                 isGenerating: false,
-
-                listKebun: [{
-                        id: 'sei-rampah',
-                        name: 'Kebun Sei Rampah'
-                    },
-                    {
-                        id: 'dolok-ilir',
-                        name: 'Kebun Dolok Ilir'
-                    },
-                    {
-                        id: 'bandar-pulau',
-                        name: 'Kebun Bandar Pulau'
-                    },
-                ],
+                showPreview: false,
+                htmlContent: '',
+                listPeriode: @json($listPeriode ?? []),
+                daftarKebun: @json(collect($listKebun)->map(fn($nama, $kode) => ['kode' => $kode, 'nama' => $nama])->values()),
 
                 sections: [{
-                        id: 'exec',
-                        label: 'Executive Summary'
-                    },
-                    {
-                        id: 'veg',
-                        label: 'Vegetation Analysis'
-                    },
-                    {
-                        id: 'block',
-                        label: 'Block Details'
-                    },
-                    {
-                        id: 'trend',
-                        label: 'Trend Charts'
+                        id: 'summary',
+                        label: 'Matriks Performa (I)',
+                        active: true
                     },
                     {
                         id: 'recom',
-                        label: 'AI Recommendations'
+                        label: 'Analisis AI (II)',
+                        active: true
+                    },
+                    {
+                        id: 'block',
+                        label: 'Data Per Blok (III)',
+                        active: true
                     },
                 ],
 
-                reportData: {
-                    kebun: 'Kebun Sei Rampah',
-                    periode: 'Maret 2026',
-                    summary: {
-                        totalBlok: 24,
-                        totalAreal: 1450,
-                        averageNDVI: 0.83,
-                        healthScore: 92,
-                    },
-                    blockPerformance: [{
-                            block: 'A-01',
-                            ndvi: 0.85,
-                            health: 90
-                        },
-                        {
-                            block: 'A-02',
-                            ndvi: 0.82,
-                            health: 87
-                        },
-                        {
-                            block: 'A-03',
-                            ndvi: 0.78,
-                            health: 82
-                        },
-                        {
-                            block: 'A-04',
-                            ndvi: 0.88,
-                            health: 93
-                        },
-                        {
-                            block: 'B-01',
-                            ndvi: 0.84,
-                            health: 89
-                        },
-                        {
-                            block: 'B-02',
-                            ndvi: 0.65,
-                            health: 70
-                        },
-                    ],
-                    trends: [{
-                            month: 'Oct',
-                            ndvi: 0.72
-                        }, {
-                            month: 'Nov',
-                            ndvi: 0.75
-                        }, {
-                            month: 'Dec',
-                            ndvi: 0.78
-                        },
-                        {
-                            month: 'Jan',
-                            ndvi: 0.81
-                        }, {
-                            month: 'Feb',
-                            ndvi: 0.84
-                        }, {
-                            month: 'Mar',
-                            ndvi: 0.83
-                        },
-                    ]
-                },
-
-                generatePreview() {
-                    if (!this.selectedKebun || !this.selectedPeriode) {
-                        alert('Silahkan pilih kebun dan periode!');
-                        return;
+                async inisialisasiLaporan() {
+                    if (!this.form.kebun || !this.form.periode) {
+                        return window.Swal.fire({
+                            icon: 'warning',
+                            title: 'Akses Ditolak',
+                            text: 'Unit Kebun dan Periode wajib dipilih.'
+                        });
                     }
-                    this.showPreview = true;
-                    // Inisialisasi chart setelah elemen muncul di DOM
-                    setTimeout(() => this.initCharts(), 200);
+
+                    this.isLoading = true;
+                    this.showPreview = false;
+
+                    try {
+                        const activeIds = this.sections.filter(s => s.active).map(s => s.id);
+                        const params = new URLSearchParams({
+                            kebun: this.form.kebun,
+                            periode: this.form.periode,
+                            include_ai: this.form.includeAI,
+                            active_sections: JSON.stringify(activeIds)
+                        });
+
+                        // PANGGIL URL SESUAI ROUTE DI web.php
+                        const res = await fetch(
+                            `/monitoring/laporan/preview-html?${params.toString()}`);
+
+                        if (!res.ok) {
+                            const errText = await res.text();
+                            throw new Error(errText);
+                        }
+
+                        this.htmlContent = await res.text();
+                        this.showPreview = true;
+                    } catch (e) {
+                        console.error(e);
+                        window.Swal.fire({
+                            icon: 'error',
+                            title: 'Database Mismatch',
+                            text: 'Variabel data tidak lengkap atau data rincian unit belum di-upload.'
+                        });
+                    } finally {
+                        this.isLoading = false;
+                    }
                 },
 
-                initCharts() {
-                    // Blok Performance Chart (Bar)
-                    const blockOpts = {
-                        series: [{
-                                name: 'NDVI Index',
-                                data: this.reportData.blockPerformance.map(i => i.ndvi)
-                            },
-                            {
-                                name: 'Health Score %',
-                                data: this.reportData.blockPerformance.map(i => i.health)
-                            }
-                        ],
-                        chart: {
-                            height: 300,
-                            type: 'bar',
-                            toolbar: {
-                                show: false
-                            }
-                        },
-                        colors: ['#00a76f', '#1c64f2'],
-                        plotOptions: {
-                            bar: {
-                                borderRadius: 4,
-                                columnWidth: '55%'
-                            }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        },
-                        xaxis: {
-                            categories: this.reportData.blockPerformance.map(i => i.block)
-                        },
-                    };
-                    new ApexCharts(document.querySelector("#blockChart"), blockOpts).render();
-
-                    // Trend Chart (Line)
-                    const trendOpts = {
-                        series: [{
-                            name: 'NDVI',
-                            data: this.reportData.trends.map(i => i.ndvi)
-                        }],
-                        chart: {
-                            height: 300,
-                            type: 'line',
-                            toolbar: {
-                                show: false
-                            }
-                        },
-                        colors: ['#00a76f'],
-                        stroke: {
-                            curve: 'smooth',
-                            width: 4
-                        },
-                        xaxis: {
-                            categories: this.reportData.trends.map(i => i.month)
-                        },
-                        markers: {
-                            size: 5,
-                            strokeColors: '#fff',
-                            strokeWidth: 2,
-                            hover: {
-                                size: 7
-                            }
-                        },
-                    };
-                    new ApexCharts(document.querySelector("#trendChart"), trendOpts).render();
-                },
-
-                exportPDF() {
-                    this.isGenerating = true;
-                    setTimeout(() => {
-                        this.isGenerating = false;
-                        alert('Laporan PDF berhasil di-generate!');
-                    }, 2000);
+                eksporPDF() {
+                    const activeIds = this.sections.filter(s => s.active).map(s => s.id);
+                    const params = new URLSearchParams({
+                        kebun: this.form.kebun,
+                        periode: this.form.periode,
+                        include_ai: this.form.includeAI,
+                        active_sections: JSON.stringify(activeIds)
+                    });
+                    window.location.href = `/monitoring/laporan/export-pdf?${params.toString()}`;
                 }
             }));
         });
     </script>
+
+    <style>
+        /* Digital Paper Styling agar 1:1 dengan PDF */
+        .digital-paper-container {
+            background: #525659;
+            padding: 50px 20px;
+            border-radius: 2.5rem;
+            overflow: auto;
+            max-height: 850px;
+        }
+
+        .digital-paper {
+            width: 210mm;
+            /* A4 Width */
+            min-height: 297mm;
+            background: white !important;
+            color: black !important;
+            padding: 1.2cm;
+            /* Margin yang sama dengan PDF */
+            box-sizing: border-box;
+            font-family: 'Helvetica', 'Arial', sans-serif !important;
+        }
+
+        /* Hilangkan override warna Vristo di dalam area digital paper */
+        .digital-paper * {
+            color: black !important;
+            border-color: black !important;
+        }
+
+        .digital-paper table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1px solid black !important;
+        }
+
+        .digital-paper th,
+        .digital-paper td {
+            border: 1px solid black !important;
+            padding: 8px !important;
+        }
+
+        .digital-paper .section-header {
+            border-left: 5px solid #00a76f !important;
+        }
+
+        @media (max-width: 1024px) {
+            .digital-paper {
+                width: 100%;
+                min-height: auto;
+            }
+        }
+    </style>
 </x-layout.default>

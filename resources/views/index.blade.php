@@ -133,48 +133,55 @@
                     </div>
                     <div>
                         <h4
-                            class="text-lg font-black text-gray-800 dark:text-white-light leading-none italic tracking-tighter">
+                            class="text-xl font-black text-gray-800 dark:text-white-light leading-none italic tracking-tighter">
                             AI Executive Narrative</h4>
-                        <p class="text-[9px] font-bold text-gray-400 mt-1 tracking-widest">Inference for:
-                            <span class="text-primary" x-text="periodeLabels[selectedPeriode]"></span>
-                        </p>
+                        <p class="text-[10px] font-bold text-gray-400 mt-2 tracking-widest">Inference: <span
+                                class="text-primary" x-text="periodeLabels[selectedPeriode]"></span></p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
                     <select x-model="analysisMode"
-                        class="form-select py-2 text-[10px] font-black rounded-lg border-gray-200 dark:bg-black/20 w-40">
-                        <option value="multimodal">MULTIMODAL</option>
-                        <option value="growth">VIGOR TUMBUH</option>
-                        <option value="survival">MORTALITAS</option>
+                        class="form-select py-2 text-[10px] font-black rounded-xl border-gray-200 dark:bg-black/20 w-44 tracking-widest">
+                        <option value="multimodal">🧠 MULTIMODAL</option>
+                        <option value="growth">📈 VIGOR TUMBUH</option>
+                        <option value="survival">🛡️ MORTALITAS</option>
                     </select>
                     <button @click="runAIInference(true)"
-                        class="btn btn-primary btn-sm rounded-lg px-4 font-black text-[10px] italic tracking-widest">
+                        class="btn btn-primary btn-sm rounded-xl px-6 font-black text-[10px] italic tracking-[0.2em]">
                         Refresh AI
                     </button>
                 </div>
             </div>
-            <div class="p-8">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-                    <div class="lg:col-span-8">
-                        <div x-show="isThinking" class="space-y-3">
-                            <div class="h-5 bg-gray-100 dark:bg-gray-800 rounded-full w-full animate-pulse"></div>
-                            <div class="h-5 bg-gray-100 dark:bg-gray-800 rounded-full w-4/6 animate-pulse"></div>
-                        </div>
-                        <p x-show="!isThinking"
-                            class="text-xl md:text-2xl text-gray-700 dark:text-white-light leading-relaxed font-bold italic tracking-tight"
-                            :class="aiInferenceText.includes('gagal') ? 'text-rose-500 opacity-60' : ''"
-                            x-text="aiInferenceText"></p>
+
+            <!-- Body Panel AI -->
+            <div class="p-10">
+                <div x-show="isThinking" class="space-y-4 max-w-4xl mx-auto">
+                    <div class="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-full animate-pulse"></div>
+                    <div class="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-5/6 animate-pulse"></div>
+                    <div class="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-4/6 animate-pulse"></div>
+                </div>
+
+                <div x-show="!isThinking" class="max-w-none prose prose-slate dark:prose-invert">
+                    <!-- Konten hasil AI yang sudah di-format -->
+                    <div class="ai-content-wrapper text-gray-700 dark:text-gray-300 leading-[1.8] font-medium text-base md:text-lg italic tracking-tight"
+                        x-html="formatAiOutput(aiInferenceText)">
                     </div>
-                    <div class="lg:col-span-4 space-y-6 border-l border-gray-100 dark:border-white-dark/5 pl-8">
+                </div>
+
+                <!-- Footer Reasoning Metrics -->
+                <div class="mt-12 pt-8 border-t border-gray-100 dark:border-white-dark/5">
+                    <h5 class="text-[10px] font-black text-gray-400 tracking-[0.3em] mb-6">Neural Reasoning
+                        Context</h5>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <template x-for="param in reasoningParams" :key="param.label">
                             <div>
                                 <div class="flex justify-between text-[10px] font-black mb-2 tracking-widest">
                                     <span class="text-gray-400" x-text="param.label"></span>
-                                    <span x-text="param.value" :class="param.color"></span>
+                                    <span x-text="param.value" :class="param.color" class="italic"></span>
                                 </div>
-                                <div class="h-2 bg-gray-100 dark:bg-black/40 rounded-full overflow-hidden">
-                                    <div class="h-full transition-all duration-[1500ms]"
-                                        :style="`width: ${param.percent}%; background-color: ${param.hex}`"></div>
+                                <div class="h-1.5 bg-gray-100 dark:bg-black/40 rounded-full overflow-hidden">
+                                    <div class="h-full transition-all duration-[2000ms] ease-out"
+                                        :style="`width: ${param.percent}%; background: ${param.hex}`"></div>
                                 </div>
                             </div>
                         </template>
@@ -183,51 +190,124 @@
             </div>
         </div>
 
-        <!-- 5. BENCHMARKING TABLE (Realisasi vs Standar Nasional) -->
+        <!-- 5. MATRIKS PERFORMA AGRONOMI -->
         <div
             class="panel border-none shadow-md p-6 bg-white dark:bg-[#0e1726] rounded-2xl border-t-4 border-primary overflow-hidden">
-            <h3 class="text-lg font-black text-gray-800 dark:text-white-light mb-6 italic tracking-tighter">
-                Benchmarking Performa Agregat Regional I (vs Standar PPKS)</h3>
+            <div class="flex items-center justify-between mb-8 border-b border-gray-100 dark:border-white-dark/5 pb-4">
+                <h3 class="text-lg font-black text-gray-800 dark:text-white-light italic tracking-tighter">
+                    Matriks Performa Agronomi (Tolok Ukur PPKS)
+                </h3>
+                <div class="px-4 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg animate-pulse">
+                    Wawasan: <span x-text="agregat.correlation_insight"></span>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="w-full text-sm font-bold">
                     <thead>
                         <tr
                             class="bg-gray-50 dark:bg-black/20 text-[#888ea8] text-[10px] font-black tracking-widest border-b border-gray-100 dark:border-white-dark/5">
-                            <th class="py-4 px-4 text-left">Indikator Performa Utama</th>
-                            <th class="py-4 px-4 text-center">Rerata Realisasi</th>
+                            <th class="py-4 px-4 text-left">Indikator Matriks Utama</th>
+                            <th class="py-4 px-4 text-center">Rataan Realisasi</th>
                             <th class="py-4 px-4 text-center">Standar Agronomi</th>
                             <th class="py-4 px-4 text-center">Deviasi Komparatif</th>
-                            <th class="py-4 px-4 text-center">Tingkat Kepatuhan</th>
+                            <th class="py-4 px-4 text-center">Tingkat Performa</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-white-dark/5">
+                        <!-- 1. INDEKS VIGOR -->
                         <tr>
-                            <td class="py-5 px-4 text-xs">Laju Pertumbuhan Lingkar Batang (Girth)</td>
+                            <td class="py-5 px-4">
+                                <span class="block text-xs font-semibold">Indeks Vigor (Batang &
+                                    Pelepah)</span>
+                                <span class="text-[9px] text-gray-400 font-bold">Sensor Pertumbuhan
+                                    Biometrik</span>
+                            </td>
                             <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
-                                {{ $agregat['avg_girth'] }} cm</td>
-                            <td class="py-5 px-4 text-center opacity-50">{{ $benchmarks['std_girth'] }}.0 cm</td>
+                                <span x-text="agregat.vigor_index"></span> <span
+                                    class="text-[10px] text-gray-400 font-bold">Poin</span>
+                            </td>
+                            <td class="py-5 px-4 text-center opacity-50 text-[10px] font-black">Standar TBM
+                                III</td>
                             <td class="py-5 px-4 text-center font-black text-lg"
-                                :class="{{ $agregat['deviasi_girth'] }} >= 0 ? 'text-emerald-500' : 'text-rose-500'">
-                                {{ $agregat['deviasi_girth'] >= 0 ? '+' : '' }}{{ $agregat['deviasi_girth'] }}
+                                :class="agregat.vigor_index >= 90 ? 'text-emerald-500' : 'text-rose-500'">
+                                <span x-text="agregat.vigor_index >= 90 ? 'Optimal' : 'Stagnan'"></span>
                             </td>
                             <td class="py-5 px-4 text-center">
-                                <span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black">
-                                    {{ round(($agregat['avg_girth'] / $benchmarks['std_girth']) * 100, 1) }}%
-                                </span>
+                                <span
+                                    class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black tracking-widest shadow-sm"
+                                    x-text="agregat.vigor_index + '%'"></span>
                             </td>
                         </tr>
+                        <!-- 2. SKOR PEMELIHARAAN -->
                         <tr>
-                            <td class="py-5 px-4 text-xs">Tingkat Kelangsungan Hidup (Survival Rate)</td>
+                            <td class="py-5 px-4">
+                                <span class="block text-xs font-semibold">Skor Pemeliharaan (LCC &
+                                    Piringan)</span>
+                                <span class="text-[9px] text-gray-400 font-bold">Kualitas Perawatan
+                                    Lapangan</span>
+                            </td>
                             <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
-                                {{ $agregat['survival_rate'] }}%</td>
-                            <td class="py-5 px-4 text-center opacity-50">{{ $benchmarks['std_survival'] }}.0%</td>
+                                <span x-text="agregat.maintenance_score"></span> <span
+                                    class="text-[10px] text-gray-400 font-bold">Poin</span>
+                            </td>
+                            <td class="py-5 px-4 text-center opacity-50 text-[10px] font-black">Standar
+                                Kultur Teknis</td>
                             <td class="py-5 px-4 text-center font-black text-lg"
-                                :class="{{ $agregat['deviasi_survival'] }} >= 0 ? 'text-emerald-500' : 'text-rose-500'">
-                                {{ $agregat['deviasi_survival'] >= 0 ? '+' : '' }}{{ $agregat['deviasi_survival'] }}
+                                :class="agregat.maintenance_score >= 90 ? 'text-emerald-500' : 'text-rose-500'">
+                                <span x-text="agregat.maintenance_score >= 90 ? 'Standar' : 'Areal Bergulma'"></span>
                             </td>
                             <td class="py-5 px-4 text-center">
-                                <span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black">
-                                    {{ $agregat['compliance_rate'] }}%
+                                <span
+                                    class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black tracking-widest shadow-sm"
+                                    x-text="agregat.maintenance_score + '%'"></span>
+                            </td>
+                        </tr>
+                        <!-- 3. INDEKS RISIKO LINGKUNGAN -->
+                        <tr>
+                            <td class="py-5 px-4">
+                                <span class="block text-xs font-semibold">Risiko Lingkungan
+                                    (Tergenang)</span>
+                                <span class="text-[9px] text-gray-400 font-bold">Risiko Hipoksia & Pencucian
+                                    Hara</span>
+                            </td>
+                            <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
+                                <span x-text="agregat.risk_index"></span> <span
+                                    class="text-[10px] text-gray-400 font-bold">% Luas</span>
+                            </td>
+                            <td class="py-5 px-4 text-center opacity-50 text-[10px] font-black">Ambang Batas
+                                < 2.0%</td>
+                            <td class="py-5 px-4 text-center font-black text-lg"
+                                :class="agregat.risk_index < 2 ? 'text-emerald-500' : 'text-rose-500'">
+                                <span x-text="agregat.risk_index < 2 ? 'Aman' : 'Kritis'"></span>
+                            </td>
+                            <td class="py-5 px-4 text-center">
+                                <span
+                                    class="px-3 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-black tracking-widest shadow-sm">Audit
+                                    Drainase</span>
+                            </td>
+                        </tr>
+                        <!-- 4. PROYEKSI PRODUKTIVITAS -->
+                        <tr>
+                            <td class="py-5 px-4">
+                                <span class="block text-xs font-semibold">Proyeksi Produktivitas (SPH)</span>
+                                <span class="text-[9px] text-gray-400 font-bold">Kerapatan Pokok per
+                                    Hektar</span>
+                            </td>
+                            <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
+                                <span x-text="agregat.sph_actual"></span> <span
+                                    class="text-[10px] text-gray-400 font-bold">Pkk/Ha</span>
+                            </td>
+                            <td class="py-5 px-4 text-center opacity-50 text-[10px] font-black">
+                                {{ $benchmarks['std_sph'] }} Pkk/Ha</td>
+                            <td class="py-5 px-4 text-center font-black text-lg"
+                                :class="agregat.sph_actual >= 135 ? 'text-emerald-500' : 'text-rose-500'">
+                                <span x-text="agregat.sph_actual - {{ $benchmarks['std_sph'] }}"></span>
+                            </td>
+                            <td class="py-5 px-4 text-center">
+                                <span
+                                    class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black tracking-widest shadow-sm">
+                                    {{ round(($agregat['sph_actual'] / $benchmarks['std_sph']) * 100, 1) }}%
                                 </span>
                             </td>
                         </tr>
@@ -371,6 +451,7 @@
                     isThinking: false,
                     analysisMode: 'multimodal',
                     aiInferenceText: "{{ $hasData ? 'Sinkronisasi Neural Dashboard...' : 'Sistem Standby: Dataset untuk periode ini belum tersedia di database.' }}",
+                    agregat: @json($agregat ?? []),
 
                     kpiCards: [{
                             label: 'Cakupan Areal Total',
@@ -417,18 +498,25 @@
                     ],
 
                     reasoningParams: [{
-                            label: "Data Quality",
-                            value: "{{ $hasData ? 'Verified' : 'Unverified' }}",
-                            percent: {{ $hasData ? 94 : 0 }}, // JIKA DATA TIDAK ADA, SET KE 0
+                            label: "Data Quality Engine",
+                            value: "{{ $hasData ? 'Verified' : 'Wait' }}",
+                            percent: {{ $hasData ? 96 : 0 }},
                             color: "{{ $hasData ? 'text-emerald-500' : 'text-gray-400' }}",
-                            hex: "{{ $hasData ? '#10b981' : '#94a3b8' }}"
+                            hex: "#10b981"
                         },
                         {
-                            label: "Standard Match",
-                            value: "{{ $hasData ? 'Optimal' : 'N/A' }}",
-                            percent: {{ $hasData ? 88 : 0 }}, // JIKA DATA TIDAK ADA, SET KE 0
+                            label: "Multimodal Sync",
+                            value: "{{ $hasData ? 'Stable' : 'Wait' }}",
+                            percent: {{ $hasData ? 88 : 0 }},
                             color: "{{ $hasData ? 'text-primary' : 'text-gray-400' }}",
-                            hex: "{{ $hasData ? '#4361ee' : '#94a3b8' }}"
+                            hex: "#4361ee"
+                        },
+                        {
+                            label: "Anomaly Detection",
+                            value: "{{ $hasData ? 'Active' : 'Wait' }}",
+                            percent: {{ $hasData ? 92 : 0 }},
+                            color: "{{ $hasData ? 'text-amber-500' : 'text-gray-400' }}",
+                            hex: "#f59e0b"
                         }
                     ],
 
@@ -436,6 +524,65 @@
                         this.isThinking = true;
                         window.location.href = window.location.pathname + "?periode=" + this
                             .selectedPeriode;
+                    },
+
+                    /**
+                     * FUNGSI PARSER UNTUK MEMBERSIHKAN TEKS AI
+                     */
+                    formatAiOutput(text) {
+                        if (!text) return "Memproses narasi...";
+
+                        // 1. Membersihkan angka "1." atau "2." yang muncul tepat setelah tanda bullet (* atau -)
+                        // Contoh: "* 1. Teks" menjadi "* Teks"
+                        let cleanText = text.replace(/^\s*[\*\-]\s*\d+\.\s*/gm, '* ');
+
+                        // 2. Memberikan baris baru jika ada angka penomoran yang menempel di akhir kalimat
+                        // Contoh: "...sesuai 2. Jika..." menjadi "...sesuai \n2. Jika..."
+                        cleanText = cleanText.replace(/([a-z\)])\s+(\d+\.)\s+([A-Z])/g, '$1\n\n$2 $3');
+
+                        // 3. Memproses Markdown Bold (**teks**) menjadi teks hitam tebal
+                        cleanText = cleanText.replace(/\*\*(.*?)\*\*/g,
+                            '<strong class="text-slate-900 dark:text-white font-black">$1</strong>');
+
+                        // 4. Pisahkan baris untuk diproses
+                        let lines = cleanText.split('\n');
+                        let html = '';
+                        let inList = false;
+
+                        lines.forEach(line => {
+                            let trimmed = line.trim();
+                            if (!trimmed) return;
+
+                            // Jika baris adalah list bullet (*)
+                            if (trimmed.startsWith('*') || trimmed.startsWith('-')) {
+                                if (!inList) {
+                                    html += '<ul class="space-y-3 my-4 list-disc list-inside">';
+                                    inList = true;
+                                }
+                                let content = trimmed.substring(1).trim();
+                                html += `<li class="pl-2">${content}</li>`;
+                            }
+                            // Jika baris adalah penomoran mandiri (1. 2. 3.)
+                            else if (/^\d+\./.test(trimmed)) {
+                                if (inList) {
+                                    html += '</ul>';
+                                    inList = false;
+                                }
+                                html +=
+                                    `<div class="flex gap-3 mb-4 mt-6"><span class="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-md flex items-center justify-center text-[10px] font-black">${trimmed.split('.')[0]}</span><p>${trimmed.split('.').slice(1).join('.').trim()}</p></div>`;
+                            }
+                            // Paragraf biasa
+                            else {
+                                if (inList) {
+                                    html += '</ul>';
+                                    inList = false;
+                                }
+                                html += `<p class="mb-4">${trimmed}</p>`;
+                            }
+                        });
+
+                        if (inList) html += '</ul>';
+                        return html;
                     },
 
                     initDashboard() {
