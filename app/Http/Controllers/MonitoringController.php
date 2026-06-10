@@ -35,10 +35,10 @@ class MonitoringController extends Controller
     protected $aiService;
 
     // Standar Agronomi Nasional (Referensi: PPKS & Master Plan PTPN IV)
+    const STD_LB_KC_INDEX     = 0.125; // Benchmark Rasio Lingkar Batang/KC (TBM III)
+    const STD_JP_KC_INDEX     = 0.040; // Benchmark Indeks Jumlah Pelepah (TBM III)
     const STD_SURVIVAL_RATE   = 98.0;
-    const STD_LINGKAR_BATANG  = 12.0; // Target cm TBM III
-    const STD_FROND_COUNT     = 32.0; // Target jumlah pelepah TBM III
-    const STD_SPH_TARGET      = 143.0; // Standar Pokok per Hektar
+    const STD_SPH_TARGET      = 143.0;
 
     /**
      * MASTER PEMETAAN PERIODE
@@ -139,9 +139,9 @@ class MonitoringController extends Controller
             // C. PERHITUNGAN LOGIKA MATRIX (Rekomendasi Cerdas)
 
             // 1. Vigor Index (Kepatuhan Girth + Pelepah)
-            $girth_comp = ($agregat['avg_girth'] > 0) ? ($agregat['avg_girth'] / self::STD_LINGKAR_BATANG) * 100 : 0;
-            $frond_comp = ($avg_frond > 0) ? ($avg_frond / self::STD_FROND_COUNT) * 100 : 0;
-            $agregat['vigor_index'] = round(($girth_comp + $frond_comp) / 2, 1);
+            $girth_comp = ($agregat['avg_girth'] > 0) ? ($agregat['avg_girth'] / self::STD_LB_KC_INDEX) * 100 : 0;
+            $frond_comp = ($avg_frond > 0) ? ($avg_frond / self::STD_JP_KC_INDEX) * 100 : 0;
+            $agregat['vigor_index'] = round(min(100, ($girth_comp + $frond_comp) / 2), 1);
 
             // 2. Maintenance Score (LCC & Kebersihan Piringan)
             $agregat['maintenance_score'] = round((($stats->avg_lcc ?? 0) + (100 - ($stats->avg_pir_buruk ?? 0))) / 2, 1);
@@ -166,7 +166,7 @@ class MonitoringController extends Controller
             $viewData['health_compliance'] = round(($viewData['avg_health'] / self::STD_SURVIVAL_RATE) * 100, 1);
             $agregat['compliance_rate'] = $viewData['health_compliance'];
             $agregat['survival_rate'] = $viewData['avg_health'];
-            $agregat['deviasi_girth'] = round($agregat['avg_girth'] - self::STD_LINGKAR_BATANG, 2);
+            $agregat['deviasi_girth'] = round($agregat['avg_girth'] - self::STD_LB_KC_INDEX, 3);
             $agregat['deviasi_survival'] = round($viewData['avg_health'] - self::STD_SURVIVAL_RATE, 2);
 
             // E. Integrasi Data Chart
@@ -199,7 +199,7 @@ class MonitoringController extends Controller
             'agregat' => $agregat,
             'benchmarks' => [
                 'std_survival' => self::STD_SURVIVAL_RATE,
-                'std_girth' => self::STD_LINGKAR_BATANG,
+                'std_girth' => self::STD_LB_KC_INDEX,
                 'std_sph' => self::STD_SPH_TARGET
             ]
         ]));
@@ -297,20 +297,33 @@ class MonitoringController extends Controller
             $configPeta = LokasiKebun::where('kebun', $kodeKebun)->whereNotNull('tile_url')->first();
             $kebunModel->tile_url = $configPeta ? $configPeta->tile_url : null;
 
+            $availableLayerTypes = DB::table('kebun_layers')
+                ->where('kebun_code', $kodeKebun)
+                ->where('is_active', 1)
+                ->pluck('layer_type')
+                ->toArray();
+
+            // Integrasi Data Spasial Lengkap (Batas, Blok, Pemeliharaan, LCC, dan Pohon)
             return view('apps.monitoring.detail-kebun', [
-                'kebun'         => $kebunModel,
-                'infoKebun'     => $this->chartService->getInfoKebunData($kodeKebun, $dbKey),
-                'kondisiPohon' => $this->chartService->getKondisiPohonData($kodeKebun, $dbKey),
-                'arealTanaman'  => $this->chartService->getArealTanamanData($kodeKebun, $dbKey),
-                'vegetatif'     => $this->chartService->getKorelasiVegetatifPerKebun($kodeKebun, $dbKey),
-                'geoJSON'       => $this->spatialService->getGeoJSON($kodeKebun, 'batas'),
-                'geoJSON_pemel' => $this->spatialService->getGeoJSON($kodeKebun, 'pemeliharaan'),
-                'geoJSON_lcc'   => $this->spatialService->getGeoJSON($kodeKebun, 'kacangan'),
-                'lokasiPoints'  => LokasiKebun::where('kebun', $kodeKebun)->where('jenis_lokasi', '!=', 'MAP_METADATA')->get(),
-                'statusCounts'  => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['statusCounts'],
-                'blockStatuses' => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['blockStatuses'],
-                'activeSlug'    => $slug,
-                'listPeriode'   => $this->mapPeriode
+                'kebun'          => $kebunModel,
+                'infoKebun'      => $this->chartService->getInfoKebunData($kodeKebun, $dbKey),
+                'kondisiPohon'   => $this->chartService->getKondisiPohonData($kodeKebun, $dbKey),
+                'arealTanaman'   => $this->chartService->getArealTanamanData($kodeKebun, $dbKey),
+                'vegetatif'      => $this->chartService->getKorelasiVegetatifPerKebun($kodeKebun, $dbKey),
+
+                // Sync GeoJSON Layers
+                'availableLayers' => $availableLayerTypes,
+                // 'geoJSON'        => $this->spatialService->getGeoJSON($kodeKebun, 'batas'),
+                // 'geoJSON_blok'   => $this->spatialService->getGeoJSON($kodeKebun, 'blok'),
+                // 'geoJSON_pemel'  => $this->spatialService->getGeoJSON($kodeKebun, 'pemeliharaan'),
+                // 'geoJSON_lcc'    => $this->spatialService->getGeoJSON($kodeKebun, 'kacangan'),
+                // 'geoJSON_pohon'  => $this->spatialService->getGeoJSON($kodeKebun, 'konpokok'),
+
+                'lokasiPoints'   => LokasiKebun::where('kebun', $kodeKebun)->where('jenis_lokasi', '!=', 'MAP_METADATA')->get(),
+                'statusCounts'   => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['statusCounts'],
+                'blockStatuses'  => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['blockStatuses'],
+                'activeSlug'     => $slug,
+                'listPeriode'    => $this->mapPeriode
             ]);
         } catch (\Exception $e) {
             Log::error("[DETAIL ERROR] " . $e->getMessage());
@@ -369,9 +382,10 @@ class MonitoringController extends Controller
     public function importDestroy($id)
     {
         $form = SimtanForm::findOrFail($id);
-        if ($form->file_path && Storage::disk('public')->exists($form->file_path)) Storage::disk('public')->delete($form->file_path);
+
         $form->delete();
-        return redirect()->route('monitoring.import')->with('success', 'Data dimusnahkan.');
+
+        return redirect()->route('monitoring.import')->with('success', 'Data dan file berhasil dihapus.');
     }
 
     public function downloadFile($id)
@@ -430,7 +444,8 @@ class MonitoringController extends Controller
         $veg = KorelasiVegetatif::where('kebun', $kebunCode)->where('periode', $dbKey)->first();
 
         // 2. Kalkulasi Matrix Performa
-        $vigor_index = ($veg) ? (($veg->lingkar_batang / self::STD_LINGKAR_BATANG) * 100) : 0;
+        $vigor_index = ($veg) ? (($veg->lingkar_batang / self::STD_LB_KC_INDEX) * 100) : 0;
+        $vigor_index = min(100, $vigor_index);
         $maintenance_score = ($stats) ? (($stats->persen_tutupan_kacangan + (100 - $stats->persen_pir_pkk_kurang_baik)) / 2) : 0;
 
         // 3. Integrasi Narasi AI

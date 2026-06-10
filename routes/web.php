@@ -13,6 +13,8 @@ use App\Http\Controllers\AI_Controller;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SpatialController;
+use Illuminate\Support\Facades\Storage;
+use App\Models\SimtanForm;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,7 +101,7 @@ Route::middleware('auth')->group(function () {
             // Analisis tren dashboard global
             Route::get('/dashboard-insight', 'getDashboardInsight')->name('analyze.dashboard');
             // Diagnosa spesifik per blok di peta
-            Route::get('/block-insight', 'getBlockInsight')->name('analyze.block');
+            Route::post('/block-insight', 'getBlockInsight')->name('analyze.block');
             // Update API Key & Threshold dari halaman Settings
             Route::post('/config/update', 'updateConfig')->name('config.update');
         });
@@ -130,6 +132,28 @@ Route::middleware('auth')->group(function () {
             Route::put('/users/update/{id}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
         });
+
+        /**
+         * UTILITY: STORAGE CLEANER
+         * Menghapus file .xlsx yang sudah tidak memiliki record di database (orphan files).
+         */
+        Route::get('/clean-storage', function () {
+            // Ambil semua file di folder uploads/simtan
+            $allFiles = Storage::disk('public')->files('uploads/simtan');
+            $deletedCount = 0;
+
+            foreach ($allFiles as $file) {
+                // Cek apakah file ini ada di database simtan_form
+                $existsInDb = SimtanForm::where('file_path', 'LIKE', "%$file%")->exists();
+
+                if (!$existsInDb) {
+                    Storage::disk('public')->delete($file);
+                    $deletedCount++;
+                }
+            }
+
+            return "Pembersihan selesai! $deletedCount file sampah berhasil dihapus.";
+        })->name('clean-storage');
     });
 });
 

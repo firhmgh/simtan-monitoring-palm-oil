@@ -851,13 +851,13 @@
                         // 4. Vegetatif 
                         new ApexCharts(this.$refs.vegetatifChart, {
                             series: [{
-                                name: 'Lingkar Batang',
+                                name: 'Rasio Lingkar Batang (LB/KC)',
                                 data: @json($korelasiVegetatifLingkarBatang ?? [])
                             }, {
-                                name: 'Jumlah Pelepah',
+                                name: 'Indeks Jumlah Pelepah (JP/KC)',
                                 data: @json($korelasiVegetatifJumlahPelepah ?? [])
                             }, {
-                                name: 'Panjang Pelepah',
+                                name: 'Rasio Panjang Pelepah (PP/KC)',
                                 data: @json($korelasiVegetatifPanjangPelepah ?? [])
                             }],
                             chart: {

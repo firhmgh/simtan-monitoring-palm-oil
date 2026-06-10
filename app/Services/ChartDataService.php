@@ -58,7 +58,7 @@ class ChartDataService
 
     /**
      * Chart: Korelasi Vegetatif (Biometrik)
-     * Mengolah data lingkar batang, pelepah, dan panjang pelepah.
+     * Mengolah data Rasio Lingkar Batang (LB/KC), pelepah, dan Rasio Panjang Pelepah (PP/KC).
      */
     public function getKorelasiVegetatifChartData($periode)
     {

@@ -9,9 +9,13 @@ use Illuminate\Support\Facades\{Storage, DB};
 
 class SimtanFormService
 {
+    /**
+     * Validasi sederhana apakah header file Excel mengandung kata kunci yang sesuai kategori.
+     */
     public static function validateHeader($kategori, $file)
     {
         $rawArray = Excel::toArray(new \stdClass(), $file);
+        // Ambil 5 baris pertama untuk pengecekan kata kunci
         $allText = strtolower(json_encode(array_slice($rawArray[0], 0, 5)));
 
         $keywords = match ($kategori) {
@@ -27,41 +31,40 @@ class SimtanFormService
         throw new \Exception("Mismatch: Struktur file tidak sesuai kategori '{$kategori}'.");
     }
 
+    /**
+     * Menangani proses upload, overwrite data lama, dan ingesti data ke database.
+     */
     public static function handleUpload(array $validated, $file)
     {
         return DB::transaction(function () use ($validated, $file) {
-            // Overwrite Logic berdasarkan kategori dan periode_data
+            // Cari data existing berdasarkan kategori dan periode yang sama
             $existing = SimtanForm::where('kategori_file', $validated['kategori_file'])
                 ->where('periode_data', $validated['periode_data'])->first();
 
             if ($existing) {
-                self::deleteExistingData($existing);
-                if ($existing->file_path) Storage::disk('public')->delete($existing->file_path);
-                $form = $existing;
-                $form->update(array_merge($validated, ['file_path' => $file->store('uploads/simtan', 'public')]));
-            } else {
-                $validated['file_path'] = $file->store('uploads/simtan', 'public');
-                $form = SimtanForm::create($validated);
+                /**
+                 * PENTING: Memanggil delete() di sini akan memicu Model SimtanForm::boot() 
+                 * yang secara otomatis menghapus file fisik di Storage dan 
+                 * menghapus data di tabel terkait (Rekap/Lokasi/Vegetatif).
+                 */
+                $existing->delete();
             }
 
-            // Ingesti berdasarkan kategori
+            // Simpan file baru ke Storage
+            $path = $file->store('uploads/simtan', 'public');
+            $validated['file_path'] = $path;
+
+            // Buat record form baru
+            $form = SimtanForm::create($validated);
+
+            // Jalankan ingesti Excel berdasarkan kategori file
             match ($form->kategori_file) {
-                'Rekap TBM' => Excel::import(new TbmImport($form->id, $form->kode_upload, $form->periode_data), $file),
-                'Lokasi Kebun' => Excel::import(new LokasiKebunImport($form->id, $form->kode_upload), $file),
+                'Rekap TBM'          => Excel::import(new TbmImport($form->id, $form->kode_upload, $form->periode_data), $file),
+                'Lokasi Kebun'       => Excel::import(new LokasiKebunImport($form->id, $form->kode_upload), $file),
                 'Korelasi Vegetatif' => Excel::import(new KorelasiVegetatifImport($form->id, $form->kode_upload, $form->periode_data), $file),
             };
 
             return $form;
         });
-    }
-
-    private static function deleteExistingData($form)
-    {
-        match ($form->kategori_file) {
-            'Rekap TBM' => DetailRekap::where('simtan_form_id', $form->id)->delete(),
-            'Lokasi Kebun' => LokasiKebun::where('simtan_form_id', $form->id)->delete(),
-            'Korelasi Vegetatif' => KorelasiVegetatif::where('simtan_form_id', $form->id)->delete(),
-            default => null
-        };
     }
 }

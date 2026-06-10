@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\SpatialDataService;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
  * 
  * Mengelola permintaan API untuk penyajian data Geospasial (GeoJSON & XYZ Tiles).
  * Menghubungkan Frontend Peta (Leaflet.js) dengan dataset lapangan dan database produksi.
+ * Mendukung analisis performa otomatis (Scopus Q1 Logic) melalui SpatialDataService.
  */
 class SpatialController extends Controller
 {
@@ -18,6 +19,17 @@ class SpatialController extends Controller
      * Property $spatialService dengan Type Information.
      */
     protected SpatialDataService $spatialService;
+
+    /**
+     * MASTER PEMETAAN PERIODE
+     * Sinkronisasi antara slug Frontend dengan Database Key.
+     */
+    protected array $mapPeriode = [
+        'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
+        'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
+        'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
+        'tahunan-2025'   => 'Tahun 2025',
+    ];
 
     /**
      * Dependency Injection SpatialDataService.
@@ -29,32 +41,36 @@ class SpatialController extends Controller
     }
 
     /**
-     * API Secure Gatekeeper: Menyajikan file GeoJSON dari Private Storage.
+     * API Secure Gatekeeper: Menyajikan file GeoJSON dengan Injeksi Analisis IPHI.
+     * 
+     * Method ini akan otomatis menyisipkan data analisis biometrik dan skor kesehatan
+     * ke dalam GeoJSON 'blok' melalui SpatialDataService.
      * 
      * @param string $kebun
      * @param string $layer
+     * @param Request $request
      * @return JsonResponse
      */
-    public function serve(string $kebun, string $layer): JsonResponse
+    public function serve(string $kebun, string $layer, Request $request): JsonResponse
     {
-        // Memanggil getGeoJSON dari Service agar data Sensus/Rekap ikut terbawa
-        $data = $this->spatialService->getGeoJSON($kebun, $layer);
+        // 1. Resolusi DB Key berdasarkan slug periode dari request
+        $dbKey = $this->resolveDbKey($request);
 
-        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "Dataset {$layer} untuk unit {$kebun} tidak ditemukan atau kosong."
-            ], 404);
+        // 2. Ambil data melalui Service. 
+        // Logika IPHI (Integrated Plantation Health Index) sudah dijalankan di dalam Service 
+        // jika $layer === 'blok', termasuk kalkulasi CV dan Survival Rate.
+        $data = $this->spatialService->getGeoJSON($kebun, $layer, $dbKey);
+
+        // Jangan return 404 jika hanya datanya kosong, agar JS tidak error
+        if (!$data) {
+            return response()->json(['type' => 'FeatureCollection', 'features' => []]);
         }
 
         return response()->json($data);
     }
 
     /**
-     * API: Mengambil Konfigurasi Awal Peta (Center & Zoom).
-     * 
-     * @param string $kode_kebun
-     * @return JsonResponse
+     * API: Mengambil Konfigurasi Awal Peta (Center, Zoom, & Orthophoto URL).
      */
     public function getConfig(string $kode_kebun): JsonResponse
     {
@@ -71,16 +87,12 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Batas Administrasi (Afdeling/Blok) & Data Kesehatan.
-     * Menggunakan method universal getGeoJSON.
-     * 
-     * @param string $kode_kebun
-     * @return JsonResponse
+     * API: Mengambil Batas Administrasi (Afdeling).
      */
-    public function getBlocks(string $kode_kebun): JsonResponse
+    public function getBlocks(string $kode_kebun, Request $request): JsonResponse
     {
-        // PERBAIKAN: Mengganti getBlockGeoJSON menjadi getGeoJSON
-        $data = $this->spatialService->getGeoJSON($kode_kebun, 'batas');
+        $dbKey = $this->resolveDbKey($request);
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'batas', $dbKey);
 
         if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
             return response()->json([
@@ -94,16 +106,13 @@ class SpatialController extends Controller
 
     /**
      * API: Mengambil Layer Tanaman Penutup Tanah (Kacangan / LCC).
-     * 
-     * @param string $kode_kebun
-     * @return JsonResponse
      */
-    public function getLCC(string $kode_kebun): JsonResponse
+    public function getLCC(string $kode_kebun, Request $request): JsonResponse
     {
-        // PERBAIKAN: Mengganti getExtraLayer menjadi getGeoJSON
-        $data = $this->spatialService->getGeoJSON($kode_kebun, 'kacangan');
+        $dbKey = $this->resolveDbKey($request);
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'kacangan', $dbKey);
 
-        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
+        if (!$data || count($data['features']) === 0) {
             return response()->json([
                 'status' => 'warning',
                 'message' => "Data spasial LCC untuk unit {$kode_kebun} tidak tersedia."
@@ -115,16 +124,13 @@ class SpatialController extends Controller
 
     /**
      * API: Mengambil Data Layer Pemeliharaan (Anomali Lapangan).
-     * 
-     * @param string $kode_kebun
-     * @return JsonResponse
      */
-    public function getMaintenance(string $kode_kebun): JsonResponse
+    public function getMaintenance(string $kode_kebun, Request $request): JsonResponse
     {
-        // PERBAIKAN: Mengganti getExtraLayer menjadi getGeoJSON
-        $data = $this->spatialService->getGeoJSON($kode_kebun, 'pemeliharaan');
+        $dbKey = $this->resolveDbKey($request);
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'pemeliharaan', $dbKey);
 
-        if (!$data || (isset($data['features']) && count($data['features']) === 0)) {
+        if (!$data || count($data['features']) === 0) {
             return response()->json([
                 'status' => 'warning',
                 'message' => "Data temuan pemeliharaan untuk unit {$kode_kebun} tidak ditemukan."
@@ -135,13 +141,32 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Titik Koordinat Pohon.
+     * API: Mengambil Titik Koordinat Pohon (KONPOKOK).
      */
-    public function getTrees(string $kode_kebun): JsonResponse
+    public function getTrees(string $kode_kebun, Request $request): JsonResponse
     {
-        return response()->json([
-            'status' => 'syncing',
-            'message' => 'Modul koordinat individu pohon sedang dalam tahap sinkronisasi biometrik.'
-        ]);
+        $dbKey = $this->resolveDbKey($request);
+        $data = $this->spatialService->getGeoJSON($kode_kebun, 'konpokok', $dbKey);
+
+        if (!$data || count($data['features']) === 0) {
+            return response()->json(['status' => 'error', 'message' => 'Data pohon tidak ditemukan'], 404);
+        }
+
+        return response()->json($data);
+    }
+
+    /**
+     * HELPER: Resolusi Slug Periode ke Database Key.
+     * 
+     * @param Request $request
+     * @return string
+     */
+    private function resolveDbKey(Request $request): string
+    {
+        $slug = $request->query('periode');
+
+        // Jika slug terdaftar di map, kembalikan DB Key. 
+        // Jika tidak, kembalikan slug asli (antisipasi jika input manual).
+        return $this->mapPeriode[$slug] ?? $slug ?? '';
     }
 }

@@ -225,9 +225,9 @@ class ExcelDataHelper
             // PERBAIKAN DI SINI: Tambahkan TBM dan Topografi
             $labelParts = array_filter([
                 $item->tahun,
-                $item->tbm,        // Tambahkan ini
+                $item->tbm,        
                 $item->kebun,
-                $item->topografi,  // Tambahkan ini (KUNCI UTAMA)
+                $item->topografi,  
                 $item->blok
             ]);
 

@@ -7,19 +7,16 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToCollection;
 
-/**
- * LokasiKebunImport
- * Logika parsing Excel khusus untuk data koordinat (GIS).
- * Mendukung pengisian simtan_form_id (Integer) dan handling merged cells.
- */
 class LokasiKebunImport implements ToCollection
 {
     private $simtanFormId;
     private $kodeUpload;
 
-    /**
-     * Constructor menerima ID (Integer) dan Kode (String) dari Service.
-     */
+    // State untuk menangani Merged Cells
+    private $currentDistrik = null;
+    private $currentKebun = null;
+    private $lastJenisLokasi = null;
+
     public function __construct($simtanFormId, $kodeUpload)
     {
         $this->simtanFormId = $simtanFormId;
@@ -28,81 +25,94 @@ class LokasiKebunImport implements ToCollection
 
     public function collection(Collection $rows)
     {
-        $success = 0;
-        $failed = 0;
-
-        // State untuk menyimpan nilai terakhir (Handle Merged Cells)
-        $currentDistrik = null;
-        $currentKebun = null;
-        $lastJenisLokasi = null;
-
-        // Skip header (slice 1) untuk mulai membaca dari data baris ke-2
+        // Mulai membaca dari baris ke-2 (Skip Header)
         foreach ($rows->slice(1) as $index => $row) {
-            $rowArray = $row->toArray();
+            $cells = $row->toArray();
 
-            // Skip jika baris benar-benar kosong total
-            if (collect($rowArray)->filter()->isEmpty()) {
-                continue;
+            // 1. Update State Merged Cells (Kolom A, B, C)
+            if (!empty(trim((string)($cells[0] ?? '')))) {
+                $this->currentDistrik = trim($cells[0]);
+            }
+            if (!empty(trim((string)($cells[1] ?? '')))) {
+                $this->currentKebun = trim($cells[1]);
+            }
+            if (!empty(trim((string)($cells[2] ?? '')))) {
+                $this->lastJenisLokasi = trim($cells[2]);
             }
 
-            // Pemetaan index kolom Excel (0=A, 1=B, 2=C, dst)
-            $distrik      = $rowArray[0] ?? null;
-            $kebun        = $rowArray[1] ?? null;
-            $jenisLokasi  = $rowArray[2] ?? null;
-            $namaLokasi   = $rowArray[3] ?? null;
-            $latitude     = $rowArray[4] ?? null;
-            $longitude    = $rowArray[5] ?? null;
+            $jenisLokasi = $this->lastJenisLokasi;
+            $namaLokasi  = trim((string)($cells[3] ?? ''));
+            $rawUrlExcel = trim((string)($cells[6] ?? ''));
 
-            // --- LOGIKA MERGED CELLS ---
-            if (!empty(trim((string)$distrik))) {
-                $currentDistrik = trim($distrik);
-            }
-            if (!empty(trim((string)$kebun))) {
-                $currentKebun = trim($kebun);
-            }
-            if (!empty(trim((string)$jenisLokasi))) {
-                $lastJenisLokasi = trim($jenisLokasi);
-            } else {
-                $jenisLokasi = $lastJenisLokasi;
-            }
+            // 2. Identifikasi apakah ini baris MAP METADATA
+            $isMetadata = (str_contains(strtoupper($jenisLokasi), 'MAP METADATA') || str_contains(strtoupper($jenisLokasi), 'MAP_METADATA'));
 
-            // Validasi baris: jika data krusial kosong, lewati
-            if (!$currentDistrik || !$currentKebun || !$namaLokasi) {
-                Log::warning("⚠️ Baris " . ($index + 2) . " dilewati: Data identitas lokasi tidak lengkap.");
+            // 3. Ambil & Bersihkan Koordinat (Kolom E dan F)
+            $lat = $this->toFloat($cells[4] ?? null);
+            $lng = $this->toFloat($cells[5] ?? null);
+
+            // --- LOGIKA FILTER PENYIMPANAN PERSIS SQL ANDA ---
+
+            $hasCoordinates = ($lat !== null && $lng !== null);
+            $hasUrlInExcel  = (!empty($rawUrlExcel) && $rawUrlExcel !== '-');
+
+            // Syarat Simpan: 
+            // - Jika baris punya koordinat (seperti Kantor Kebun)
+            // - ATAU Jika baris MAP METADATA yang punya link URL (seperti Orthophoto)
+            if (!$hasCoordinates && !($isMetadata && $hasUrlInExcel)) {
                 continue;
             }
 
             try {
-                // Integrasi simpan ke Database
+                // 4. Penentuan Nilai TILE_URL
+                // HANYA isi tile_url jika baris ini adalah MAP METADATA
+                $finalTileUrl = null;
+                if ($isMetadata && $hasUrlInExcel) {
+                    $finalTileUrl = $this->formatToRawGithub($rawUrlExcel);
+                }
+
+                // 5. Eksekusi Simpan
                 LokasiKebun::create([
-                    'simtan_form_id' => $this->simtanFormId, // Integer 
-                    'kode_upload'    => $this->kodeUpload,    // String (Audit Trail)
-                    'distrik'        => $currentDistrik,
-                    'kebun'          => $currentKebun,
-                    'jenis_lokasi'   => $jenisLokasi ?? '-',
-                    'nama_lokasi'    => trim($namaLokasi),
-                    'latitude'       => $this->toFloat($latitude),
-                    'longitude'      => $this->toFloat($longitude),
+                    'simtan_form_id' => $this->simtanFormId,
+                    'kode_upload'    => $this->kodeUpload,
+                    'distrik'        => $this->currentDistrik ?? '-',
+                    'kebun'          => $this->currentKebun ?? '-',
+                    'jenis_lokasi'   => $isMetadata ? 'MAP_METADATA' : ($jenisLokasi ?? '-'),
+                    'nama_lokasi'    => $namaLokasi,
+                    'latitude'       => $lat ?? 0, // Metadata tanpa koordinat jadi 0.00000000
+                    'longitude'      => $lng ?? 0, // Metadata tanpa koordinat jadi 0.00000000
+                    'tile_url'       => $finalTileUrl, // Baris biasa akan NULL, baris metadata akan berisi link
                 ]);
-                $success++;
             } catch (\Exception $e) {
-                $failed++;
-                Log::error("❌ Gagal simpan Lokasi Kebun baris " . ($index + 2) . ": " . $e->getMessage());
+                Log::error("Gagal simpan baris " . ($index + 2) . ": " . $e->getMessage());
             }
         }
-
-        Log::info("[IMPORT LOKASI KEBUN SELESAI] ✅ Sukses: {$success} | ❌ Gagal: {$failed}");
     }
 
     /**
-     * Membersihkan koordinat latitude/longitude agar menjadi float yang valid
+     * Konversi URL ke format RAW GitHub lengkap
+     */
+    private function formatToRawGithub($url)
+    {
+        if (str_contains($url, 'github.com')) {
+            $raw = str_replace(
+                ['github.com', '/tree/'],
+                ['raw.githubusercontent.com', '/'],
+                $url
+            );
+            return rtrim($raw, '/') . '/{z}/{x}/{y}.jpg';
+        }
+        return $url;
+    }
+
+    /**
+     * Membersihkan koordinat
      */
     private function toFloat($value)
     {
-        if ($value === null || trim((string)$value) === '' || $value === '-') {
+        if ($value === null || trim((string)$value) === '' || trim((string)$value) === '-') {
             return null;
         }
-        // Ganti koma dengan titik dan hapus karakter non-numeric kecuali titik dan minus
         $cleaned = preg_replace('/[^\d\.\-]/', '', str_replace(',', '.', (string) $value));
         return is_numeric($cleaned) ? (float) $cleaned : null;
     }

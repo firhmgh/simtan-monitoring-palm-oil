@@ -77,35 +77,37 @@ class AI_Controller extends Controller
         try {
             $request->validate([
                 'kebun' => 'required',
-                'blok_id' => 'required', // ID dari GeoJSON (Afdeling/Blok)
+                'blok_id' => 'required',
                 'periode' => 'required'
             ]);
 
             $dbKey = $this->mapPeriode[$request->periode] ?? $request->periode;
 
-            // 1. Ekstraksi Raw Data dari Database untuk Context Enrichment
             $rekap = DetailRekap::where('kebun', $request->kebun)
                 ->where('afdeling', $request->blok_id)
                 ->where('periode', $dbKey)
                 ->first();
 
+            // 2. PROTEKSI: Jika data tidak ditemukan, jangan dipaksa
             if (!$rekap) {
                 return response()->json([
                     'status' => 'success',
-                    'data' => ['rekomendasi_ai' => "Data sensus untuk unit {$request->blok_id} tidak ditemukan pada periode ini."]
+                    'data' => ['rekomendasi_ai' => "Data sensus unit {$request->blok_id} belum tersedia."]
                 ]);
             }
 
-            // 2. Integrasi Struktur Data Tambahan (Logic Literatur Agronomi)
-            // Menggunakan enrichedContext spesifik untuk dikirim ke AIService
+            // 3. KONTEKS CERDAS UNTUK AI (Gunakan data dari $rekap)
             $enrichedContext = [
-                'unit' => $request->blok_id,
-                'risiko_topografi' => $rekap->topografi,
-                'status_drainase' => $rekap->persen_area_tergenang > 2 ? 'KRITIS' : 'NORMAL',
-                'map_age' => ($rekap->tahun_tanam) ? (date('Y') - $rekap->tahun_tanam) . ' Tahun' : 'Tidak Terdata',
+                'unit'             => $request->blok_id,
+                'risiko_topografi' => $rekap->topografi ?? 'N/A',
+                'survival_rate'    => ($rekap->persen_pkk_normal ?? 0) . '%',
+                'status_drainase'  => ($rekap->persen_area_tergenang > 2) ? 'KRITIS (Tergenang)' : 'NORMAL',
+                'map_age'          => ($rekap->tahun_tanam) ? (date('Y') - $rekap->tahun_tanam) . ' Tahun' : 'Tidak Terdata',
+                'cakupan_lcc'      => ($rekap->persen_tutupan_kacangan ?? 0) . '%',
+                'piringan_gulma'   => ($rekap->persen_pir_pkk_kurang_baik ?? 0) . '%',
             ];
 
-            // 3. Eksekusi Analisis via AIService dengan Enriched Context
+            // 4. EKSEKUSI AI
             $analysis = $this->aiService->analyzeSpecificBlok(
                 $request->kebun,
                 $request->blok_id,
@@ -122,7 +124,7 @@ class AI_Controller extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => 'Sistem Sibuk: ' . $e->getMessage()], 500);
         }
     }
 

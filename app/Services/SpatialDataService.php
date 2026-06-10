@@ -6,120 +6,242 @@ use App\Models\DetailRekap;
 use App\Models\LokasiKebun;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
 /**
- * SpatialDataService
+ * SpatialDataService - High-Performance GIS & Decision Support Engine
  * 
- * Layanan profesional untuk mengolah data Geospasial (GeoJSON & XYZ Tiles).
- * Mendukung fusi data antara atribut file GIS dengan database operasional (Sensus Pohon).
- * Menggunakan Private Storage untuk melindungi keamanan aset digital PTPN IV.
+ * Sesuai Standar Scopus Q1: Mengimplementasikan Data Fusion Multimodal 
+ * (Tabular + Spasial + Biometrik) untuk kalkulasi Plantation Health Index.
  */
 class SpatialDataService
 {
     /**
-     * 1. Ambil GeoJSON secara Dinamis (Universal untuk 26 Kebun)
-     * Mengambil path file dari database dan menggabungkan data statistik sensus.
-     * 
-     * @param string $kodeKebun Contoh: 1KAS, 1KDH
-     * @param string $layerType Contoh: batas, kacangan, pemeliharaan
+     * Mengambil GeoJSON dengan Injeksi Analisis Performa Blok (IPHI)
      */
-    public function getGeoJSON($kodeKebun, $layerType)
+    public function getGeoJSON($kodeKebun, $layerType, $periode = null)
     {
         $kode = strtoupper($kodeKebun);
-        $filePath = "spatial/{$kode}/{$layerType}.geojson";
+        $type = strtolower($layerType);
+        $filePath = $this->resolvePath($kode, $type);
 
-        try {
-            $config = DB::table('kebun_layers')
-                ->where('kebun_code', $kode)
-                ->where('layer_type', $layerType)
-                ->where('is_active', 1)
-                ->first();
-            if ($config) {
-                $filePath = $config->file_path;
-            }
-        } catch (\Exception $e) {
-            Log::warning("Database fallback for {$kode}");
+        if (!$filePath) return ['type' => 'FeatureCollection', 'features' => []];
+
+        // 1. MAPPING PERIODE
+        $mapPeriode = [
+            'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
+            'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
+            'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
+            'tahunan-2025'   => 'Tahun 2025',
+        ];
+
+        $dbKey = $mapPeriode[$periode] ?? $periode;
+        $geojsonData = json_decode(Storage::disk('local')->get($filePath), true);
+
+        // 2. DATA FUSION: Ambil data rekapitulasi database
+        $dbData = DetailRekap::where('kebun', $kode)
+            ->where('periode', $dbKey)
+            ->get();
+
+        $lookupMap = $dbData->keyBy(function ($item) {
+            return strtoupper(trim($item->blok ?? $item->afdeling));
+        });
+
+        // 3. TREE DATA FUSION (Khusus untuk Layer BLOK)
+        // Ambil data pohon untuk menghitung Coefficient of Variation (CV) dan Survival
+        $treeDataGrouped = [];
+        if ($type === 'blok') {
+            $treeDataGrouped = $this->getTreeDataGroupedByBlock($kode);
         }
-
-        if (!Storage::exists($filePath)) return ['type' => 'FeatureCollection', 'features' => []];
-
-        $geojsonData = json_decode(Storage::get($filePath), true);
-
-        // Ambil data statistik riil. 
-        // Berdasarkan SQL Dump Anda, ID unit tersimpan di kolom 'afdeling'
-        $blockStats = DetailRekap::where('kebun', $kode)
-            ->where('is_total', 0)
-            ->get()
-            ->keyBy('afdeling'); // Sesuaikan dengan kolom identitas di DB anda
 
         foreach ($geojsonData['features'] as &$feature) {
             $props = &$feature['properties'];
+            $unitID = strtoupper(trim($props['BLOK'] ?? $props['AFDELING'] ?? ''));
 
-            // 1. Ekstraksi Afdeling dari properti 'layer' (Sangat Penting untuk Kacangan)
-            if (!isset($props['AFDELING']) && isset($props['layer'])) {
-                preg_match('/AFD\d+/', $props['layer'], $matches);
-                $props['afdeling_id'] = $matches[0] ?? 'N/A';
-            } else {
-                $props['afdeling_id'] = $props['AFDELING'] ?? 'N/A';
-            }
+            // Ambil data statistik dari DB
+            $data = $lookupMap->get($unitID);
 
-            // 2. Mapping Key untuk pencarian database
-            $blockKey = $props['BLOK'] ?? $props['AFDELING'] ?? $props['blok'] ?? null;
+            if ($type === 'blok') {
+                // Jalankan Logika "Integrated Plantation Health Index" (IPHI)
+                $trees = $treeDataGrouped[$unitID] ?? [];
+                $analysis = $this->calculateBlockHealth($trees);
 
-            if ($blockKey && isset($blockStats[$blockKey])) {
-                $data = $blockStats[$blockKey];
+                // Injeksi hasil analisis IPHI ke properties GeoJSON
+                $props['analysis'] = $analysis;
+                $props['fill_color'] = $this->getIPHIColor($analysis['status']);
+                $props['survival_rate'] = $analysis['survival_rate'];
+            } else if ($data) {
                 $props['survival_rate'] = (float) $data->persen_pkk_normal;
-                $props['pkk_mati'] = (int) $data->pkk_mati;
-                $props['pkk_kerdil'] = (int) $data->pkk_kerdil_mati_kembali;
-                $props['fill_color'] = $this->getColorByHealth($data->persen_pkk_normal);
-                $props['display_name'] = $blockKey;
-            } else {
-                $props['survival_rate'] = 0;
-                $props['fill_color'] = '#cbd5e1';
-                $props['display_name'] = $blockKey ?? 'N/A';
+                $props['fill_color'] = $this->calculateColor($data->persen_pkk_normal, $type);
+                $props['LUAS_ADM'] = (float) $data->luas_ha;
             }
+
+            $props['std_blok'] = $unitID;
+            $props['layer_type'] = $type;
+            $props['db_found'] = $data ? true : false;
         }
 
         return $geojsonData;
     }
 
     /**
-     * 2. Logika Pewarnaan Tematik Berdasarkan Persentase Kesehatan (Standar PPKS)
+     * Logic Scopus Q1: Integrated Plantation Health Index (IPHI)
+     * Menggunakan MCDM (Multi-Criteria Decision Making)
      */
-    private function getColorByHealth($percentage)
+    public function calculateBlockHealth($trees)
     {
-        if ($percentage >= 95) return '#10b981'; // Hijau (Optimal)
-        if ($percentage >= 90) return '#f59e0b'; // Kuning (Waspada)
-        return '#ef4444'; // Merah (Kritis)
+        if (empty($trees)) {
+            return [
+                'status' => 'healthy',
+                'score' => 100,
+                'cv' => 0,
+                'survival_rate' => 100,
+                'message' => 'No Tree Data Available'
+            ];
+        }
+
+        $total = count($trees);
+        $mati = 0;
+        $kerdil = 0;
+        $girths = [];
+
+        foreach ($trees as $tree) {
+            $status = strtoupper($tree['properties']['KONPOKOK'] ?? '');
+            if ($status === 'MATI') $mati++;
+            if ($status === 'KERDIL') $kerdil++;
+
+            // Ambil data biometrik (Rasio Lingkar Batang (LB/KC))
+            $girth = (float) ($tree['properties']['std_lingkar_batang'] ?? 0);
+            if ($girth > 0) $girths[] = $girth;
+        }
+
+        // Kriteria 1: Survival Score (W1 = 40%)
+        $survivalRate = (($total - $mati) / $total) * 100;
+        $s_score = $survivalRate * 0.4;
+
+        // Kriteria 2: Uniformity Score / CV (W2 = 30%)
+        // Semakin rendah variasi pertumbuhan, semakin sehat bloknya
+        $u_score = 30; // Default
+        $cv = 0;
+        if (count($girths) > 1) {
+            $mean = array_sum($girths) / count($girths);
+            $sumSq = 0;
+            foreach ($girths as $g) $sumSq += pow($g - $mean, 2);
+            $stdDev = sqrt($sumSq / count($girths));
+            $cv = ($stdDev / $mean) * 100;
+
+            if ($cv <= 15) $u_score = 30; // Sangat Seragam
+            elseif ($cv > 30) $u_score = 10; // Heterogenitas Tinggi (Masalah)
+            else $u_score = 20;
+        }
+
+        // Kriteria 3: Growth Performance (W3 = 30%)
+        $normalRate = (($total - ($mati + $kerdil)) / $total) * 100;
+        $g_score = $normalRate * 0.3;
+
+        // Total Agregated Score
+        $totalScore = $s_score + $u_score + $g_score;
+
+        // Classification Logic
+        $statusFinal = 'healthy';
+        if ($totalScore < 65) $statusFinal = 'critical';
+        elseif ($totalScore < 85) $statusFinal = 'moderate';
+
+        return [
+            'status' => $statusFinal,
+            'score' => round($totalScore, 2),
+            'cv' => round($cv, 2),
+            'survival_rate' => round($survivalRate, 2),
+            'counts' => ['total' => $total, 'dead' => $mati, 'stunted' => $kerdil]
+        ];
     }
 
     /**
-     * 3. Helper untuk Label Status Kesehatan
+     * Memuat data KONPOKOK dan mengelompokkan per blok
      */
-    private function getStatusLabel($percentage)
+    private function getTreeDataGroupedByBlock($kode)
     {
-        if ($percentage >= 95) return 'Optimal / Sehat';
-        if ($percentage >= 90) return 'Waspada / Perlu Perhatian';
-        return 'Kritis / Perlu Intervensi';
+        $path = $this->resolvePath($kode, 'konpokok');
+        if (!$path) return [];
+
+        $data = json_decode(Storage::disk('local')->get($path), true);
+        $grouped = [];
+
+        foreach ($data['features'] as $f) {
+            $bid = strtoupper(trim($f['properties']['BLOK'] ?? ''));
+            if ($bid) {
+                $grouped[$bid][] = $f;
+            }
+        }
+        return $grouped;
     }
 
     /**
-     * 4. Menyediakan Konfigurasi XYZ Tiles (Orthophoto Drone)
-     * Mengintegrasikan koordinat pusat dari database 'lokasi_kebun'.
+     * Resolve path file GeoJSON dengan sistem fallback
+     */
+    private function resolvePath($kode, $type)
+    {
+        try {
+            $config = DB::table('kebun_layers')
+                ->where('kebun_code', $kode)
+                ->where('layer_type', $type)
+                ->where('is_active', 1)
+                ->first();
+
+            if ($config && Storage::disk('local')->exists($config->file_path)) {
+                return $config->file_path;
+            }
+        } catch (\Exception $e) {
+            Log::error("Database Kebun Layers Error: " . $e->getMessage());
+        }
+
+        $upper = strtoupper($type);
+        $fallbacks = [
+            "spatial/{$kode}/{$kode}_TBM2023_{$upper}.geojson",
+            "spatial/{$kode}/{$kode}_{$upper}.geojson",
+            "spatial/{$kode}/{$type}.geojson"
+        ];
+
+        foreach ($fallbacks as $path) {
+            if (Storage::disk('local')->exists($path)) return $path;
+        }
+
+        return null;
+    }
+
+    /**
+     * Warna IPHI (Integrated Plantation Health Index)
+     */
+    private function getIPHIColor($status)
+    {
+        return [
+            'healthy'  => '#10b981', // Hijau
+            'moderate' => '#f59e0b', // Kuning
+            'critical' => '#ef4444', // Merah
+        ][$status] ?? '#cbd5e1';
+    }
+
+    /**
+     * Penentuan warna tematik standar
+     */
+    private function calculateColor($percentage, $type)
+    {
+        if ($percentage >= 95) return '#10b981';
+        if ($percentage >= 90) return '#f59e0b';
+        if ($percentage > 0) return '#ef4444';
+        return ($type === 'batas') ? '#94a3b8' : '#cbd5e1';
+    }
+
+    /**
+     * Konfigurasi Orthophoto UAV
      */
     public function getOrthophotoConfig($kodeKebun)
     {
         $kebun = LokasiKebun::where('kebun', strtoupper($kodeKebun))->first();
-
-        $lat = $kebun->latitude ?? 2.03394;
-        $lng = $kebun->longitude ?? 99.9952;
-
         return [
-            'tile_url' => $kebun->tile_url ?? null, // Mengambil URL dari DB (bisa GitHub/Local)
-            'latitude' => (float) $lat,
-            'longitude' => (float) $lng,
+            'tile_url' => $kebun->tile_url ?? null,
+            'latitude' => (float) ($kebun->latitude ?? 2.03394),
+            'longitude' => (float) ($kebun->longitude ?? 99.9952),
             'minZoom' => 12,
             'maxZoom' => 22,
             'maxNativeZoom' => 18
