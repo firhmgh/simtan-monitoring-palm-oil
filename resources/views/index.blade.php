@@ -1,41 +1,59 @@
 <x-layout.default>
-    <!-- Script ApexCharts Engine & Font Inter -->
-    <script defer src="/assets/js/apexcharts.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <!-- Script ApexCharts Engine -->
+    <script defer src="{{ asset('assets/js/apexcharts.js') }}"></script>
 
-    <div x-data="dashboard" class="space-y-5 pb-10 font-['Inter'] antialiased text-slate-800 dark:text-white-light"
+    <div x-data="dashboard" class="space-y-5 pb-10 font-['Plus_Jakarta_Sans',sans-serif] antialiased text-slate-900 dark:text-white"
         x-init="initDashboard()">
 
         <!-- 1. HEADER & STATUS SISTEM -->
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
             <div class="space-y-1">
-                <nav class="flex text-[10px] font-black tracking-[0.2em] text-primary/80">
-                    <span>Beranda</span> <span class="mx-2 text-gray-400">/</span> <span>Dashboard Analytics</span>
-                </nav>
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Dashboard</li>
+                </ul>
                 <h1 class="text-2xl md:text-3xl font-black tracking-tighter leading-none italic">
                     Monitoring Panel <span class="text-primary underline decoration-primary/20">Presisi TBM III</span>
                 </h1>
+                <p class="text-xs font-bold italic text-slate-500 dark:text-slate-400 mt-2 border-l-2 border-primary pl-2 tracking-tight">
+                    Sistem Integrasi Terpadu - PTPN IV Regional I
+                </p>
             </div>
 
             <div
-                class="flex items-center gap-4 px-4 py-2 bg-white dark:bg-[#0e1726] border border-gray-100 dark:border-white-dark/10 rounded-xl shadow-sm">
+                class="flex items-center gap-4 px-4 py-2 bg-white/70 dark:bg-[#0e1726]/70 backdrop-blur-md border border-gray-100/80 dark:border-white-dark/10 rounded-xl shadow-sm hover:shadow-md transition-all font-plus-jakarta">
                 <div class="text-right">
-                    <p class="text-[9px] font-black text-gray-400 leading-none mb-1 tracking-widest">Inference
-                        Engine</p>
-                    <p class="text-xs font-black text-emerald-500 italic">GPT-4o Terkoneksi</p>
+                    <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 leading-none mb-1 tracking-widest uppercase">
+                        Mesin Inferensi
+                    </p>
+                    <p class="text-xs font-black italic"
+                        :class="{
+                            'text-rose-500 dark:text-rose-400': !navigator.onLine,
+                            'text-amber-500 dark:text-amber-400': isThinking,
+                            'text-emerald-500 dark:text-emerald-400': navigator.onLine && !isThinking
+                        }"
+                        x-text="!navigator.onLine ? 'Terputus' : (isThinking ? 'Sedang Berpikir...' : ($store.app.activeModel || 'Gemini') + ' Terkoneksi')">
+                    </p>
                 </div>
-                <div class="relative flex h-3 w-3">
-                    <span
-                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span
-                        class="relative inline-flex rounded-full h-3 w-3 bg-primary shadow-[0_0_8px_rgba(67,97,238,0.5)]"></span>
+                <div class="relative flex h-3 w-3 items-center justify-center">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                        :class="{
+                            'bg-rose-500': !navigator.onLine,
+                            'bg-amber-500': isThinking,
+                            'bg-emerald-500': navigator.onLine && !isThinking
+                        }"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+                        :class="{
+                            'bg-rose-500': !navigator.onLine,
+                            'bg-amber-500': isThinking,
+                            'bg-emerald-500': navigator.onLine && !isThinking
+                        }"></span>
                 </div>
             </div>
         </div>
 
         <!-- 2. FILTER DIMENSI WAKTU -->
-        <div class="panel border-none shadow-lg bg-white dark:bg-[#0e1726] rounded-2xl overflow-hidden relative group">
+        <div class="panel border-none shadow-lg bg-white/80 dark:bg-[#0e1726]/80 backdrop-blur-md border border-white/20 dark:border-white-dark/10 rounded-2xl overflow-hidden relative group">
             <div
                 class="absolute right-0 top-0 opacity-[0.03] dark:opacity-[0.07] pointer-events-none transform translate-x-10 -translate-y-10">
                 <svg class="w-64 h-64 text-primary" fill="currentColor" viewBox="0 0 24 24">
@@ -44,10 +62,10 @@
             </div>
             <div class="relative z-10 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div>
-                    <h4 class="text-xl font-black italic tracking-tighter text-slate-800 dark:text-white">
+                    <h4 class="text-xl font-black italic tracking-tighter text-slate-900 dark:text-white">
                         Filter Dimensi Temporal</h4>
-                    <p class="text-slate-500 dark:text-white/60 text-[10px] font-bold tracking-widest mt-1">
-                        Sinkronisasi Multimodal & Maturity Curve Analysis</p>
+                    <p class="text-slate-600 dark:text-white/60 text-[10px] font-bold tracking-widest mt-1">
+                        Integrasi Data Terpadu & Analisis Kurva Pertumbuhan</p>
                 </div>
                 <div class="w-full md:w-80">
                     <select x-model="selectedPeriode" @change="changePeriode" class="form-select ...">
@@ -120,7 +138,7 @@
 
         <!-- 4. AI EXECUTIVE HUB (Narasi Otomatis) -->
         <div
-            class="panel border-none p-0 overflow-hidden shadow-xl bg-white dark:bg-[#0e1726] rounded-2xl border border-gray-100 dark:border-white-dark/5">
+            class="panel border-none p-0 overflow-hidden shadow-xl bg-white/80 dark:bg-[#0e1726]/80 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white-dark/10">
             <div
                 class="p-5 bg-gray-50/50 dark:bg-black/20 border-b border-gray-100 dark:border-white-dark/5 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-4">
@@ -133,16 +151,16 @@
                     </div>
                     <div>
                         <h4
-                            class="text-xl font-black text-gray-800 dark:text-white-light leading-none italic tracking-tighter">
-                            AI Executive Narrative</h4>
-                        <p class="text-[10px] font-bold text-gray-400 mt-2 tracking-widest">Inference: <span
+                            class="text-xl font-black text-slate-900 dark:text-white-light leading-none italic tracking-tighter">
+                            Narasi Eksekutif AI</h4>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-gray-400 mt-2 tracking-widest">Inferensi: <span
                                 class="text-primary" x-text="periodeLabels[selectedPeriode]"></span></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <select x-model="analysisMode"
-                        class="form-select py-2 text-[10px] font-black rounded-xl border-gray-200 dark:bg-black/20 w-44 tracking-widest">
-                        <option value="multimodal">🧠 MULTIMODAL</option>
+                        class="form-select py-2 text-[10px] font-black rounded-xl border-gray-200 dark:bg-black/20 w-44 tracking-widest text-slate-900 dark:text-white">
+                        <option value="multimodal">🧠 INTEGRASI DATA</option>
                         <option value="growth">📈 VIGOR TUMBUH</option>
                         <option value="survival">🛡️ MORTALITAS</option>
                     </select>
@@ -163,20 +181,19 @@
 
                 <div x-show="!isThinking" class="max-w-none prose prose-slate dark:prose-invert">
                     <!-- Konten hasil AI yang sudah di-format -->
-                    <div class="ai-content-wrapper text-gray-700 dark:text-gray-300 leading-[1.8] font-medium text-base md:text-lg italic tracking-tight"
-                        x-html="formatAiOutput(aiInferenceText)">
+                    <div class="ai-content-wrapper text-slate-900 dark:text-gray-300 leading-[1.8] font-medium text-base md:text-lg italic tracking-tight"
+                         x-html="formatAiOutput(aiInferenceText)">
                     </div>
                 </div>
 
                 <!-- Footer Reasoning Metrics -->
                 <div class="mt-12 pt-8 border-t border-gray-100 dark:border-white-dark/5">
-                    <h5 class="text-[10px] font-black text-gray-400 tracking-[0.3em] mb-6">Neural Reasoning
-                        Context</h5>
+                    <h5 class="text-[10px] font-black text-slate-900 dark:text-white-light tracking-[0.3em] mb-6">Logika Pemrosesan AI</h5>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <template x-for="param in reasoningParams" :key="param.label">
                             <div>
                                 <div class="flex justify-between text-[10px] font-black mb-2 tracking-widest">
-                                    <span class="text-gray-400" x-text="param.label"></span>
+                                    <span class="text-slate-500 dark:text-gray-400" x-text="param.label"></span>
                                     <span x-text="param.value" :class="param.color" class="italic"></span>
                                 </div>
                                 <div class="h-1.5 bg-gray-100 dark:bg-black/40 rounded-full overflow-hidden">
@@ -440,8 +457,6 @@
             </div>
         </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
         <script>
             document.addEventListener("alpine:init", () => {
                 Alpine.data("dashboard", () => ({
@@ -450,7 +465,7 @@
                     hasData: {{ $hasData ? 'true' : 'false' }},
                     isThinking: false,
                     analysisMode: 'multimodal',
-                    aiInferenceText: "{{ $hasData ? 'Sinkronisasi Neural Dashboard...' : 'Sistem Standby: Dataset untuk periode ini belum tersedia di database.' }}",
+                    aiInferenceText: "{{ $hasData ? 'Sinkronisasi Integrasi Data Terpadu...' : 'Sistem Standby: Dataset untuk periode ini belum tersedia di database.' }}",
                     agregat: @json($agregat ?? []),
 
                     kpiCards: [{
@@ -505,7 +520,7 @@
                             hex: "#10b981"
                         },
                         {
-                            label: "Multimodal Sync",
+                            label: "Integrasi Data Terpadu",
                             value: "{{ $hasData ? 'Stable' : 'Wait' }}",
                             percent: {{ $hasData ? 88 : 0 }},
                             color: "{{ $hasData ? 'text-primary' : 'text-gray-400' }}",
@@ -532,56 +547,39 @@
                     formatAiOutput(text) {
                         if (!text) return "Memproses narasi...";
 
-                        // 1. Membersihkan angka "1." atau "2." yang muncul tepat setelah tanda bullet (* atau -)
-                        // Contoh: "* 1. Teks" menjadi "* Teks"
-                        let cleanText = text.replace(/^\s*[\*\-]\s*\d+\.\s*/gm, '* ');
+                        let cleanText = text.replace(/\*\*(.*?)\*\*/g,
+                            '<strong class="text-slate-900 dark:text-white font-extrabold">$1</strong>');
 
-                        // 2. Memberikan baris baru jika ada angka penomoran yang menempel di akhir kalimat
-                        // Contoh: "...sesuai 2. Jika..." menjadi "...sesuai \n2. Jika..."
-                        cleanText = cleanText.replace(/([a-z\)])\s+(\d+\.)\s+([A-Z])/g, '$1\n\n$2 $3');
-
-                        // 3. Memproses Markdown Bold (**teks**) menjadi teks hitam tebal
-                        cleanText = cleanText.replace(/\*\*(.*?)\*\*/g,
-                            '<strong class="text-slate-900 dark:text-white font-black">$1</strong>');
-
-                        // 4. Pisahkan baris untuk diproses
                         let lines = cleanText.split('\n');
                         let html = '';
-                        let inList = false;
 
                         lines.forEach(line => {
                             let trimmed = line.trim();
                             if (!trimmed) return;
 
-                            // Jika baris adalah list bullet (*)
-                            if (trimmed.startsWith('*') || trimmed.startsWith('-')) {
-                                if (!inList) {
-                                    html += '<ul class="space-y-3 my-4 list-disc list-inside">';
-                                    inList = true;
-                                }
-                                let content = trimmed.substring(1).trim();
-                                html += `<li class="pl-2">${content}</li>`;
+                            let isListItem = false;
+                            let content = trimmed;
+
+                            if (trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+                                isListItem = true;
+                                content = trimmed.replace(/^[\+\-\*]\s*/, '').trim();
                             }
-                            // Jika baris adalah penomoran mandiri (1. 2. 3.)
-                            else if (/^\d+\./.test(trimmed)) {
-                                if (inList) {
-                                    html += '</ul>';
-                                    inList = false;
-                                }
-                                html +=
-                                    `<div class="flex gap-3 mb-4 mt-6"><span class="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-md flex items-center justify-center text-[10px] font-black">${trimmed.split('.')[0]}</span><p>${trimmed.split('.').slice(1).join('.').trim()}</p></div>`;
-                            }
-                            // Paragraf biasa
-                            else {
-                                if (inList) {
-                                    html += '</ul>';
-                                    inList = false;
-                                }
-                                html += `<p class="mb-4">${trimmed}</p>`;
+
+                            if (isListItem) {
+                                html += `
+                                    <div class="bg-slate-50/50 dark:bg-white/5 shadow-sm border-l-4 border-emerald-500 p-3 mb-2 rounded-r-xl flex items-start gap-3 transition-all hover:bg-slate-100/50 dark:hover:bg-white/10">
+                                        <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <div class="text-slate-700 dark:text-gray-300 text-xs md:text-sm font-medium leading-relaxed">${content}</div>
+                                    </div>`;
+                            } else if (trimmed.endsWith(':')) {
+                                html += `<h5 class="text-xs md:text-sm font-extrabold text-slate-950 dark:text-white uppercase tracking-wider mt-4 mb-2 border-b border-gray-100 dark:border-white-dark/5 pb-1">${trimmed}</h5>`;
+                            } else {
+                                html += `<p class="text-xs md:text-sm text-slate-700 dark:text-gray-300 leading-relaxed mb-3">${trimmed}</p>`;
                             }
                         });
 
-                        if (inList) html += '</ul>';
                         return html;
                     },
 
@@ -655,7 +653,7 @@
                         const premiumTooltip = {
                             theme: 'dark',
                             style: {
-                                fontFamily: 'Inter, sans-serif'
+                                fontFamily: 'Plus Jakarta Sans, sans-serif'
                             },
                             x: {
                                 show: true

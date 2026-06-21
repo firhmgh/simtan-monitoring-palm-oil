@@ -9,41 +9,34 @@ use App\Models\User;
 
 /**
  * Class AuthController
- * 
- * Mengelola siklus hidup autentikasi pengguna (Login & Logout) 
+ *
+ * Mengelola otentikasi pengguna termasuk fungsi login dan logout.
  */
 class AuthController extends Controller
 {
+    /**
+     * Menampilkan halaman formulir login.
+     */
     public function showLogin()
     {
         return view('auth.login');
     }
 
     /**
-     * Memproses permintaan login dengan validasi kredensial.
-     * 
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Memproses verifikasi kredensial login pengguna.
      */
     public function login(Request $request)
     {
-        // 1. Validasi Input sesuai standar keamanan
         $credentials = $request->validate([
-            'username' => ['required', 'string'],
+            'email' => ['required', 'string', 'email'],
             'password' => ['required'],
         ]);
 
-        // 2. Percobaan Autentikasi (Attempt Login)
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            /**
-             * 3. Role-Based Redirect (Otorisasi Pasca Login)
-             * Mengarahkan user ke index sesuai otoritasnya
-             */
             $user = Auth::user();
 
-            // Logika pengalihan berdasarkan nama role
             if ($user->role->name === 'superadmin' || $user->role->name === 'admin') {
                 return redirect()->intended('/index')
                     ->with('success', 'Selamat datang, ' . $user->name);
@@ -53,14 +46,13 @@ class AuthController extends Controller
                 ->with('success', 'Login Berhasil.');
         }
 
-        // 4. Response Gagal (Exception Handling)
         return back()->withErrors([
-            'username' => 'Kredensial yang diberikan tidak cocok dengan data kami.',
-        ])->onlyInput('username');
+            'email' => 'Kredensial yang Anda masukkan tidak terdaftar di sistem kami.',
+        ])->onlyInput('email');
     }
 
     /**
-     * Mengakhiri sesi pengguna (Logout).
+     * Mengakhiri sesi aktif pengguna dan melakukan logout.
      */
     public function logout(Request $request)
     {

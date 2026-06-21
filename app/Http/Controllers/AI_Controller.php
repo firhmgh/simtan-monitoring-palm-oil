@@ -45,7 +45,7 @@ class AI_Controller extends Controller
             $refresh = $request->has('refresh');
 
             // Logika penentuan mode otomatis: 
-            // Jika ada parameter kebun -> kebun_summary, jika tidak -> multimodal (Global)
+            // Jika ada parameter kebun -> kebun_summary, jika tidak -> integrasi terpadu (Global)
             $mode = $kebun ? 'kebun_summary' : 'multimodal';
 
             $dbKey = $this->mapPeriode[$selectedSlug] ?? $selectedSlug;
@@ -70,7 +70,7 @@ class AI_Controller extends Controller
 
     /**
      * BLOCK INSIGHT: Diagnosa & Prediksi Spesifik Per Blok
-     * Terintegrasi dengan Scopus Standard Enrichment (Topografi, Drainase, & MAP Age)
+     * Terintegrasi dengan Standard Enrichment (Topografi, Drainase, & MAP Age)
      */
     public function getBlockInsight(Request $request)
     {
@@ -158,7 +158,7 @@ class AI_Controller extends Controller
 
             return back()->with('success', 'Konfigurasi Neural Engine dan Parameter Agronomi Berhasil Disinkronisasi.');
         } catch (\Exception $e) {
-            return back()->withErrors(['system_error' => 'Gagal memperbarui konfigurasi: ' . $e->getMessage()]);
+            return back()->with('error', 'Gagal memperbarui konfigurasi: ' . $e->getMessage());
         }
     }
 }

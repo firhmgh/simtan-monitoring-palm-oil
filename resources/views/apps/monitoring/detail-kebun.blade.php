@@ -52,7 +52,7 @@
             filter: brightness(0.8) contrast(1.2) saturate(0.8);
         }
 
-        /* Scopus Q1 Visual: Critical Hotspot Animation */
+        /* Critical Hotspot Animation */
         path.leaflet-interactive[fill="#ef4444"] {
             animation: critical-pulse 2s infinite;
         }
@@ -124,15 +124,17 @@
         <!-- HEADER & SELECTOR -->
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="space-y-1 text-left">
-                <nav class="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-primary/60">
-                    <a href="{{ route('monitoring.data-kebun') }}" class="hover:text-primary transition-colors">Daftar
-                        Kebun</a>
-                    <span class="text-slate-300">/</span>
-                    <span class="text-slate-400 font-black">Analisis Bio-Spasial</span>
-                </nav>
+                <!-- Navigasi Breadcrumb Standar SIMTAN -->
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Detail Kebun</li>
+                </ul>
                 <h1 class="text-3xl font-black tracking-tighter italic text-slate-900 dark:text-white leading-none">
                     {{ $kebun->nama_kebun }} <span class="text-primary not-italic">({{ $kebun->kebun }})</span>
                 </h1>
+                <p class="text-xs font-bold italic text-slate-500 dark:text-slate-400 mt-2 border-l-2 border-primary pl-2 tracking-tight">
+                    Sistem Integrasi Terpadu - PTPN IV Regional I
+                </p>
                 <p class="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-widest leading-none mt-2">
                     {{ $kebun->nama_distrik }} • <span x-text="totalBlocks"></span> Unit Blok •
                     {{ number_format($infoKebun['luas'] ?? 0, 2, ',', '.') }} Ha Luas Areal
@@ -143,7 +145,7 @@
                 class="flex items-center gap-4 p-2 pl-5 bg-white dark:bg-[#0e1726] rounded-2xl border border-slate-100 shadow-sm">
                 <div class="hidden lg:block text-right border-r border-slate-100 dark:border-slate-800 pr-4">
                     <p class="text-[9px] font-black text-slate-400 tracking-widest mb-1">Dimensi Waktu</p>
-                    <p class="text-[10px] font-black text-primary italic">Geo-Synchronized</p>
+                    <p class="text-[10px] font-black text-primary italic">Tersinkronisasi</p>
                 </div>
                 <select x-model="selectedPeriode" @change="changePeriode()"
                     class="form-select py-2.5 text-xs font-black rounded-xl border-none bg-slate-50 dark:bg-black/20 focus:ring-2 focus:ring-primary/20 cursor-pointer w-[240px] text-slate-700 dark:text-white">
@@ -163,7 +165,8 @@
                     <div class="space-y-4 text-[11px] font-black">
                         <template x-for="(list, key) in categorizedBlocks" :key="key">
                             <div
-                                class="group pt-2 first:pt-0 border-t first:border-none border-slate-50 dark:border-white/5">
+                                class="group pt-2 border-t border-slate-50 dark:border-white/5"
+                                :class="{'!border-t-0 !pt-0': key === 'healthy'}">
                                 <div class="flex justify-between mb-2"
                                     :class="key === 'healthy' ? 'text-success' : (key === 'moderate' ? 'text-warning' :
                                         'text-danger')">
@@ -189,8 +192,9 @@
 
                 <!-- LAYER TOGGLE -->
                 <div class="panel p-6 border-none rounded-[2rem] bg-white dark:bg-[#0e1726] shadow-xl">
-                    <h5 class="font-black text-[10px] mb-6 text-slate-400 italic border-b pb-2">Visualization
-                        Layers</h5>
+                    {{-- Panel kontrol lapisan GIS yang dapat diaktifkan/nonaktifkan --}}
+                    <h5 class="font-black text-[10px] mb-6 text-slate-400 italic border-b pb-2">Lapisan
+                        Peta</h5>
                     <div class="space-y-4">
                         <template x-for="layer in layers" :key="layer.id">
                             <div class="flex justify-between items-center group cursor-pointer"
@@ -221,19 +225,21 @@
                     :class="isMapExpanded ? 'map-fullscreen' : 'h-[550px] rounded-3xl'">
                     <div
                         class="p-4 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1b2e4b] z-[1001]">
+                        {{-- Label panel peta interaktif --}}
                         <div class="flex items-center gap-2 text-primary font-black italic tracking-widest text-[10px]">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-width="2"
                                     d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1 0 010.553 0.894v10.764a1 1 0 01-1.447 0.894L15 17m-6 3l6-3m-6 0V7m6 10V4" />
                             </svg>
-                            Interactive Spatial Intelligence
+                            Sistem Informasi Spasial
                         </div>
                         <div class="flex gap-2">
                             <button @click="toggleMapHeight()"
                                 class="p-2 px-4 rounded-xl transition-all shadow-sm flex items-center gap-2"
                                 :class="isMapExpanded ? 'bg-danger text-white' : 'bg-gray-100 dark:bg-black/20 text-primary'">
+                                {{-- Tombol mode layar penuh untuk peta --}}
                                 <span class="text-[10px] font-black"
-                                    x-text="isMapExpanded ? 'Exit Theater' : 'Theater Mode'"></span>
+                                    x-text="isMapExpanded ? 'Tutup Layar Penuh' : 'Mode Layar Penuh'"></span>
                             </button>
                             <button @click="map.zoomIn()"
                                 class="p-2 bg-primary text-white rounded-xl w-10 shadow-lg active:scale-90">+</button>
@@ -250,9 +256,10 @@
                 <div x-show="!isMapExpanded" class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div
                         class="panel p-8 rounded-[2.5rem] bg-white dark:bg-[#0e1726] border-none shadow-xl text-center">
+                        {{-- Diagram proporsi kondisi kesehatan pohon per blok --}}
                         <h5
                             class="text-[11px] font-black text-slate-400 text-left border-l-4 border-primary pl-4 mb-10">
-                            Condition Proportions</h5>
+                            Proporsi Kondisi Blok</h5>
                         <div x-ref="pieChart" class="min-h-[320px]"></div>
                     </div>
                     <div
@@ -332,7 +339,7 @@
                                     Autonomous Prescriptive Engine</h4>
                                 <p
                                     class="text-[10px] text-indigo-500 font-bold tracking-[0.3em] opacity-70 mt-2 font-mono">
-                                    Node: DSS-XAI-STANDAR-SCOPUS</p>
+                                    Node: DSS-SistemPakar-StandarEnterprise</p>
                             </div>
                         </div>
                         <div
@@ -343,7 +350,7 @@
                                         class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin">
                                     </div>
                                     <p class="text-[10px] font-black text-slate-400 tracking-[0.4em] italic">
-                                        Neural Reasoning...</p>
+                                        Logika Pemrosesan AI...</p>
                                 </div>
                             </template>
                             <template x-if="inferenceResult && !isThinkingBlok">
@@ -627,11 +634,11 @@
                                 switch (id) {
                                     case 'batas':
                                         bodyHtml =
-                                            `<div class="flex justify-between"><span>KEBUN</span><span class="font-bold">${p.KEBUN || '-'}</span></div><div class="flex justify-between"><span>AFD</span><span class="font-bold">${p.AFDELING || '-'}</span></div><div class="flex justify-between border-t mt-1 pt-1"><span>LUAS ADM</span><span class="font-black text-primary">${p.LUAS_ADM || 0} HA</span></div><div class="flex justify-between"><span>LUAS SHP</span><span class="font-black text-success">${p.LUAS_SHP || 0} HA</span></div><div class="mt-1 border-t pt-1 flex justify-between text-primary"><span>SURVIVAL</span><span class="font-black">${p.survival_rate || 0}%</span></div>`;
+                                            `<div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">KEBUN</span><span class="font-bold text-slate-800 dark:text-white-light">${p.KEBUN || '-'}</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">AFD</span><span class="font-bold text-slate-800 dark:text-white-light">${p.AFDELING || '-'}</span></div><div class="flex justify-between border-t border-slate-100 dark:border-slate-800 mt-1 pt-1"><span class="text-slate-500 dark:text-slate-400">LUAS ADM</span><span class="font-black text-primary">${p.LUAS_ADM || 0} HA</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">LUAS SHP</span><span class="font-black text-success">${p.LUAS_SHP || 0} HA</span></div><div class="mt-1 border-t border-slate-100 dark:border-slate-800 pt-1 flex justify-between text-primary"><span class="text-slate-500 dark:text-slate-400">SURVIVAL</span><span class="font-black">${p.survival_rate || 0}%</span></div>`;
                                         break;
                                     case 'blok':
                                         bodyHtml =
-                                            `<div class="flex justify-between"><span>KEBUN</span><span class="font-bold">${p.KEBUN || '-'}</span></div><div class="flex justify-between"><span>AFD</span><span class="font-bold">${p.AFDELING || '-'}</span></div><div class="flex justify-between border-t mt-1 pt-1 text-primary"><span>BLOK ID</span><span class="font-black">${p.BLOK || '-'}</span></div>`;
+                                            `<div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">KEBUN</span><span class="font-bold text-slate-800 dark:text-white-light">${p.KEBUN || '-'}</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">AFD</span><span class="font-bold text-slate-800 dark:text-white-light">${p.AFDELING || '-'}</span></div><div class="flex justify-between border-t border-slate-100 dark:border-slate-800 mt-1 pt-1 text-primary"><span class="text-slate-500 dark:text-slate-400">BLOK ID</span><span class="font-black">${p.BLOK || '-'}</span></div>`;
                                         break;
                                     default:
                                         Object.keys(p).forEach(k => {
@@ -645,7 +652,7 @@
                                             if (!blacklist.includes(k) && p[k] !==
                                                 null) {
                                                 bodyHtml +=
-                                                    `<div class="flex justify-between gap-4"><span class="text-[8px] font-bold text-slate-400">${k}</span><span class="text-[9px] font-black dark:text-white truncate">${p[k]}</span></div>`;
+                                                    `<div class="flex justify-between gap-4"><span class="text-[8px] font-bold text-slate-400 dark:text-slate-500">${k}</span><span class="text-[9px] font-black text-slate-800 dark:text-white-light truncate">${p[k]}</span></div>`;
                                             }
                                         });
                                 }

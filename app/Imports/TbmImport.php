@@ -7,7 +7,7 @@ use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 
 /**
  * TbmImport (The Orchestrator)
- * Standar Scopus: Modular Ingestion Strategy.
+ * Modular Upload Strategy.
  * Mampu memilah sheet berdasarkan metadata 'periode_data' yang dikirim dari controller.
  */
 class TbmImport implements WithMultipleSheets, SkipsUnknownSheets
@@ -64,7 +64,7 @@ class TbmImport implements WithMultipleSheets, SkipsUnknownSheets
         }
 
         /**
-         * Keunggulan Scopus:
+         * Keunggulan :
          * 1. Metadata-Driven: Data yang diambil ditentukan oleh input pengguna.
          * 2. Selective Processing: Menghemat memori server jika hanya 1 sheet yang perlu diproses.
          * 3. Consistency: Memastikan label periode di database sinkron dengan nama sheet.

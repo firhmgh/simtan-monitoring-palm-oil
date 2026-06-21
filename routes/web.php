@@ -38,6 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/', fn() => redirect()->route('index'));
     Route::get('/dashboard', [MonitoringController::class, 'index'])->name('index');
 
+    Route::get('/leave-impersonation', [\App\Http\Controllers\ImpersonateController::class, 'leaveImpersonation'])->name('impersonate.leave');
+    Route::get('/superadmin/impersonate/{id}', [\App\Http\Controllers\ImpersonateController::class, 'impersonate'])->name('impersonate');
+
     /**
      * MODULE: SECURE SPATIAL DATA (Gatekeeper)
      * Mengamankan GeoJSON agar hanya bisa diakses via aplikasi.
@@ -82,7 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:superadmin,admin'])->group(function () {
 
         Route::prefix('monitoring')->name('monitoring.')->group(function () {
-            // -- Ingesti Data (Upload Excel) --
+            // -- Proses Unggah Data (Upload Excel) --
             Route::get('/upload-data', [MonitoringController::class, 'importView'])->name('import');
             Route::post('/upload-data/store', [MonitoringController::class, 'importStore'])->name('import.store');
 
@@ -91,10 +94,14 @@ Route::middleware('auth')->group(function () {
             Route::put('/import/{id}', [MonitoringController::class, 'importUpdate'])->name('import.update');
             Route::delete('/import/{id}', [MonitoringController::class, 'importDestroy'])->name('import.destroy');
             Route::get('/riwayat-data', [MonitoringController::class, 'riwayatData'])->name('riwayat-data');
+
+            // -- Ekspor Laporan Audit Trail (Riwayat Data) --
+            Route::get('/audit-csv', [MonitoringController::class, 'exportAuditCsv'])->name('audit.csv');
+            Route::get('/audit-pdf', [MonitoringController::class, 'printAuditPdf'])->name('audit.pdf');
         });
 
         /**
-         * MODULE: AI NEURAL ENGINE
+         * MODULE: LOGIKA PEMROSESAN AI
          * Prefix 'api/ai' agar fetch asinkron di Dashboard & Detail Kebun tidak terblokir.
          */
         Route::prefix('api/ai')->name('ai.')->controller(AI_Controller::class)->group(function () {
@@ -104,16 +111,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/block-insight', 'getBlockInsight')->name('analyze.block');
             // Update API Key & Threshold dari halaman Settings
             Route::post('/config/update', 'updateConfig')->name('config.update');
-        });
-
-        /**
-         * MODULE: REPORTS (Export Engine)
-         */
-        Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/', [ReportController::class, 'index'])->name('index');
-            Route::post('/preview', [ReportController::class, 'preview'])->name('preview');
-            Route::post('/export/pdf', [ReportController::class, 'downloadPDF'])->name('pdf');
-            Route::post('/export/excel', [ReportController::class, 'downloadExcel'])->name('excel');
         });
     });
 
@@ -126,12 +123,9 @@ Route::middleware('auth')->group(function () {
 
         // Menu Kelola Akun (User Management)
         Route::get('/kelola-akun', [UserController::class, 'index'])->name('monitoring.kelola-akun');
-
-        Route::name('admin.')->group(function () {
-            Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
-            Route::put('/users/update/{id}', [UserController::class, 'update'])->name('users.update');
-            Route::delete('/users/delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
-        });
+        Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/update/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/delete/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
         /**
          * UTILITY: STORAGE CLEANER
@@ -161,5 +155,6 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 | 5. FALLBACK
 |--------------------------------------------------------------------------
+|
 */
-Route::fallback(fn() => view('pages.error404'));
+Route::fallback(fn() => response()->view('errors.404', [], 404));

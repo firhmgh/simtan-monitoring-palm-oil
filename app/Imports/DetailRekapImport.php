@@ -23,7 +23,7 @@ class DetailRekapImport implements ToCollection, WithCalculatedFormulas
 
     public function collection(Collection $rows)
     {
-        Log::info("⚙️ START INGESTI: [{$this->labelPeriode}]");
+        Log::info("⚙️ START UNGGAH DATA: [{$this->labelPeriode}]");
 
         // Identifikasi Periode 1 (JANFEBMAR...) untuk pemetaan kolom spesifik
         $isP1 = str_contains(strtoupper($this->labelPeriode), 'JANFEBMAR');
@@ -124,7 +124,7 @@ class DetailRekapImport implements ToCollection, WithCalculatedFormulas
                 Log::error("❌ Gagal [{$this->labelPeriode}] Baris " . ($index + 1) . ": " . $e->getMessage());
             }
         }
-        Log::info("✅ [{$this->labelPeriode}] Ingesti Selesai. Total Sukses: $success");
+        Log::info("✅ [{$this->labelPeriode}] Unggah Data Selesai. Total Sukses: $success");
     }
 
     private function isHeaderRow($c0, $c1, $c2)

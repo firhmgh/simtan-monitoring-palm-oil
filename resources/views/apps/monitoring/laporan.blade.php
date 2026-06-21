@@ -1,8 +1,10 @@
 <x-layout.default>
-    <!-- Script html2canvas -->
+    {{-- Font Plus Jakarta Sans (standar tipografi SIMTAN) --}}
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    {{-- html2canvas untuk ekspor dokumen dari tampilan pratinjau --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <div x-data="pusatLaporanDSS" class="relative">
+    <div x-data="pusatLaporanDSS" class="relative font-['Plus_Jakarta_Sans'] antialiased">
 
         <!-- 1. Overlay Loading (Gunakan x-teleport agar selalu paling depan) -->
         <template x-teleport="body">
@@ -21,15 +23,19 @@
         <!-- 2. Header Strategis -->
         <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 pt-5 no-print">
             <div>
-                <nav class="flex text-[10px] font-black tracking-[0.2em] text-primary/80 uppercase mb-2">
-                    <span>Manajemen Strategis</span> <span class="mx-2 text-gray-400">/</span> <span>Pelaporan
-                        DSS</span>
-                </nav>
+                <!-- Navigasi Breadcrumb Standar SIMTAN -->
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Laporan</li>
+                </ul>
                 <h1
                     class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter leading-none">
                     Pusat Generasi Laporan <span class="text-primary underline decoration-primary/20">Presisi TBM
                         III</span>
                 </h1>
+                <p class="text-xs font-bold italic text-slate-500 dark:text-slate-400 mt-2 border-l-2 border-primary pl-2 tracking-tight">
+                    Sistem Integrasi Terpadu - PTPN IV Regional I
+                </p>
             </div>
 
             <button type="button" @click="eksporPDF()" :disabled="!showPreview"
@@ -79,9 +85,10 @@
                             </select>
                         </div>
 
+                    {{-- Toggle opsional: sertakan atau kecualikan analisis AI dari laporan --}}
                         <div class="flex items-center justify-between bg-slate-50 dark:bg-black/40 p-4 rounded-2xl">
                             <span
-                                class="text-xs font-black uppercase tracking-tighter text-gray-600 dark:text-white-dark">Injeksi
+                                class="text-xs font-black uppercase tracking-tighter text-gray-600 dark:text-white-dark">Sertakan
                                 Analisis AI</span>
                             <input type="checkbox" x-model="form.includeAI" class="custom_switch" />
                         </div>
@@ -96,10 +103,10 @@
                     </div>
                 </div>
 
-                <!-- OPSI OUTPUT -->
+                {{-- Kartu panel bagian laporan yang dapat dikustomisasi --}}
                 <div class="panel rounded-[2rem] border-none shadow-sm bg-white dark:bg-[#0e1726] p-8">
-                    <h5 class="font-black text-[10px] uppercase text-gray-400 mb-6 tracking-[0.2em]">Section Laporan
-                        (Opsi Output)</h5>
+                    <h5 class="font-black text-[10px] uppercase text-gray-400 mb-6 tracking-[0.2em]">Pilih Bagian
+                        Laporan</h5>
                     <div class="space-y-4">
                         <template x-for="s in sections" :key="s.id">
                             <label class="flex items-center justify-between cursor-pointer group">
@@ -116,10 +123,11 @@
 
             <!-- AREA PRATINJAU (DIGITAL PAPER) -->
             <div class="lg:col-span-8 overflow-hidden">
+                {{-- Area pratinjau kosong: tampil sebelum pengguna memilih parameter --}}
                 <div x-show="!showPreview"
                     class="panel h-[700px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-[3rem]">
-                    <h5 class="text-xl font-black text-gray-400 uppercase italic tracking-tighter text-center">Tentukan
-                        Parameter Input<br>Untuk Merender Dokumen Formal</h5>
+                    <h5 class="text-xl font-black text-gray-400 uppercase italic tracking-tighter text-center">Pilih Unit
+                        & Periode<br>untuk Memulai Pratinjau Dokumen</h5>
                 </div>
 
                 <div x-show="showPreview" x-transition.opacity class="digital-paper-container shadow-inner">
@@ -244,7 +252,7 @@
             font-family: 'Helvetica', 'Arial', sans-serif !important;
         }
 
-        /* Hilangkan override warna Vristo di dalam area digital paper */
+        /* Hilangkan override warna template di dalam area digital paper */
         .digital-paper * {
             color: black !important;
             border-color: black !important;

@@ -350,19 +350,33 @@ class MonitoringController extends Controller
 
         DB::beginTransaction();
         try {
+            // 1. Validasi header & struktur kolom berkas Excel
             SimtanFormService::validateHeader($request->kategori_file, $file);
             $kode = $this->generateUniqueCode($request->kategori_file);
+            
+            // 2. Unggah data dan masukkan ke database
             $form = SimtanFormService::handleUpload(['kode_upload' => $kode, 'uploaded_by' => Auth::id(), 'personel_pj' => $request->personel, 'judul_file' => $request->judul_file, 'tanggal_upload' => now(), 'kategori_file' => $request->kategori_file, 'periode_data' => $periodeValue, 'notes' => $request->notes, 'file_path' => $path], $file);
             $rowCount = $this->getProcessedRowCount($request->kategori_file, $form->id);
-            if ($rowCount === 0) throw new \Exception("Gagal: Data tidak ditemukan.");
-            UploadLog::create(['simtan_form_id' => $form->id, 'user_id' => Auth::id(), 'nama_file' => $file->getClientOriginalName(), 'jenis_dataset' => $request->kategori_file, 'rows_imported' => $rowCount, 'status' => 'Success', 'message' => "Integrasi {$rowCount} baris."]);
+            
+            if ($rowCount === 0) {
+                throw new \Exception("Data tidak ditemukan atau baris kosong.");
+            }
+            
+            // 3. Catat log pengunggahan berhasil
+            UploadLog::create(['simtan_form_id' => $form->id, 'user_id' => Auth::id(), 'nama_file' => $file->getClientOriginalName(), 'jenis_dataset' => $request->kategori_file, 'rows_imported' => $rowCount, 'status' => 'Success', 'message' => "Integrasi {$rowCount} baris data berhasil."]);
+            
             DB::commit();
-            return redirect()->route('monitoring.import')->with('success', "Berhasil!");
+            return redirect()->route('monitoring.import')->with('success', "Berkas berhasil diimpor. Sebanyak {$rowCount} baris data berhasil diintegrasikan ke dalam basis data.");
         } catch (\Exception $e) {
             DB::rollBack();
-            if (Storage::disk('public')->exists($path)) Storage::disk('public')->delete($path);
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+            
+            // Catat log pengunggahan gagal dengan pesan kesalahan detil
             DB::table('upload_log')->insert(['user_id' => Auth::id(), 'nama_file' => $file->getClientOriginalName(), 'jenis_dataset' => $request->kategori_file, 'rows_imported' => 0, 'status' => 'Failed', 'message' => $e->getMessage(), 'created_at' => now()]);
-            return back()->withErrors(['system_error' => $e->getMessage()])->withInput();
+            
+            return back()->withInput()->with('error', 'Gagal memproses berkas. Silakan periksa kembali format Excel Anda: ' . $e->getMessage());
         }
     }
 
@@ -372,27 +386,43 @@ class MonitoringController extends Controller
         try {
             $form = SimtanForm::findOrFail($id);
             $periode = ($request->kategori_file === 'Lokasi Kebun') ? 'MASTER' : ($request->periode_data ?? $form->periode_data);
-            $form->update(['judul_file' => $request->judul_file, 'kategori_file' => $request->kategori_file, 'periode_data' => $periode, 'personel_pj' => $request->personel, 'notes' => ($form->notes ? $form->notes . " | " : "") . "Update: " . Auth::user()->name]);
-            return redirect()->route('monitoring.import')->with('success', 'Metadata diperbarui.');
+            
+            $form->update([
+                'judul_file' => $request->judul_file, 
+                'kategori_file' => $request->kategori_file, 
+                'periode_data' => $periode, 
+                'personel_pj' => $request->personel, 
+                'notes' => ($form->notes ? $form->notes . " | " : "") . "Update: " . Auth::user()->name
+            ]);
+            
+            return redirect()->route('monitoring.import')->with('success', 'Data metadata berkas berhasil diperbarui.');
         } catch (\Exception $e) {
-            return back()->withErrors(['system_error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memperbarui konfigurasi metadata: ' . $e->getMessage());
         }
     }
 
     public function importDestroy($id)
     {
-        $form = SimtanForm::findOrFail($id);
-
-        $form->delete();
-
-        return redirect()->route('monitoring.import')->with('success', 'Data dan file berhasil dihapus.');
+        try {
+            $form = SimtanForm::findOrFail($id);
+            $form->delete();
+            return redirect()->route('monitoring.import')->with('success', 'Data dan berkas Excel berhasil dihapus secara permanen dari sistem.');
+        } catch (\Exception $e) {
+            return redirect()->route('monitoring.import')->with('error', 'Gagal menghapus data berkas: ' . $e->getMessage());
+        }
     }
 
     public function downloadFile($id)
     {
-        $form = SimtanForm::findOrFail($id);
-        if ($form->file_path && file_exists($p = storage_path('app/public/' . $form->file_path))) return response()->download($p);
-        return back()->withErrors(['system_error' => 'Berkas tidak ditemukan.']);
+        try {
+            $form = SimtanForm::findOrFail($id);
+            if ($form->file_path && file_exists($p = storage_path('app/public/' . $form->file_path))) {
+                return response()->download($p);
+            }
+            return back()->with('error', 'Gagal mengunduh berkas: Berkas fisik tidak ditemukan di sistem penyimpanan.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengunduh berkas: ' . $e->getMessage());
+        }
     }
 
     public function riwayatData()

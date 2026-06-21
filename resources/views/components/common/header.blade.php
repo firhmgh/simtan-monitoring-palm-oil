@@ -1,31 +1,38 @@
 <header
     class="h-16 bg-white dark:bg-[#0e1726] border-b border-gray-200 dark:border-[#191e3a] flex items-center justify-between px-6 sticky top-0 z-40 transition-all duration-300">
 
-    <!-- SEARCH BAR -->
-    <div class="flex-1 max-w-xl">
-        <div class="relative group pl-3 md:pl-4">
-            <div class="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="text-gray-400 group-focus-within:text-emerald-500 transition-colors">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                </svg>
+    <!-- IMPERSONATION INDICATOR (God Mode - Skripsi HCI Standard) -->
+    <div class="flex-1 flex items-center pl-3 md:pl-4 min-w-0 mr-4">
+        @if(session()->has('original_user_id'))
+            <div class="flex items-center gap-2 px-3 py-1 rounded-full transition-all duration-300 shrink min-w-0"
+                 style="background-color: rgba(225, 29, 72, 0.08) !important; border: 1px solid rgba(225, 29, 72, 0.25) !important;">
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold min-w-0" style="color: #e11d48 !important;">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 animate-pulse" style="color: #e11d48 !important;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span class="font-extrabold uppercase tracking-wider text-[9px] shrink-0" style="color: #e11d48 !important;">Penyamaran:</span>
+                    <span class="truncate font-bold max-w-[120px] sm:max-w-[180px] md:max-w-[240px]" style="color: #be123c !important;">Menyamar sebagai <strong class="underline" style="color: #be123c !important;">{{ auth()->user()->name }}</strong></span>
+                </div>
+                <a href="{{ route('impersonate.leave') }}" 
+                   class="px-2.5 py-0.5 font-extrabold text-[9px] uppercase tracking-wider rounded-full shadow transition-all active:scale-95 shrink-0 ml-1.5"
+                   style="background-color: #e11d48 !important; color: #ffffff !important; display: inline-block !important;">
+                    Kembali<span class="hidden sm:inline"> ke Superadmin</span>
+                </a>
             </div>
-            <input type="text" placeholder="Cari kebun, data monitoring, laporan..."
-                class="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#1b2e4b] border border-gray-200 dark:border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm text-gray-700 dark:text-white-dark placeholder-gray-500 dark:placeholder-white-dark/50 transition-all" />
-        </div>
+        @endif
     </div>
 
     <!-- RIGHT SECTION -->
-    <div class="flex items-center gap-4 ml-6">
+    <div class="flex items-center gap-4 shrink-0">
 
         <!-- DATE & TIME -->
+        @if(!session()->has('original_user_id'))
         <div x-data="clock()"
             class="text-sm text-gray-600 dark:text-white-dark hidden md:block text-right leading-tight">
             <p class="font-medium text-gray-900 dark:text-white-light" x-text="date"></p>
             <p class="text-xs text-gray-500 dark:text-white-dark/70" x-text="time"></p>
         </div>
+        @endif
 
         <!-- PROFILE DROPDOWN -->
         <div class="relative" x-data="dropdown">
@@ -40,10 +47,10 @@
                         <circle cx="12" cy="7" r="4" />
                     </svg>
                 </div>
-                <div class="text-left hidden md:block">
-                    <p class="text-sm font-bold text-gray-900 dark:text-white-light leading-none">
+                <div class="text-left hidden md:block max-w-[150px]">
+                    <p class="text-sm font-bold text-gray-900 dark:text-white-light leading-none truncate">
                         {{ auth()->user()->name ?? 'Admin PTPN' }}</p>
-                    <p class="text-xs text-gray-500 dark:text-white-dark mt-1 capitalize">
+                    <p class="text-xs text-gray-500 dark:text-white-dark mt-1 capitalize truncate">
                         {{ auth()->user()->role->name ?? 'Administrator' }}</p>
                 </div>
             </button>

@@ -1,13 +1,20 @@
 <x-layout.default>
     <!-- Alpine.js Component Wrapper -->
+    <!-- Sesuai Bab 3 Skripsi: Modul Manajemen Pengguna untuk kontrol akses sistem SIMTAN -->
     <div x-data="userManagement()" class="space-y-6">
 
         <!-- Page Header & Action -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
+                <!-- Navigasi Breadcrumb Standar SIMTAN -->
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Kelola Akun</li>
+                </ul>
                 <h1 class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Manajemen Pengguna</h1>
-                <p class="text-gray-500 text-sm mt-1 dark:text-gray-400">Kelola pengguna sistem dan kontrol hak akses
-                    secara menyeluruh</p>
+                <p class="text-xs font-bold italic text-slate-500 dark:text-slate-400 mt-2 border-l-2 border-primary pl-2 tracking-tight">
+                    Sistem Integrasi Terpadu - PTPN IV Regional I
+                </p>
             </div>
             <button @click="openDialog()"
                 class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900">
@@ -216,7 +223,7 @@
                                             'badge-outline-primary': user.role === 'admin',
                                             'badge-outline-info': user.role === 'user'
                                         }">
-                                        <span x-text="user.role.t()"></span>
+                                        <span x-text="user.role.toUpperCase()"></span>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
@@ -285,14 +292,17 @@
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-                <div x-show="isDialogOpen" x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                <form :action="editingUser ? '{{ url('/superadmin/users/update') }}/' + editingUser.id : '{{ route('users.store') }}'" method="POST"
                     class="inline-block align-middle bg-white dark:bg-[#0e1726] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100 dark:border-gray-800">
+                    @csrf
+                    <template x-if="editingUser">
+                        <input type="hidden" name="_method" value="PUT">
+                    </template>
 
                     <div class="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white"
                             x-text="editingUser ? 'Edit Detail Akun' : 'Buat Akun Baru'"></h3>
-                        <button @click="closeDialog()" class="text-white-dark hover:text-danger">
+                        <button type="button" @click="closeDialog()" class="text-white-dark hover:text-danger">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round">
@@ -306,26 +316,26 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="text-sm font-semibold mb-1.5 block">Nama Lengkap</label>
-                                <input type="text" x-model="formData.name" placeholder="Budi Santoso"
-                                    class="form-input" />
+                                <input type="text" name="name" x-model="formData.name" placeholder="Budi Santoso"
+                                    class="form-input" required />
                             </div>
                             <div>
                                 <label class="text-sm font-semibold mb-1.5 block">Username</label>
-                                <input type="text" x-model="formData.username" placeholder="budi01"
-                                    class="form-input" />
+                                <input type="text" name="username" x-model="formData.username" placeholder="budi01"
+                                    class="form-input" required />
                             </div>
                         </div>
 
                         <div>
                             <label class="text-sm font-semibold mb-1.5 block">Alamat Email</label>
-                            <input type="email" x-model="formData.email" placeholder="budi@plantation.com"
-                                class="form-input" />
+                            <input type="email" name="email" x-model="formData.email" placeholder="budi@plantation.com"
+                                class="form-input" required />
                         </div>
 
                         <div>
                             <label class="text-sm font-semibold mb-1.5 block">Password</label>
-                            <input type="password" x-model="formData.password" placeholder="••••••••"
-                                class="form-input" />
+                            <input type="password" name="password" x-model="formData.password" placeholder="••••••••"
+                                class="form-input" :required="!editingUser" />
                             <p class="text-[11px] text-white-dark mt-1" x-show="editingUser">* Kosongkan jika tidak
                                 ingin mengubah password</p>
                         </div>
@@ -333,17 +343,16 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="text-sm font-semibold mb-1.5 block">Hak Akses / Role</label>
-                                <select x-model="formData.role" class="form-select">
-                                    <option value="superadmin">Superadmin</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="user">User</option>
+                                <select name="role_id" x-model="formData.role_id" class="form-select" required>
+                                    <template x-for="r in rolesList" :key="r.id">
+                                        <option :value="r.id" x-text="r.name.toUpperCase()"></option>
+                                    </template>
                                 </select>
                             </div>
                             <div>
                                 <label class="text-sm font-semibold mb-1.5 block">Status Akun</label>
-                                <select x-model="formData.status" class="form-select">
+                                <select class="form-select" disabled>
                                     <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
                                 </select>
                             </div>
                         </div>
@@ -352,10 +361,10 @@
                     <div
                         class="flex items-center justify-end px-6 py-4 gap-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800">
                         <button type="button" @click="closeDialog()" class="btn btn-outline-danger">Batal</button>
-                        <button type="button" @click="saveUser()" class="btn btn-primary"
+                        <button type="submit" class="btn btn-primary"
                             x-text="editingUser ? 'Simpan Perubahan' : 'Buat Pengguna'"></button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -389,8 +398,12 @@
                     <div class="grid grid-cols-2 gap-4 mt-8">
                         <button @click="isDeleteDialogOpen = false"
                             class="btn btn-outline-secondary w-full py-3">Batal</button>
-                        <button @click="deleteUser()"
-                            class="btn btn-danger w-full py-3 shadow-lg shadow-danger/30">Ya, Hapus</button>
+                        <form :action="'{{ url('/superadmin/users/delete') }}/' + userToDelete?.id" method="POST" class="w-full">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                class="btn btn-danger w-full py-3 shadow-lg shadow-danger/30">Ya, Hapus</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -415,38 +428,26 @@
                     username: '',
                     email: '',
                     password: '',
-                    role: 'user',
+                    role_id: '',
                     status: 'active'
                 },
 
-                usersData: [{
-                        id: 1,
-                        name: 'Maghfirah',
-                        username: 'gitaddpir',
-                        email: 'maghfirah@plantation.com',
-                        role: 'superadmin',
-                        status: 'active',
-                        lastLogin: '2026-03-12 10:30'
-                    },
+                usersData: [
+                    @foreach($users as $user)
                     {
-                        id: 2,
-                        name: 'Asisten Investasi dan Pemetaan',
-                        username: 'admin01',
-                        email: 'admin01@gmail.com',
-                        role: 'admin',
+                        id: {{ $user->id }},
+                        name: '{{ addslashes($user->name) }}',
+                        username: '{{ addslashes($user->username) }}',
+                        email: '{{ addslashes($user->email) }}',
+                        role_id: {{ $user->role_id }},
+                        role: '{{ $user->role->name }}',
                         status: 'active',
-                        lastLogin: '2026-03-11 09:15'
+                        lastLogin: '{{ $user->created_at ? $user->created_at->format("Y-m-d H:i") : "-" }}'
                     },
-                    {
-                        id: 3,
-                        name: 'Kasub Investasi',
-                        username: 'user01',
-                        email: 'user@gmail.com',
-                        role: 'user',
-                        status: 'active',
-                        lastLogin: '2026-03-07 16:45'
-                    },
+                    @endforeach
                 ],
+
+                rolesList: @json($roles),
 
                 get filteredUsers() {
                     return this.usersData.filter((user) => {
@@ -487,8 +488,8 @@
                             name: user.name,
                             username: user.username,
                             email: user.email,
-                            password: '', // Password tidak dimunculkan demi keamanan
-                            role: user.role,
+                            password: '',
+                            role_id: user.role_id,
                             status: user.status
                         };
                     } else {
@@ -498,7 +499,7 @@
                             username: '',
                             email: '',
                             password: '',
-                            role: 'user',
+                            role_id: this.rolesList[0] ? this.rolesList[0].id : '',
                             status: 'active'
                         };
                     }
@@ -509,46 +510,10 @@
                     this.isDialogOpen = false;
                 },
 
-                saveUser() {
-                    if (!this.formData.name || !this.formData.username || !this.formData.email) {
-                        alert('Silakan lengkapi field yang wajib diisi!');
-                        return;
-                    }
-
-                    if (this.editingUser) {
-                        const index = this.usersData.findIndex(u => u.id === this.editingUser.id);
-                        if (index !== -1) {
-                            this.usersData[index] = {
-                                ...this.usersData[index],
-                                name: this.formData.name,
-                                username: this.formData.username,
-                                email: this.formData.email,
-                                role: this.formData.role,
-                                status: this.formData.status
-                            };
-                        }
-                    } else {
-                        this.usersData.unshift({
-                            id: Date.now(),
-                            ...this.formData,
-                            lastLogin: '-'
-                        });
-                    }
-                    this.closeDialog();
-                },
-
                 confirmDelete(user) {
                     this.userToDelete = user;
                     this.isDeleteDialogOpen = true;
                 },
-
-                deleteUser() {
-                    if (this.userToDelete) {
-                        this.usersData = this.usersData.filter(u => u.id !== this.userToDelete.id);
-                        this.isDeleteDialogOpen = false;
-                        this.userToDelete = null;
-                    }
-                }
             }));
         });
     </script>

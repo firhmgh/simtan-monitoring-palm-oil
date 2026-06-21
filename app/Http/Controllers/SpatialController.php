@@ -7,22 +7,20 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 /**
- * SpatialController
- * 
- * Mengelola permintaan API untuk penyajian data Geospasial (GeoJSON & XYZ Tiles).
- * Menghubungkan Frontend Peta (Leaflet.js) dengan dataset lapangan dan database produksi.
- * Mendukung analisis performa otomatis (Scopus Q1 Logic) melalui SpatialDataService.
+ * Class SpatialController
+ *
+ * Mengelola penyajian data geospasial (GeoJSON & konfigurasi peta orthophoto)
+ * untuk visualisasi peta interaktif Leaflet.js.
  */
 class SpatialController extends Controller
 {
     /**
-     * Property $spatialService dengan Type Information.
+     * Service data spasial.
      */
     protected SpatialDataService $spatialService;
 
     /**
-     * MASTER PEMETAAN PERIODE
-     * Sinkronisasi antara slug Frontend dengan Database Key.
+     * Pemetaan slug periode ke database key.
      */
     protected array $mapPeriode = [
         'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
@@ -32,7 +30,7 @@ class SpatialController extends Controller
     ];
 
     /**
-     * Dependency Injection SpatialDataService.
+     * Inisialisasi controller dengan injeksi SpatialDataService.
      */
     public function __construct(SpatialDataService $spatialService)
     {
@@ -41,27 +39,13 @@ class SpatialController extends Controller
     }
 
     /**
-     * API Secure Gatekeeper: Menyajikan file GeoJSON dengan Injeksi Analisis IPHI.
-     * 
-     * Method ini akan otomatis menyisipkan data analisis biometrik dan skor kesehatan
-     * ke dalam GeoJSON 'blok' melalui SpatialDataService.
-     * 
-     * @param string $kebun
-     * @param string $layer
-     * @param Request $request
-     * @return JsonResponse
+     * Menyajikan data GeoJSON dengan integrasi analisis kesehatan tanaman (IPHI).
      */
     public function serve(string $kebun, string $layer, Request $request): JsonResponse
     {
-        // 1. Resolusi DB Key berdasarkan slug periode dari request
         $dbKey = $this->resolveDbKey($request);
-
-        // 2. Ambil data melalui Service. 
-        // Logika IPHI (Integrated Plantation Health Index) sudah dijalankan di dalam Service 
-        // jika $layer === 'blok', termasuk kalkulasi CV dan Survival Rate.
         $data = $this->spatialService->getGeoJSON($kebun, $layer, $dbKey);
 
-        // Jangan return 404 jika hanya datanya kosong, agar JS tidak error
         if (!$data) {
             return response()->json(['type' => 'FeatureCollection', 'features' => []]);
         }
@@ -70,7 +54,7 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Konfigurasi Awal Peta (Center, Zoom, & Orthophoto URL).
+     * Mengambil konfigurasi awal peta (center, zoom, dan URL orthophoto).
      */
     public function getConfig(string $kode_kebun): JsonResponse
     {
@@ -87,7 +71,7 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Batas Administrasi (Afdeling).
+     * Mengambil data GeoJSON batas afdeling kebun.
      */
     public function getBlocks(string $kode_kebun, Request $request): JsonResponse
     {
@@ -105,7 +89,7 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Layer Tanaman Penutup Tanah (Kacangan / LCC).
+     * Mengambil data GeoJSON tanaman penutup tanah (LCC).
      */
     public function getLCC(string $kode_kebun, Request $request): JsonResponse
     {
@@ -123,7 +107,7 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Data Layer Pemeliharaan (Anomali Lapangan).
+     * Mengambil data GeoJSON titik/area pemeliharaan dan anomali gulma.
      */
     public function getMaintenance(string $kode_kebun, Request $request): JsonResponse
     {
@@ -141,7 +125,7 @@ class SpatialController extends Controller
     }
 
     /**
-     * API: Mengambil Titik Koordinat Pohon (KONPOKOK).
+     * Mengambil data GeoJSON koordinat titik individu pohon sawit.
      */
     public function getTrees(string $kode_kebun, Request $request): JsonResponse
     {
@@ -156,17 +140,11 @@ class SpatialController extends Controller
     }
 
     /**
-     * HELPER: Resolusi Slug Periode ke Database Key.
-     * 
-     * @param Request $request
-     * @return string
+     * Mengubah slug periode dari request ke database key yang sesuai.
      */
     private function resolveDbKey(Request $request): string
     {
         $slug = $request->query('periode');
-
-        // Jika slug terdaftar di map, kembalikan DB Key. 
-        // Jika tidak, kembalikan slug asli (antisipasi jika input manual).
         return $this->mapPeriode[$slug] ?? $slug ?? '';
     }
 }
