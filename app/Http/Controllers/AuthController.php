@@ -38,11 +38,11 @@ class AuthController extends Controller
             $user = Auth::user();
 
             if ($user->role->name === 'superadmin' || $user->role->name === 'admin') {
-                return redirect()->intended('/index')
+                return redirect()->intended('/dashboard')
                     ->with('success', 'Selamat datang, ' . $user->name);
             }
 
-            return redirect()->intended('/index')
+            return redirect()->intended('/dashboard')
                 ->with('success', 'Login Berhasil.');
         }
 

@@ -29,14 +29,7 @@ class SpatialDataService
         if (!$filePath) return ['type' => 'FeatureCollection', 'features' => []];
 
         // 1. MAPPING PERIODE
-        $mapPeriode = [
-            'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
-            'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
-            'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
-            'tahunan-2025'   => 'Tahun 2025',
-        ];
-
-        $dbKey = $mapPeriode[$periode] ?? $periode;
+        $dbKey = config("simtan.map_periode.{$periode}.db_key") ?? $periode;
         
         // OPTIMASI SPASIAL: Membaca & men-decode file GeoJSON dari cache jika sudah pernah diload (mencegah I/O bottleneck)
         $cacheKeyGeoJson = "geojson_raw_{$kode}_{$type}";

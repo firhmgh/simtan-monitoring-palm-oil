@@ -19,15 +19,7 @@ class SpatialController extends Controller
      */
     protected SpatialDataService $spatialService;
 
-    /**
-     * Pemetaan slug periode ke database key.
-     */
-    protected array $mapPeriode = [
-        'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
-        'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
-        'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
-        'tahunan-2025'   => 'Tahun 2025',
-    ];
+
 
     /**
      * Inisialisasi controller dengan injeksi SpatialDataService.
@@ -145,6 +137,6 @@ class SpatialController extends Controller
     private function resolveDbKey(Request $request): string
     {
         $slug = $request->query('periode');
-        return $this->mapPeriode[$slug] ?? $slug ?? '';
+        return config("simtan.map_periode.{$slug}.db_key") ?? $slug ?? '';
     }
 }

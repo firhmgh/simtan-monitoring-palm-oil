@@ -63,7 +63,7 @@
                         ],
                         [
                             'route' => 'monitoring.data-kebun',
-                            'label' => 'Manajemen Areal',
+                            'label' => 'Data Kebun',
                             'icon' => 'tabler-database',
                             'roles' => ['superadmin', 'admin', 'user'],
                         ],

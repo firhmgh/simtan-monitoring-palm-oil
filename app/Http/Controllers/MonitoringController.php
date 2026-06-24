@@ -40,16 +40,7 @@ class MonitoringController extends Controller
     const STD_SURVIVAL_RATE   = 98.0;
     const STD_SPH_TARGET      = 143.0;
 
-    /**
-     * MASTER PEMETAAN PERIODE
-     * Menghubungkan Slug URL -> Database Key -> Label Manusia
-     */
-    protected $mapPeriode = [
-        'periode-1-2025' => ['db_key' => 'JANFEBMARAPR2025REKAP', 'label' => 'Periode I (Jan - Apr 2025)'],
-        'periode-2-2025' => ['db_key' => 'MEIJULJUNAGST2025REKAP', 'label' => 'Periode II (Mei - Agst 2025)'],
-        'periode-3-2025' => ['db_key' => 'SEPOKTNOVDES2025REKAP',  'label' => 'Periode III (Sep - Des 2025)'],
-        'tahunan-2025'   => ['db_key' => 'Tahun 2025',             'label' => 'Konsolidasi Tahun 2025'],
-    ];
+
 
     public function __construct(ChartDataService $chartService, SpatialDataService $spatialService, AIService $aiService)
     {
@@ -65,11 +56,11 @@ class MonitoringController extends Controller
     public function index(Request $request)
     {
         $selectedSlug = $request->query('periode', session('monitoring_periode_slug', 'periode-3-2025'));
-        if (!array_key_exists($selectedSlug, $this->mapPeriode)) {
+        if (!array_key_exists($selectedSlug, config('simtan.map_periode'))) {
             $selectedSlug = 'periode-3-2025';
         }
 
-        $dbKey = $this->mapPeriode[$selectedSlug]['db_key'];
+        $dbKey = config("simtan.map_periode.{$selectedSlug}.db_key");
         session(['monitoring_periode_slug' => $selectedSlug]);
 
         Log::info("Analytic Dashboard initiated", ['slug' => $selectedSlug, 'db_key' => $dbKey]);
@@ -195,7 +186,7 @@ class MonitoringController extends Controller
         return view('index', array_merge($viewData, [
             'hasData' => $hasData,
             'activeSlug' => $selectedSlug,
-            'listPeriode' => $this->mapPeriode,
+            'listPeriode' => config('simtan.map_periode'),
             'agregat' => $agregat,
             'benchmarks' => [
                 'std_survival' => self::STD_SURVIVAL_RATE,
@@ -211,7 +202,7 @@ class MonitoringController extends Controller
     public function dataKebun(Request $request)
     {
         $selectedSlug = $request->query('periode', session('monitoring_periode_slug', 'periode-3-2025'));
-        $dbKey = $this->mapPeriode[$selectedSlug]['db_key'] ?? 'SEPOKTNOVDES2025REKAP';
+        $dbKey = config("simtan.map_periode.{$selectedSlug}.db_key") ?? 'SEPOKTNOVDES2025REKAP';
         session(['monitoring_periode_slug' => $selectedSlug]);
 
         $query = DetailRekap::where('periode', $dbKey)->where('is_total', 1);
@@ -256,7 +247,7 @@ class MonitoringController extends Controller
             'kpi' => $kpi,
             'distrikList' => ExcelDataHelper::getListDistrik(),
             'activeSlug' => $selectedSlug,
-            'listPeriode' => $this->mapPeriode
+            'listPeriode' => config('simtan.map_periode')
         ]);
     }
 
@@ -267,10 +258,10 @@ class MonitoringController extends Controller
     {
         try {
             $slug = $request->query('periode', session('monitoring_periode_slug', 'periode-3-2025'));
-            if (!array_key_exists($slug, $this->mapPeriode)) {
+            if (!array_key_exists($slug, config('simtan.map_periode'))) {
                 $slug = 'periode-3-2025';
             }
-            $dbKey = $this->mapPeriode[$slug]['db_key'];
+            $dbKey = config("simtan.map_periode.{$slug}.db_key");
             session(['monitoring_periode_slug' => $slug]);
 
             if (!$id) {
@@ -323,7 +314,7 @@ class MonitoringController extends Controller
                 'statusCounts'   => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['statusCounts'],
                 'blockStatuses'  => $this->chartService->getBlockAnalysisData($kodeKebun, $dbKey)['blockStatuses'],
                 'activeSlug'     => $slug,
-                'listPeriode'    => $this->mapPeriode
+                'listPeriode'    => config('simtan.map_periode')
             ]);
         } catch (\Exception $e) {
             Log::error("[DETAIL ERROR] " . $e->getMessage());
@@ -336,7 +327,7 @@ class MonitoringController extends Controller
      */
     public function importView()
     {
-        return view('apps.monitoring.import', ['history' => UploadLog::with(['form', 'user'])->latest()->take(10)->get(), 'listPeriode' => $this->mapPeriode]);
+        return view('apps.monitoring.import', ['history' => UploadLog::with(['form', 'user'])->latest()->take(10)->get(), 'listPeriode' => config('simtan.map_periode')]);
     }
 
     public function importStore(Request $request)
@@ -446,7 +437,7 @@ class MonitoringController extends Controller
     public function laporan()
     {
         return view('apps.monitoring.laporan', [
-            'listPeriode' => $this->mapPeriode,
+            'listPeriode' => config('simtan.map_periode'),
             'listKebun'   => ExcelDataHelper::getDaftarKebunFull()
         ]);
     }
@@ -462,7 +453,7 @@ class MonitoringController extends Controller
         $includeAI = $request->query('include_ai') === 'true';
         $active_sections = json_decode($request->query('active_sections', '[]'), true) ?: ['summary', 'recom', 'block', 'trend', 'veg'];
 
-        $dbKey = $this->mapPeriode[$periodeSlug]['db_key'] ?? $periodeSlug;
+        $dbKey = config("simtan.map_periode.{$periodeSlug}.db_key") ?? $periodeSlug;
         $daftarSemuaKebun = ExcelDataHelper::getDaftarKebunFull();
         $namaKebunLengkap = $daftarSemuaKebun[$kebunCode] ?? $kebunCode;
 
@@ -492,7 +483,7 @@ class MonitoringController extends Controller
 
         return [
             'nama_kebun'        => $namaKebunLengkap,
-            'periode_label'     => $this->mapPeriode[$periodeSlug]['label'] ?? $dbKey,
+            'periode_label'     => config("simtan.map_periode.{$periodeSlug}.label") ?? $dbKey,
             'blocks'            => $blocks,
             'ai_narrative'      => $ai_narrative,
             'survival_rate'     => round($stats->persen_pkk_normal ?? 0, 1),
@@ -529,6 +520,79 @@ class MonitoringController extends Controller
     public function settings()
     {
         return view('apps.monitoring.settings', ['aiConfig' => DB::table('ai_configs')->first()]);
+    }
+
+    public function exportAuditCsv()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="Audit_Trail_SIMTAN_' . now()->format('Ymd_His') . '.csv"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // UTF-8 BOM
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            fputcsv($file, ['No', 'ID Log', 'Timestamp', 'Nama Berkas', 'Pengunggah', 'Jenis Dataset', 'Volume Baris', 'Status', 'Keterangan']);
+
+            $logs = UploadLog::with(['user'])->latest()->get();
+            
+            foreach ($logs as $i => $log) {
+                fputcsv($file, [
+                    $i + 1,
+                    '#' . $log->id,
+                    $log->created_at->format('d/m/y H:i'),
+                    $log->nama_file,
+                    $log->user->name ?? 'System',
+                    $log->jenis_dataset,
+                    $log->rows_imported,
+                    $log->status === 'Success' ? 'Sukses' : 'Gagal',
+                    $log->message
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function printAuditPdf()
+    {
+        try {
+            $logs = UploadLog::with(['user'])->latest()->get()->map(fn($l) => [
+                'id' => $l->id,
+                'tglUpload' => $l->created_at->format('d/m/y H:i'),
+                'namaFile' => $l->nama_file,
+                'pengunggah' => $l->user->name ?? 'System',
+                'jenisDataset' => $l->jenis_dataset,
+                'baris' => (int)$l->rows_imported,
+                'status' => $l->status === 'Success' ? 'Sukses' : 'Gagal',
+                'keterangan' => $l->message
+            ]);
+
+            $summary = [
+                'tgl_cetak' => now()->translatedFormat('d F Y H:i') . ' WIB',
+                'penginput' => Auth::user()->name ?? 'System Administrator',
+                'total' => $logs->count(),
+                'sukses' => $logs->where('status', 'Sukses')->count(),
+                'gagal' => $logs->where('status', 'Gagal')->count(),
+            ];
+
+            $pdf = Pdf::loadView('apps.monitoring.exports.pdf-audit-log', [
+                'logs' => $logs,
+                'summary' => $summary
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->stream("Laporan_Audit_Trail_SIMTAN_" . now()->format('Ymd_His') . ".pdf");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghasilkan PDF: ' . $e->getMessage());
+        }
     }
 
     private function getProcessedRowCount($k, $f)

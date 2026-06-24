@@ -18,15 +18,7 @@ class AI_Controller extends Controller
 {
     protected $aiService;
 
-    /**
-     * Mapping Slug dari URL ke Database Key
-     */
-    protected $mapPeriode = [
-        'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
-        'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
-        'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
-        'tahunan-2025'   => 'Tahun 2025',
-    ];
+
 
     public function __construct(AIService $aiService)
     {
@@ -48,7 +40,7 @@ class AI_Controller extends Controller
             // Jika ada parameter kebun -> kebun_summary, jika tidak -> integrasi terpadu (Global)
             $mode = $kebun ? 'kebun_summary' : 'multimodal';
 
-            $dbKey = $this->mapPeriode[$selectedSlug] ?? $selectedSlug;
+            $dbKey = config("simtan.map_periode.{$selectedSlug}.db_key") ?? $selectedSlug;
 
             if (!$dbKey) {
                 return response()->json(['status' => 'error', 'message' => 'Dimensi waktu tidak valid.']);
@@ -81,7 +73,7 @@ class AI_Controller extends Controller
                 'periode' => 'required'
             ]);
 
-            $dbKey = $this->mapPeriode[$request->periode] ?? $request->periode;
+            $dbKey = config("simtan.map_periode.{$request->periode}.db_key") ?? $request->periode;
 
             $rekap = DetailRekap::where('kebun', $request->kebun)
                 ->where('afdeling', $request->blok_id)

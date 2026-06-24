@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
  * 
  * Prefix: /api/spatial/
  */
-Route::prefix('spatial')->group(function () {
+Route::middleware('auth:sanctum')->prefix('spatial')->group(function () {
 
     /**
      * API: Konfigurasi Spasial Kebun

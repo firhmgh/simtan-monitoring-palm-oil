@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AI_Controller;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SpatialController;
 use Illuminate\Support\Facades\Storage;
