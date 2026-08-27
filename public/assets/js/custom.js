@@ -235,7 +235,7 @@
             },
 
             // sidebar
-            sidebar: true,
+            sidebar: false,
             toggleSidebar() {
                 this.sidebar = !this.sidebar;
             },
