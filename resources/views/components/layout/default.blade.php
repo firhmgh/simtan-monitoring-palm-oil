@@ -7,24 +7,85 @@
     <title>{{ $title ?? 'SIMTAN - Sistem Informasi Monitoring Areal Tanaman' }}</title>
 
     <meta name='viewport' content='width=device-width, initial-scale=1' />
-    <link rel="icon" type="image/svg" href="/assets/images/logo-ptpn4.png" />
+    <link rel="icon" type="image/svg" href="{{ asset('assets/images/logo-ptpn4.png') }}" />
 
+    <!-- Font Preloading for Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" />
+    </noscript>
 
-    <script src="/assets/js/perfect-scrollbar.min.js"></script>
-    <script defer src="/assets/js/popper.min.js"></script>
-    <script defer src="/assets/js/tippy-bundle.umd.min.js"></script>
-    <script defer src="/assets/js/sweetalert.min.js"></script>
+    <script defer src="{{ asset('assets/js/perfect-scrollbar.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/popper.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/tippy-bundle.umd.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/sweetalert.min.js') }}"></script>
     @vite(['resources/css/app.css'])
+
+    <!-- Inisialisasi Objek main & $store.app Terpadu -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            if (!Alpine.store('app')) {
+                Alpine.store('app', {
+                    sidebar: window.innerWidth > 1024,
+                    theme: localStorage.getItem('theme') || 'light',
+                    isDarkMode: localStorage.getItem('theme') === 'dark',
+                    menu: 'vertical',
+                    layout: 'full',
+                    rtlClass: 'ltr',
+                    animation: '',
+                    navbar: 'navbar-sticky',
+                    semidark: false,
+                    locale: 'en',
+                    init() {
+                        this.refreshTheme();
+                    },
+                    toggleSidebar() {
+                        this.sidebar = !this.sidebar;
+                    },
+                    toggleTheme(val) {
+                        this.theme = val || (this.theme === 'light' ? 'dark' : 'light');
+                        localStorage.setItem('theme', this.theme);
+                        this.isDarkMode = this.theme === 'dark';
+                        this.refreshTheme();
+                    },
+                    refreshTheme() {
+                        if (this.theme === 'dark') {
+                            document.documentElement.classList.add('dark');
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                        }
+                    },
+                    setRTLLayout() {
+                        document.querySelector('html').setAttribute('dir', this.rtlClass);
+                    }
+                });
+            }
+
+            if (!Alpine.data('main')) {
+                Alpine.data('main', () => ({}));
+            }
+        });
+    </script>
+    <style>
+        .custom-toast {
+            background: rgba(255, 255, 255, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.4) !important;
+        }
+        html.dark .custom-toast {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+    </style>
 </head>
 
-<body x-data="main" class="antialiased relative font-nunito text-sm font-normal overflow-x-hidden"
+<body x-data="main" class="antialiased relative font-['Plus_Jakarta_Sans',sans-serif] text-sm font-normal overflow-x-hidden"
     :class="[$store.app.sidebar ? 'toggle-sidebar' : '', $store.app.theme === 'dark' || $store.app.isDarkMode ? 'dark' : '',
         $store.app.menu, $store.app.layout, $store.app.rtlClass
     ]">
+
+
 
     <!-- screen loader -->
     <div
@@ -44,14 +105,31 @@
     </div>
 
     <!-- GLOBAL NOTIFICATION SYSTEM (TOAST TOP-CENTER) -->
-    <div x-data="{ show: false, message: '', type: 'success' }" x-cloak
-        @toast.window="
-        message = $event.detail.message;
-        type = $event.detail.type || 'success';
-        show = true;
-        setTimeout(() => show = false, 5000);
-    "
-        class="fixed inset-x-0 top-8 flex justify-center pointer-events-none z-[999999]">
+    <div x-data="{ 
+        show: false, 
+        message: '', 
+        type: 'success',
+        init() {
+            @if (session('success'))
+                this.trigger('{{ session('success') }}', 'success');
+            @endif
+            @if (session('error'))
+                this.trigger('{{ session('error') }}', 'error');
+            @endif
+            @if (session('toast'))
+                this.trigger('{{ session('toast')['message'] }}', '{{ session('toast')['type'] }}');
+            @endif
+        },
+        trigger(message, type) {
+            this.message = message;
+            this.type = type || 'success';
+            this.show = true;
+            setTimeout(() => this.show = false, 5000);
+        }
+    }" x-cloak
+        @toast.window="trigger($event.detail.message, $event.detail.type)"
+        class="fixed top-8 left-1/2 -translate-x-1/2 pointer-events-none z-[999999] w-full max-w-md px-4"
+        style="left: 50% !important; transform: translateX(-50%) !important;">
 
         <!-- Floating Premium Toast -->
         <div x-show="show" x-transition:enter="transition ease-out duration-500"
@@ -61,13 +139,14 @@
             x-transition:leave-end="-translate-y-20 opacity-0 scale-90" class="pointer-events-auto w-full max-w-md">
 
             <div :class="{
-                'border-emerald-500 bg-white/90 dark:bg-emerald-950/90': type === 'success',
-                'border-rose-500 bg-white/90 dark:bg-rose-950/90': type === 'error'
+                'border-emerald-500/40': type === 'success',
+                'border-rose-500/40': type === 'error'
             }"
-                class="border-l-[6px] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-5 flex items-center gap-5 border border-white/20 backdrop-blur-xl">
+                class="custom-toast border-l-[6px] rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-5 flex items-center gap-5 border backdrop-blur-xl">
 
-                <!-- Icon -->
-                <div :class="type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'"
+                <!-- Icon (Vibrant Gradient Backgrounds) -->
+                <div :class="type === 'success' ? 'bg-gradient-to-tr from-emerald-600 to-teal-400' : 'bg-gradient-to-tr from-rose-600 to-orange-500'"
+                    :style="type === 'success' ? 'background: linear-gradient(135deg, #059669 0%, #2dd4bf 100%) !important;' : 'background: linear-gradient(135deg, #e11d48 0%, #f97316 100%) !important;'"
                     class="p-3 text-white rounded-2xl shadow-lg shrink-0">
                     <template x-if="type === 'success'">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -82,10 +161,10 @@
                 </div>
 
                 <!-- Text Content -->
-                <div class="flex-1">
-                    <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1"
-                        x-text="type === 'success' ? 'System Integrated' : 'Security Alert'"></p>
-                    <p class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-tight leading-tight"
+                <div class="flex-1 text-center">
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 text-center"
+                        x-text="type === 'success' ? 'Integrasi Data Terpadu' : 'Security Alert'"></p>
+                    <p class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-tight leading-tight text-center"
                         x-text="message"></p>
                 </div>
 
@@ -103,37 +182,6 @@
     <div x-cloak class="fixed inset-0 bg-[black]/60 z-50 lg:hidden" :class="{ 'hidden': !$store.app.sidebar }"
         @click="$store.app.toggleSidebar()"></div>
 
-    <!-- BACKEND SESSION TO EVENT BRIDGE -->
-    <script>
-        window.addEventListener('load', () => {
-            @if (session('success'))
-                window.dispatchEvent(new CustomEvent('toast', {
-                    detail: {
-                        message: "{{ session('success') }}",
-                        type: 'success'
-                    }
-                }));
-            @endif
-
-            @if (session('error'))
-                window.dispatchEvent(new CustomEvent('toast', {
-                    detail: {
-                        message: "{{ session('error') }}",
-                        type: 'error'
-                    }
-                }));
-            @endif
-
-            @if (session('toast'))
-                window.dispatchEvent(new CustomEvent('toast', {
-                    detail: {
-                        message: "{{ session('toast')['message'] }}",
-                        type: "{{ session('toast')['type'] }}"
-                    }
-                }));
-            @endif
-        });
-    </script>
 
     <div class="fixed bottom-6 ltr:right-6 rtl:left-6 z-50" x-data="scrollToTop">
         <template x-if="showTopButton">
@@ -162,14 +210,15 @@
         </div>
     </div>
 
-    <script src="/assets/js/alpine-collaspe.min.js"></script>
-    <script src="/assets/js/alpine-persist.min.js"></script>
-    <script defer src="/assets/js/alpine-ui.min.js"></script>
-    <script defer src="/assets/js/alpine-focus.min.js"></script>
-    <script defer src="/assets/js/alpine.min.js"></script>
-    <script src="/assets/js/custom.js"></script>
-    <script src="/assets/js/alpine-colorthemes.js"></script>
-    <script src="/assets/js/app.js"></script>
+    <!-- Load Alpine.js Plugins & Custom Scripts BEFORE Alpine.js Core to prevent initialization race conditions -->
+    <script defer src="{{ asset('assets/js/alpine-collaspe.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/alpine-persist.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/alpine-ui.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/alpine-focus.min.js') }}"></script>
+    <script defer src="{{ asset('assets/js/custom.js') }}"></script>
+    <script defer src="{{ asset('assets/js/alpine-colorthemes.js') }}"></script>
+    <script defer src="{{ asset('assets/js/app.js') }}"></script>
+    <script defer src="{{ asset('assets/js/alpine.min.js') }}"></script>
 </body>
 
 </html>

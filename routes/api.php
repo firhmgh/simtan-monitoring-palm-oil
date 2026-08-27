@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
  * 
  * Prefix: /api/spatial/
  */
-Route::prefix('spatial')->group(function () {
+Route::middleware('auth:sanctum')->prefix('spatial')->group(function () {
 
     /**
      * API: Konfigurasi Spasial Kebun
@@ -38,7 +38,7 @@ Route::prefix('spatial')->group(function () {
 
     /**
      * API: Data Poligon Batas Blok
-     * Mengembalikan fusi data antara file 'kanas_batas.geojson' dengan status kesehatan dari DB.
+     * Mengembalikan integrasi data terpadu antara file 'kanas_batas.geojson' dengan status kesehatan dari DB.
      * Metadata Tooltip: Unit (AFD), Tahun Tanam, Luas ADM, Luas SHP.
      */
     Route::get('/blocks/{kode_kebun}', [SpatialController::class, 'getBlocks'])->name('api.spatial.blocks');

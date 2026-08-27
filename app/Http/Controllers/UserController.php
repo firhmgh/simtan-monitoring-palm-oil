@@ -33,6 +33,10 @@ class UserController extends Controller
      * Menyimpan pengguna baru (Create).
      * Sesuai alur Prosedur Penambahan Akun Baru di Bab 3.6.1.2.
      */
+    /**
+     * Menyimpan pengguna baru (Create).
+     * Sesuai alur Prosedur Penambahan Akun Baru di Bab 3.6.1.2.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -51,18 +55,28 @@ class UserController extends Controller
             'role_id' => $request->role_id
         ]);
 
-        return back()->with('success', 'Akun berhasil ditambahkan.');
+        return back()->with('success', 'Akun pengguna baru berhasil didaftarkan ke dalam sistem.');
     }
 
     /**
-     * Memperbarui data pengguna lain (Update oleh Admin).
+     * Memperbarui data pengguna lain (Update oleh Superadmin).
      */
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'username' => 'required|string|unique:users,username,' . $id . '|max:100',
+            'email' => 'required|email|unique:users,email,' . $id . '|max:150',
+            'password' => 'nullable|min:6',
+            'role_id' => 'required|exists:roles,id'
+        ]);
+
         $user->update([
             'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
             'role_id' => $request->role_id
         ]);
 
@@ -70,7 +84,7 @@ class UserController extends Controller
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        return back()->with('success', 'Data akun diperbarui.');
+        return back()->with('success', 'Data profil dan peran pengguna berhasil diperbarui.');
     }
 
     /**
@@ -78,8 +92,12 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        if ($id == Auth::id()) {
+            return back()->with('error', 'Gagal menghapus akun: Anda tidak dapat menghapus akun Superadmin yang sedang aktif digunakan untuk login.');
+        }
+
         User::findOrFail($id)->delete();
-        return back()->with('success', 'Akun berhasil dihapus.');
+        return back()->with('success', 'Akun pengguna berhasil dihapus secara permanen dari sistem.');
     }
 
 

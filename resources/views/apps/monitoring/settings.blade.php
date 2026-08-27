@@ -1,23 +1,31 @@
 <x-layout.default>
-    <div x-data="settingsData()" class="space-y-6">
+    {{-- Font Plus Jakarta Sans (standar tipografi SIMTAN) --}}
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <div x-data="settingsData()" class="space-y-6 font-['Plus_Jakarta_Sans'] antialiased">
         <!-- Page Header -->
         <div class="flex flex-col md:flex-row justify-between gap-4">
             <div>
+                <!-- Navigasi Breadcrumb Standar SIMTAN -->
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Settings</li>
+                </ul>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white italic tracking-tighter">
                     Pengaturan Sistem
                 </h1>
-                <p class="text-gray-500 text-sm mt-1 dark:text-gray-400 font-medium">
-                    Kelola informasi personal, keamanan akun, dan konfigurasi kecerdasan artifisial
+                <p class="text-xs font-bold italic text-slate-500 dark:text-slate-400 mt-2 border-l-2 border-primary pl-2 tracking-tight">
+                    Sistem Integrasi Terpadu - PTPN IV Regional I
                 </p>
             </div>
         </div>
 
         <!-- Tab Navigation -->
         <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-800">
+            {{-- Tab navigasi: Profil, Keamanan, dan Konfigurasi AI --}}
             <button @click="activeTab = 'profile'"
                 :class="activeTab === 'profile' ? 'border-emerald-600 text-emerald-600' :
-                    'border-transparent text-gray-400 hover:text-gray-700'"
-                class="flex items-center gap-2 px-8 py-4 border-b-2 font-black text-xs transition-all tracking-[0.1em] italic">
+                    'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                class="flex items-center gap-2 px-8 py-4 border-b-2 font-black text-xs transition-all duration-200 tracking-[0.1em] italic">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2.5">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -27,8 +35,8 @@
             </button>
             <button @click="activeTab = 'security'"
                 :class="activeTab === 'security' ? 'border-emerald-600 text-emerald-600' :
-                    'border-transparent text-gray-400 hover:text-gray-700'"
-                class="flex items-center gap-2 px-8 py-4 border-b-2 font-black text-xs transition-all tracking-[0.1em] italic">
+                    'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                class="flex items-center gap-2 px-8 py-4 border-b-2 font-black text-xs transition-all duration-200 tracking-[0.1em] italic">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2.5">
                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
@@ -40,8 +48,8 @@
             @if (auth()->user()->hasRole('superadmin'))
                 <button @click="activeTab = 'ai'"
                     :class="activeTab === 'ai' ? 'border-emerald-600 text-emerald-600' :
-                        'border-transparent text-gray-400 hover:text-gray-700'"
-                    class="flex items-center gap-2 px-8 py-4 border-b-2 font-black text-xs transition-all tracking-[0.1em] italic">
+                        'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="flex items-center gap-2 px-8 py-4 border-b-2 font-black text-xs transition-all duration-200 tracking-[0.1em] italic">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
@@ -165,11 +173,12 @@
                                     </svg>
                                 </div>
                                 <div>
+                                    {{-- Heading konfigurasi mesin AI dengan manajemen API keys multi-penyedia --}}
                                     <h3
                                         class="text-base font-black italic tracking-wider leading-none dark:text-white">
-                                        AI Neural Engine Failsafe</h3>
+                                        Konfigurasi Mesin AI</h3>
                                     <p class="text-[10px] font-bold text-gray-400 mt-1 tracking-widest">
-                                        Manajemen Multi-Provider API Keys</p>
+                                        Manajemen Kunci API Multi-Penyedia</p>
                                 </div>
                             </div>
 
@@ -178,8 +187,9 @@
                                     <label class="flex items-center justify-between tracking-widest">
                                         <span class="text-[10px] font-black text-gray-500">Layanan Utama
                                             (L1)</span>
+                                        {{-- Badge status layanan: aktif digunakan sistem saat ini --}}
                                         <span
-                                            class="text-[9px] bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-black italic">Active</span>
+                                            class="text-[9px] bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-black italic">Aktif</span>
                                     </label>
                                     <select name="api_primary"
                                         class="form-select rounded-xl py-3 font-bold text-xs shadow-sm dark:bg-[#1b2e4b] dark:border-none dark:text-white">
@@ -199,8 +209,9 @@
                                     <label class="flex items-center justify-between tracking-widest">
                                         <span class="text-[10px] font-black text-gray-500">Layanan Cadangan
                                             (L2)</span>
+                                        {{-- Badge status layanan: siaga sebagai failsafe --}}
                                         <span
-                                            class="text-[9px] bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-black italic">Standby</span>
+                                            class="text-[9px] bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-black italic">Cadangan</span>
                                     </label>
                                     <select name="api_backup"
                                         class="form-select rounded-xl py-3 font-bold text-xs shadow-sm dark:bg-[#1b2e4b] dark:border-none dark:text-white">
@@ -239,8 +250,9 @@
                                 <div class="space-y-6">
                                     <label
                                         class="text-[10px] font-black text-amber-600 flex items-center gap-2 tracking-widest">
-                                        <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div> Ambang
-                                        Peringatan (Yellow Zone)
+                                        <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                                        {{-- Zona Kuning: ambang batas peringatan sebelum status kritis --}}
+                                        Ambang Peringatan (Zona Kuning)
                                     </label>
                                     <div class="flex items-center gap-8 px-2">
                                         <input type="range" name="threshold_yellow" min="0" max="100"
@@ -253,8 +265,9 @@
                                 <div class="space-y-6">
                                     <label
                                         class="text-[10px] font-black text-red-600 flex items-center gap-2 tracking-widest">
-                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> Ambang Kritis
-                                        (Red Zone)
+                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                        {{-- Zona Merah: ambang batas kritis yang memicu notifikasi intervensi --}}
+                                        Ambang Kritis (Zona Merah)
                                     </label>
                                     <div class="flex items-center gap-8 px-2">
                                         <input type="range" name="threshold_red" min="0" max="100"

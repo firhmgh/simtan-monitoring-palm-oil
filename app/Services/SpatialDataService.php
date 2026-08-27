@@ -7,11 +7,12 @@ use App\Models\LokasiKebun;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * SpatialDataService - High-Performance GIS & Decision Support Engine
  * 
- * Sesuai Standar Scopus Q1: Mengimplementasikan Data Fusion Multimodal 
+ * Mengimplementasikan Data Fusion Multimodal 
  * (Tabular + Spasial + Biometrik) untuk kalkulasi Plantation Health Index.
  */
 class SpatialDataService
@@ -28,15 +29,13 @@ class SpatialDataService
         if (!$filePath) return ['type' => 'FeatureCollection', 'features' => []];
 
         // 1. MAPPING PERIODE
-        $mapPeriode = [
-            'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
-            'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
-            'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
-            'tahunan-2025'   => 'Tahun 2025',
-        ];
-
-        $dbKey = $mapPeriode[$periode] ?? $periode;
-        $geojsonData = json_decode(Storage::disk('local')->get($filePath), true);
+        $dbKey = config("simtan.map_periode.{$periode}.db_key") ?? $periode;
+        
+        // OPTIMASI SPASIAL: Membaca & men-decode file GeoJSON dari cache jika sudah pernah diload (mencegah I/O bottleneck)
+        $cacheKeyGeoJson = "geojson_raw_{$kode}_{$type}";
+        $geojsonData = Cache::remember($cacheKeyGeoJson, 3600, function () use ($filePath) {
+            return json_decode(Storage::disk('local')->get($filePath), true);
+        });
 
         // 2. DATA FUSION: Ambil data rekapitulasi database
         $dbData = DetailRekap::where('kebun', $kode)
@@ -85,7 +84,7 @@ class SpatialDataService
     }
 
     /**
-     * Logic Scopus Q1: Integrated Plantation Health Index (IPHI)
+     * Logic Integrated Plantation Health Index (IPHI)
      * Menggunakan MCDM (Multi-Criteria Decision Making)
      */
     public function calculateBlockHealth($trees)
@@ -158,22 +157,27 @@ class SpatialDataService
 
     /**
      * Memuat data KONPOKOK dan mengelompokkan per blok
+     * Hasil grouping di-cache selama 1 jam (3600 detik) untuk menghindari I/O & CPU overhead dari data spasial raksasa.
      */
     private function getTreeDataGroupedByBlock($kode)
     {
-        $path = $this->resolvePath($kode, 'konpokok');
-        if (!$path) return [];
+        $cacheKey = "tree_grouped_{$kode}";
 
-        $data = json_decode(Storage::disk('local')->get($path), true);
-        $grouped = [];
+        return Cache::remember($cacheKey, 3600, function () use ($kode) {
+            $path = $this->resolvePath($kode, 'konpokok');
+            if (!$path) return [];
 
-        foreach ($data['features'] as $f) {
-            $bid = strtoupper(trim($f['properties']['BLOK'] ?? ''));
-            if ($bid) {
-                $grouped[$bid][] = $f;
+            $data = json_decode(Storage::disk('local')->get($path), true);
+            $grouped = [];
+
+            foreach ($data['features'] as $f) {
+                $bid = strtoupper(trim($f['properties']['BLOK'] ?? ''));
+                if ($bid) {
+                    $grouped[$bid][] = $f;
+                }
             }
-        }
-        return $grouped;
+            return $grouped;
+        });
     }
 
     /**

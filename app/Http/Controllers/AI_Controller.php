@@ -18,15 +18,7 @@ class AI_Controller extends Controller
 {
     protected $aiService;
 
-    /**
-     * Mapping Slug dari URL ke Database Key
-     */
-    protected $mapPeriode = [
-        'periode-1-2025' => 'JANFEBMARAPR2025REKAP',
-        'periode-2-2025' => 'MEIJULJUNAGST2025REKAP',
-        'periode-3-2025' => 'SEPOKTNOVDES2025REKAP',
-        'tahunan-2025'   => 'Tahun 2025',
-    ];
+
 
     public function __construct(AIService $aiService)
     {
@@ -45,10 +37,10 @@ class AI_Controller extends Controller
             $refresh = $request->has('refresh');
 
             // Logika penentuan mode otomatis: 
-            // Jika ada parameter kebun -> kebun_summary, jika tidak -> multimodal (Global)
+            // Jika ada parameter kebun -> kebun_summary, jika tidak -> integrasi terpadu (Global)
             $mode = $kebun ? 'kebun_summary' : 'multimodal';
 
-            $dbKey = $this->mapPeriode[$selectedSlug] ?? $selectedSlug;
+            $dbKey = config("simtan.map_periode.{$selectedSlug}.db_key") ?? $selectedSlug;
 
             if (!$dbKey) {
                 return response()->json(['status' => 'error', 'message' => 'Dimensi waktu tidak valid.']);
@@ -70,7 +62,7 @@ class AI_Controller extends Controller
 
     /**
      * BLOCK INSIGHT: Diagnosa & Prediksi Spesifik Per Blok
-     * Terintegrasi dengan Scopus Standard Enrichment (Topografi, Drainase, & MAP Age)
+     * Terintegrasi dengan Standard Enrichment (Topografi, Drainase, & MAP Age)
      */
     public function getBlockInsight(Request $request)
     {
@@ -81,7 +73,7 @@ class AI_Controller extends Controller
                 'periode' => 'required'
             ]);
 
-            $dbKey = $this->mapPeriode[$request->periode] ?? $request->periode;
+            $dbKey = config("simtan.map_periode.{$request->periode}.db_key") ?? $request->periode;
 
             $rekap = DetailRekap::where('kebun', $request->kebun)
                 ->where('afdeling', $request->blok_id)
@@ -158,7 +150,7 @@ class AI_Controller extends Controller
 
             return back()->with('success', 'Konfigurasi Neural Engine dan Parameter Agronomi Berhasil Disinkronisasi.');
         } catch (\Exception $e) {
-            return back()->withErrors(['system_error' => 'Gagal memperbarui konfigurasi: ' . $e->getMessage()]);
+            return back()->with('error', 'Gagal memperbarui konfigurasi: ' . $e->getMessage());
         }
     }
 }

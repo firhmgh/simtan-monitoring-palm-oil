@@ -1,20 +1,23 @@
 <x-layout.default>
-    <div x-data="riwayatData({{ json_encode($logsJson) }})" class="relative text-gray-900 dark:text-white-light" x-init="initRiwayat()" x-cloak>
+    {{-- Font Plus Jakarta Sans (standar tipografi SIMTAN) --}}
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <div x-data="riwayatData({{ json_encode($logsJson) }})" class="relative text-gray-900 dark:text-white-light font-['Plus_Jakarta_Sans'] antialiased" x-init="initRiwayat()" x-cloak>
 
         <!-- 1. HEADER SECTION -->
         <div
             class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
             <div class="text-left">
-                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black">
-                    <li><a href="javascript:;" class="text-primary hover:underline">Monitoring</a></li>
-                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black">Riwayat Data</li>
+                <!-- Navigasi Breadcrumb Standar SIMTAN -->
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Riwayat Data</li>
                 </ul>
                 <h1
                     class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-none italic">
                     Log Konsolidasi Data</h1>
                 <p
-                    class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mt-2 border-l-2 border-primary pl-2 tracking-widest">
-                    Audit Trail & Transparansi Aktivitas Ingesti Multimoda
+                    class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mt-2 border-l-2 border-primary pl-2 tracking-widest font-plus-jakarta">
+                    Audit Trail & Transparansi Aktivitas Unggah Data Terpadu
                 </p>
             </div>
         </div>
@@ -22,7 +25,7 @@
         <!-- NOTIFIKASI KONDISI AWAL (DATA KOSONG) -->
         @if (count($logsJson) === 0)
             <div
-                class="flex items-center p-5 mb-8 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-500 shadow-sm animate__animated animate__fadeIn">
+                class="flex items-center p-5 mb-8 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-500 shadow-sm animate__animated animate__fadeIn font-plus-jakarta">
                 <svg class="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -30,7 +33,7 @@
                 <div>
                     <span class="font-black italic tracking-widest text-xs">Informasi Log:</span>
                     <p class="text-sm font-bold">
-                        Belum ada aktivitas ingesti data yang tercatat. Silakan menuju halaman <a
+                        Belum ada aktivitas unggah data yang tercatat. Silakan menuju halaman <a
                             href="{{ route('monitoring.import') }}"
                             class="underline decoration-2 font-black text-primary">Upload Data</a> untuk memulai
                         sinkronisasi.
@@ -40,13 +43,13 @@
         @endif
 
         <!-- 2. ANALYTICAL STATS CARDS (Dynamic Counters) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 font-black">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 font-black font-plus-jakarta">
             <!-- Total -->
             <div
                 class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all rounded-xl">
-                <div class="text-left">
+                <div class="text-left font-plus-jakarta">
                     <p class="text-[10px] text-gray-400 dark:text-gray-500 tracking-[0.2em] mb-1 font-black">
-                        Total Ingesti</p>
+                        Total Unggah Data</p>
                     <p class="text-4xl font-black text-gray-900 dark:text-white leading-none tracking-tighter"
                         x-text="statusCounts.total"></p>
                 </div>
@@ -98,7 +101,7 @@
                 class="panel bg-white dark:bg-[#0e1726] border-0 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all rounded-xl">
                 <div class="text-left">
                     <p class="text-[10px] text-gray-400 dark:text-gray-500 tracking-[0.2em] mb-1 font-black">
-                        Queue / Antrean</p>
+                        Dalam Antrean</p>
                     <p class="text-4xl font-black text-blue-600 leading-none tracking-tighter"
                         x-text="statusCounts.processing"></p>
                 </div>
@@ -113,21 +116,23 @@
             </div>
         </div>
 
-        <!-- 3. SMART FILTER PANEL (Vristo Standard) -->
+        <!-- 3. PANEL FILTER DATA SENSUS -->
         <div
             class="panel bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-[#1b2e4b] shadow-sm p-5 mb-8 rounded-xl">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end font-black">
                 <div class="text-left">
+                    {{-- Filter pencarian berdasarkan nama berkas yang diunggah --}}
                     <label
-                        class="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Search
-                        Files</label>
-                    <input type="text" x-model="searchQuery" placeholder="INPUT FILENAME..."
+                        class="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Cari
+                        Berkas</label>
+                    <input type="text" x-model="searchQuery" placeholder="NAMA BERKAS..."
                         class="form-input py-2.5 text-xs">
                 </div>
 
                 <div class="text-left">
+                    {{-- Filter berdasarkan pengguna yang melakukan unggah data --}}
                     <label
-                        class="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Authority</label>
+                        class="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Pengunggah</label>
                     <select x-model="filterPengunggah" class="form-select py-2.5 text-xs">
                         <option value="all">SEMUA PENGUNGGAH</option>
                         @foreach ($listPengunggah as $name)
@@ -137,9 +142,10 @@
                 </div>
 
                 <div class="text-left">
+                    {{-- Filter berdasarkan jenis dataset yang diunggah --}}
                     <label
-                        class="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Dataset
-                        Type</label>
+                        class="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5 block tracking-[0.2em] italic">Jenis
+                        Dataset</label>
                     <select x-model="filterJenis" class="form-select py-2.5 text-xs">
                         <option value="all">SEMUA JENIS</option>
                         @foreach ($listJenis as $jenis)
@@ -162,21 +168,22 @@
             <div class="table-responsive">
                 <table class="w-full text-left border-collapse table-hover">
                     <thead>
+                        {{-- Header tabel log aktivitas sistem (audit trail) --}}
                         <tr
                             class="bg-gray-50 dark:bg-black/20 text-gray-700 dark:text-gray-300 border-b dark:border-[#1b2e4b]">
-                            <th class="px-6 py-4 text-[11px] font-black tracking-widest italic">Timestamp</th>
+                            <th class="px-6 py-4 text-[11px] font-black tracking-widest italic">Waktu Unggah</th>
                             <th class="px-6 py-4 text-[11px] font-black tracking-widest italic">Laporan /
                                 Berkas</th>
                             <th class="px-6 py-4 text-[11px] font-black tracking-widest italic text-center">
-                                Otoritas</th>
+                                Pengunggah</th>
                             <th class="px-6 py-4 text-[11px] font-black tracking-widest italic text-center">
-                                Dataset</th>
+                                Jenis Data</th>
                             <th class="px-6 py-4 text-[11px] font-black tracking-widest italic text-center">
-                                Volume</th>
+                                Jumlah Baris</th>
                             <th class="px-6 py-4 text-[11px] font-black tracking-widest italic text-center">
-                                Integrasi</th>
+                                Status</th>
                             <th class="px-6 py-4 text-[11px] font-black tracking-widest italic text-center">
-                                Navigasi</th>
+                                Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-[13px] font-bold">
@@ -263,19 +270,31 @@
 
         <!-- 5. BOTTOM ACTIONS -->
         <div class="flex flex-wrap gap-4 mt-8 justify-start font-black">
-            <button
-                class="btn btn-dark text-[10px] tracking-widest italic py-3 px-8 rounded-lg shadow-xl transition-all active:scale-95">
+            {{-- Tombol Download CSV: mengunduh seluruh log sebagai file .csv --}}
+            <a href="{{ route('monitoring.audit.csv') }}"
+               id="btn-download-csv"
+               class="btn btn-dark text-[10px] tracking-widest italic py-3 px-8 rounded-lg shadow-xl transition-all active:scale-95 inline-flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                 Download Master CSV
-            </button>
-            <button
-                class="btn btn-outline-dark text-[10px] tracking-widest italic py-3 px-8 rounded-lg shadow-sm transition-all active:scale-95">
+            </a>
+
+            {{-- Tombol Print PDF: membuka laporan PDF audit trail resmi di tab baru --}}
+            <a href="{{ route('monitoring.audit.pdf') }}"
+               id="btn-print-pdf"
+               target="_blank"
+               class="btn btn-outline-dark text-[10px] tracking-widest italic py-3 px-8 rounded-lg shadow-sm transition-all active:scale-95 inline-flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
                 Print Official PDF
-            </button>
+            </a>
         </div>
     </div>
 
     <!-- REFACTOR SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/assets/js/sweetalert.min.js"></script>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('riwayatData', (initialData) => ({

@@ -675,3 +675,11 @@ hover:text-primary hover:before:!bg-primary ltr:before:mr-2 rtl:before:ml-2 dark
 [dir='rtl'] .apexcharts-tooltip-marker {
     @apply mr-0 ml-2.5;
 }
+
+/* Global Typography Override: Plus Jakarta Sans */
+body, html, h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea, label, td, th {
+    font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif !important;
+}
+.fa, .fas, .far, .fab, [class^="fa-"], [class*=" fa-"] {
+    font-family: 'FontAwesome' !important;
+}

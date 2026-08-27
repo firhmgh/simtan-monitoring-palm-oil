@@ -32,7 +32,7 @@ class SimtanFormService
     }
 
     /**
-     * Menangani proses upload, overwrite data lama, dan ingesti data ke database.
+     * Menangani proses upload, overwrite data lama, dan proses unggah data ke database.
      */
     public static function handleUpload(array $validated, $file)
     {
@@ -57,7 +57,7 @@ class SimtanFormService
             // Buat record form baru
             $form = SimtanForm::create($validated);
 
-            // Jalankan ingesti Excel berdasarkan kategori file
+            // Jalankan unggah berkas Excel berdasarkan kategori file
             match ($form->kategori_file) {
                 'Rekap TBM'          => Excel::import(new TbmImport($form->id, $form->kode_upload, $form->periode_data), $file),
                 'Lokasi Kebun'       => Excel::import(new LokasiKebunImport($form->id, $form->kode_upload), $file),

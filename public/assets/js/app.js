@@ -1,16 +1,16 @@
 /**
- * SIMTAN Monitoring - Vristo Dashboard Core Application
+ * SIMTAN - Sistem Informasi Monitoring Areal Tanaman
  * High-performance Alpine.js initialization and global state management.
  * Integrated with Global Typography, Design System, and Forensic Fixes.
  */
 
 document.addEventListener('alpine:init', () => {
-    // 1. GLOBAL APP STORE - Pusat kontrol State Vristo
+    // 1. GLOBAL APP STORE - Pusat kontrol SIMTAN
     if (!Alpine.store('app')) {
         Alpine.store('app', {
             sidebar: window.innerWidth > 1024,
             theme: localStorage.getItem('theme') || 'light',
-            
+
             init() {
                 this.refreshTheme();
             },
@@ -125,7 +125,7 @@ document.addEventListener('alpine:init', () => {
     // Langsung terapkan tema dari localStorage sebelum render halaman dimulai
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
         document.documentElement.classList.add('dark');
         if (!savedTheme) localStorage.setItem('theme', 'dark');

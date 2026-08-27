@@ -9,25 +9,27 @@
         <!-- 1. BAGIAN HEADER (Dukungan Tema Dinamis) -->
         <div class="flex flex-col gap-5 sm:flex-row sm:items-center justify-between">
             <div class="space-y-1">
-                <nav
-                    class="flex items-center gap-2 text-[10px] font-black shadow-sm tracking-[0.2em] text-primary/60 dark:text-primary/80">
-                    <a href="/" class="hover:text-primary transition-colors">Analisis</a>
-                    <span class="text-slate-300 dark:text-slate-600">/</span>
-                    <span class="text-slate-400">Mesin Inventarisasi</span>
-                </nav>
+                <!-- Navigasi Breadcrumb Standar SIMTAN -->
+                <ul class="flex space-x-2 text-xs mb-2 text-white-dark tracking-widest font-black uppercase">
+                    <li><a href="{{ route('index') }}" class="text-primary hover:underline font-black">Monitoring</a></li>
+                    <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2 font-black text-slate-400">Data Kebun</li>
+                </ul>
                 <h1 class="text-3xl font-black tracking-tighter leading-none italic text-slate-900 dark:text-white">
                     Data Kebun <span class="text-primary underline decoration-primary/20">Regional I</span>
                 </h1>
+                <p class="text-xs font-bold italic text-slate-500 dark:text-slate-400 mt-2 border-l-2 border-primary pl-2 tracking-tight">
+                    Sistem Integrasi Terpadu - PTPN IV Regional I
+                </p>
                 <p
-                    class="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-widest flex items-center gap-2">
+                    class="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-widest flex items-center gap-2 mt-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     Sistem Pemantauan Areal Terintegrasi TBM III
                 </p>
             </div>
 
-            <!-- 2. FILTER TEMPORAL (Sinkronisasi Vristo) -->
+            <!-- 2. FILTER WAKTU (Sinkronisasi Periode) -->
             <div
-                class="flex items-center gap-4 p-2 pl-5 bg-white dark:bg-[#0e1726] rounded-2xl border border-slate-100 dark:border-white-dark/10 shadow-sm transition-all hover:shadow-md">
+                class="flex items-center gap-4 p-2 pl-5 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-slate-100 dark:border-white-dark/10 shadow-sm transition-all hover:shadow-md">
                 <div class="hidden lg:block text-right border-r border-slate-100 dark:border-slate-800 pr-4">
                     <p class="text-[9px] font-black text-slate-400 tracking-widest leading-none mb-1">Dimensi
                         Waktu</p>
@@ -72,7 +74,7 @@
                             </div>
                             <div>
                                 <p class="text-[9px] font-black text-gray-400 leading-none mb-1">Status
-                                    Evaluasi</p>
+                                    Kinerja</p>
                                 <p class="text-[10px] font-black italic"
                                     :class="parseFloat(kpi.compliance) >= 100 && parseFloat(kpi.value.replace(/[^0-9.-]+/g,
                                         '')) > 0 ? 'text-emerald-500' : 'text-amber-500'"
@@ -166,8 +168,9 @@
                     <tbody class="divide-y divide-slate-50 dark:divide-white-dark/5 text-xs font-bold">
                         @forelse($kebun as $index => $item)
                             <tr class="group hover:bg-slate-50/80 dark:hover:bg-primary/5 transition-all duration-300">
+                                {{-- Nomor urut baris dengan efek hover ke warna primer --}}
                                 <td
-                                    class="py-6 px-8 text-center font-black text-slate-300 group-hover:text-primary transition-colors">
+                                    class="py-6 px-8 text-center font-black text-slate-300 group-hover:text-primary transition-colors duration-200">
                                     {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                                 <td class="py-6 px-6">
                                     <div class="flex flex-col">
@@ -291,7 +294,7 @@
                         icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>'
                     },
                     {
-                        label: 'Tingkat Kelangsungan Hidup',
+                        label: 'Indeks Kesehatan Areal',
                         value: '{{ $kpi['avg_health'] }}',
                         unit: '%',
                         bg: 'bg-purple-500/10',

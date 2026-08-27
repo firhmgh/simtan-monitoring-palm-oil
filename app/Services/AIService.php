@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
  * AIService - Expert Decision Support System Engine
  * Mengelola inferensi neural dengan pola pikir Senior Agronomist Auditor PTPN IV.
  * Fokus: Causal Analysis (Sebab-Akibat), Vigor Evaluation, dan Predictive Risk.
- * Scopus Standard: Terintegrasi dengan Hukum Minimum Liebig & Teori Nutrient Leaching.
+ * Terintegrasi dengan Hukum Minimum Liebig & Teori Nutrient Leaching.
  */
 class AIService
 {
@@ -122,7 +122,7 @@ class AIService
         if ($forceRefresh) Cache::forget($cacheKey);
 
         return Cache::remember($cacheKey, 3600, function () use ($prompt, $mode, $unitLabel, $contextData) {
-            // Logging Audit Trail (Scopus Requirement)
+            // Logging Audit Trail
             try {
                 DB::table('ai_usage_logs')->insert([
                     'user_id' => Auth::id() ?? 1,
