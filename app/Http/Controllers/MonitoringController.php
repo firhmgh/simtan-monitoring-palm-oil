@@ -183,17 +183,168 @@ class MonitoringController extends Controller
                 });
         }
 
+        // G. TEMPORAL DELTA COMPARISON (Milestone 4)
+        $temporalDelta = $this->resolveTemporalDelta($selectedSlug, $hasData ? [
+            'survival_rate' => $agregat['survival_rate'],
+            'sph_actual' => $agregat['sph_actual'],
+            'vigor_index' => $agregat['vigor_index'],
+            'maintenance_score' => $agregat['maintenance_score'],
+        ] : null);
+
         return view('index', array_merge($viewData, [
             'hasData' => $hasData,
             'activeSlug' => $selectedSlug,
             'listPeriode' => config('simtan.map_periode'),
             'agregat' => $agregat,
+            'temporalDelta' => $temporalDelta,
             'benchmarks' => [
                 'std_survival' => self::STD_SURVIVAL_RATE,
                 'std_girth' => self::STD_LB_KC_INDEX,
                 'std_sph' => self::STD_SPH_TARGET
             ]
         ]));
+    }
+
+    /**
+     * Helper KPI Calculation Set (Identik dengan formula existing)
+     */
+    public function calculateKpiSet($dbKey): ?array
+    {
+        if (empty($dbKey) || !DetailRekap::where('periode', $dbKey)->exists()) {
+            return null;
+        }
+
+        $stats = DetailRekap::where('is_total', 1)->where('periode', $dbKey)
+            ->selectRaw('
+                SUM(luas_ha) as luas, 
+                SUM(pkk_normal) as pokok, 
+                AVG(persen_pkk_normal) as health,
+                AVG(persen_tutupan_kacangan) as avg_lcc,
+                AVG(persen_pir_pkk_kurang_baik) as avg_pir_buruk,
+                AVG(persen_area_tergenang) as avg_tergenang
+            ')->first();
+
+        $totalLuas = (float) ($stats->luas ?? 0);
+        $totalPokok = (int) ($stats->pokok ?? 0);
+        $survivalRate = round($stats->health ?? 0, 1);
+
+        $vegStats = KorelasiVegetatif::where('periode', $dbKey)
+            ->selectRaw('AVG(lingkar_batang) as girth, AVG(jumlah_pelepah) as frond')
+            ->first();
+
+        $avgGirth = (float) ($vegStats->girth ?? 0);
+        $avgFrond = (float) ($vegStats->frond ?? 0);
+
+        $girthComp = ($avgGirth > 0) ? ($avgGirth / self::STD_LB_KC_INDEX) * 100 : 0;
+        $frondComp = ($avgFrond > 0) ? ($avgFrond / self::STD_JP_KC_INDEX) * 100 : 0;
+        $vigorIndex = round(min(100, ($girthComp + $frondComp) / 2), 1);
+
+        $maintenanceScore = round((($stats->avg_lcc ?? 0) + (100 - ($stats->avg_pir_buruk ?? 0))) / 2, 1);
+        $sphActual = ($totalLuas > 0) ? round($totalPokok / $totalLuas, 1) : 0;
+
+        return [
+            'survival_rate' => $survivalRate,
+            'sph_actual' => $sphActual,
+            'vigor_index' => $vigorIndex,
+            'maintenance_score' => $maintenanceScore,
+        ];
+    }
+
+    /**
+     * Resolusi Temporal Delta Comparison
+     */
+    public function resolveTemporalDelta(string $selectedSlug, ?array $currentKpi): array
+    {
+        $temporalSequence = [
+            'periode-1-2025' => null,
+            'periode-2-2025' => 'periode-1-2025',
+            'periode-3-2025' => 'periode-2-2025',
+            'tahunan-2025'   => null,
+        ];
+
+        $prevSlug = $temporalSequence[$selectedSlug] ?? null;
+        $prevLabel = $prevSlug ? (config("simtan.map_periode.{$prevSlug}.label") ?? $prevSlug) : null;
+
+        $defaultDelta = [
+            'has_comparison' => false,
+            'previous_slug' => $prevSlug,
+            'previous_label' => $prevLabel,
+            'kpi' => [
+                'survival_rate' => ['current' => $currentKpi['survival_rate'] ?? 0, 'previous' => null, 'delta_abs' => null, 'delta_percent' => null, 'trend' => 'none'],
+                'sph_actual' => ['current' => $currentKpi['sph_actual'] ?? 0, 'previous' => null, 'delta_abs' => null, 'delta_percent' => null, 'trend' => 'none'],
+                'vigor_index' => ['current' => $currentKpi['vigor_index'] ?? 0, 'previous' => null, 'delta_abs' => null, 'delta_percent' => null, 'trend' => 'none'],
+                'maintenance_score' => ['current' => $currentKpi['maintenance_score'] ?? 0, 'previous' => null, 'delta_abs' => null, 'delta_percent' => null, 'trend' => 'none'],
+            ]
+        ];
+
+        // Jika previous slug tidak ada atau current KPI null, return default graceful
+        if (!$prevSlug || !$currentKpi) {
+            return $defaultDelta;
+        }
+
+        $prevDbKey = config("simtan.map_periode.{$prevSlug}.db_key");
+        $prevKpi = $this->calculateKpiSet($prevDbKey);
+
+        if (!$prevKpi) {
+            return $defaultDelta;
+        }
+
+        return $this->computeTemporalDelta($currentKpi, $prevKpi, $prevSlug, $prevLabel);
+    }
+
+    /**
+     * Komputasi Delta Numerik Antar-Dua Set KPI
+     */
+    public function computeTemporalDelta(array $currentKpi, array $previousKpi, ?string $prevSlug, ?string $prevLabel): array
+    {
+        $kpiKeys = ['survival_rate', 'sph_actual', 'vigor_index', 'maintenance_score'];
+        $resultKpi = [];
+
+        foreach ($kpiKeys as $key) {
+            $curVal = isset($currentKpi[$key]) ? (float) $currentKpi[$key] : 0.0;
+            $hasPrev = isset($previousKpi[$key]) && $previousKpi[$key] !== null;
+            $prevVal = $hasPrev ? (float) $previousKpi[$key] : null;
+
+            if ($prevVal === null) {
+                $resultKpi[$key] = [
+                    'current' => $curVal,
+                    'previous' => null,
+                    'delta_abs' => null,
+                    'delta_percent' => null,
+                    'trend' => 'none',
+                ];
+                continue;
+            }
+
+            $deltaAbs = round($curVal - $prevVal, 1);
+
+            $deltaPercent = null;
+            if ($prevVal != 0.0) {
+                $deltaPercent = round((($curVal - $prevVal) / $prevVal) * 100, 1);
+            }
+
+            $trend = 'same';
+            if ($deltaAbs > 0) {
+                $trend = 'up';
+            } elseif ($deltaAbs < 0) {
+                $trend = 'down';
+            }
+
+            $resultKpi[$key] = [
+                'current' => $curVal,
+                'previous' => $prevVal,
+                'delta_abs' => $deltaAbs,
+                'delta_percent' => $deltaPercent,
+                'trend' => $trend,
+            ];
+        }
+
+        return [
+            'has_comparison' => true,
+            'previous_slug' => $prevSlug,
+            'previous_label' => $prevLabel,
+            'kpi' => $resultKpi,
+        ];
     }
 
     /**
@@ -341,22 +492,38 @@ class MonitoringController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Validasi header & struktur kolom berkas Excel
-            SimtanFormService::validateHeader($request->kategori_file, $file);
+            // 1. Pre-flight Validation: Validasi integritas berkas, struktur sheet, & kolom sebelum di-commit
+            SimtanFormService::validatePreFlight($request->kategori_file, $file, $periodeValue);
             $kode = $this->generateUniqueCode($request->kategori_file);
             
-            // 2. Unggah data dan masukkan ke database
-            $form = SimtanFormService::handleUpload(['kode_upload' => $kode, 'uploaded_by' => Auth::id(), 'personel_pj' => $request->personel, 'judul_file' => $request->judul_file, 'tanggal_upload' => now(), 'kategori_file' => $request->kategori_file, 'periode_data' => $periodeValue, 'notes' => $request->notes, 'file_path' => $path], $file);
+            // 2. Unggah data dan masukkan ke database (mengembalikan [$form, $oldFilePath])
+            [$form, $oldFilePath] = SimtanFormService::handleUpload(['kode_upload' => $kode, 'uploaded_by' => Auth::id(), 'personel_pj' => $request->personel, 'judul_file' => $request->judul_file, 'tanggal_upload' => now(), 'kategori_file' => $request->kategori_file, 'periode_data' => $periodeValue, 'notes' => $request->notes, 'file_path' => $path], $file);
             $rowCount = $this->getProcessedRowCount($request->kategori_file, $form->id);
             
             if ($rowCount === 0) {
-                throw new \Exception("Data tidak ditemukan atau baris kosong.");
+                throw new \Exception("Data tidak ditemukan atau seluruh baris kosong.");
             }
             
             // 3. Catat log pengunggahan berhasil
             UploadLog::create(['simtan_form_id' => $form->id, 'user_id' => Auth::id(), 'nama_file' => $file->getClientOriginalName(), 'jenis_dataset' => $request->kategori_file, 'rows_imported' => $rowCount, 'status' => 'Success', 'message' => "Integrasi {$rowCount} baris data berhasil."]);
             
+            // 4. FINAL DATABASE COMMIT
             DB::commit();
+
+            // 5. HANYA setelah DB::commit() final berhasil, bersihkan berkas fisik lama
+            if ($oldFilePath) {
+                try {
+                    $cleanOldPath = str_replace('public/', '', $oldFilePath);
+                    if (Storage::disk('public')->exists($cleanOldPath)) {
+                        Storage::disk('public')->delete($cleanOldPath);
+                        Log::info("Pembersihan Storage: Berkas fisik lama berhasil digantikan -> " . $cleanOldPath);
+                    }
+                } catch (\Throwable $fileEx) {
+                    // Masalah I/O filesystem setelah DB commit tidak membatalkan data database yang sudah committed
+                    Log::warning("Pembersihan Storage: Gagal menghapus berkas lama pasca-commit -> " . $fileEx->getMessage());
+                }
+            }
+
             return redirect()->route('monitoring.import')->with('success', "Berkas berhasil diimpor. Sebanyak {$rowCount} baris data berhasil diintegrasikan ke dalam basis data.");
         } catch (\Exception $e) {
             DB::rollBack();
@@ -364,10 +531,22 @@ class MonitoringController extends Controller
                 Storage::disk('public')->delete($path);
             }
             
-            // Catat log pengunggahan gagal dengan pesan kesalahan detil
-            DB::table('upload_log')->insert(['user_id' => Auth::id(), 'nama_file' => $file->getClientOriginalName(), 'jenis_dataset' => $request->kategori_file, 'rows_imported' => 0, 'status' => 'Failed', 'message' => $e->getMessage(), 'created_at' => now()]);
+            // Catat log pengunggahan gagal dengan pesan kesalahan detil (terisolasi dari secondary failure)
+            try {
+                DB::table('upload_log')->insert([
+                    'user_id' => Auth::id(),
+                    'nama_file' => $file->getClientOriginalName(),
+                    'jenis_dataset' => $request->kategori_file,
+                    'rows_imported' => 0,
+                    'status' => 'Failed',
+                    'message' => $e->getMessage(),
+                    'created_at' => now()
+                ]);
+            } catch (\Throwable $logEx) {
+                Log::error("Gagal mencatat audit log pengunggahan: " . $logEx->getMessage());
+            }
             
-            return back()->withInput()->with('error', 'Gagal memproses berkas. Silakan periksa kembali format Excel Anda: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memproses berkas (Pre-flight Validation): ' . $e->getMessage());
         }
     }
 
@@ -396,6 +575,7 @@ class MonitoringController extends Controller
     {
         try {
             $form = SimtanForm::findOrFail($id);
+            $form->purgePhysicalFile(); // Bersihkan berkas fisik secara eksplisit
             $form->delete();
             return redirect()->route('monitoring.import')->with('success', 'Data dan berkas Excel berhasil dihapus secara permanen dari sistem.');
         } catch (\Exception $e) {

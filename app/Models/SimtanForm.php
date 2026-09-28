@@ -91,24 +91,33 @@ class SimtanForm extends Model
 
             // 2. Otomatis hapus Log Upload terkait
             $form->uploadLog()->delete();
-
-            // 3. Hapus file fisik di storage
-            if ($form->file_path) {
-                // Bersihkan path: hapus prefix 'public/' jika tersimpan di database
-                // agar sesuai dengan akses Storage::disk('public')
-                $cleanPath = str_replace('public/', '', $form->file_path);
-
-                try {
-                    if (Storage::disk('public')->exists($cleanPath)) {
-                        Storage::disk('public')->delete($cleanPath);
-                        Log::info("Pembersihan Storage: File berhasil dihapus -> " . $cleanPath);
-                    } else {
-                        Log::warning("Pembersihan Storage: File tidak ditemukan saat penghapusan record -> " . $cleanPath);
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Pembersihan Storage: Gagal menghapus file " . $cleanPath . ". Error: " . $e->getMessage());
-                }
-            }
         });
+    }
+
+    /**
+     * Membersihkan berkas fisik di disk penyimpanan secara aman.
+     * Dipanggil secara eksplisit setelah transaksi commit atau saat aksi destroy definitif.
+     */
+    public function purgePhysicalFile(): bool
+    {
+        if (!$this->file_path) {
+            return false;
+        }
+
+        $cleanPath = str_replace('public/', '', $this->file_path);
+
+        try {
+            if (Storage::disk('public')->exists($cleanPath)) {
+                Storage::disk('public')->delete($cleanPath);
+                Log::info("Pembersihan Storage: File berhasil dihapus -> " . $cleanPath);
+                return true;
+            } else {
+                Log::warning("Pembersihan Storage: File tidak ditemukan -> " . $cleanPath);
+            }
+        } catch (\Exception $e) {
+            Log::error("Pembersihan Storage: Gagal menghapus file " . $cleanPath . ". Error: " . $e->getMessage());
+        }
+
+        return false;
     }
 }

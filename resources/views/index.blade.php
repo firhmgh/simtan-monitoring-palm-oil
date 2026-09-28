@@ -131,6 +131,23 @@
                                 </p>
                             </div>
                         </div>
+                        <!-- Temporal Delta Sub-indicator (Milestone 4) -->
+                        <template x-if="kpi.delta !== undefined && kpi.delta !== null">
+                            <div class="mt-2 pt-2 border-t border-dashed border-gray-100 dark:border-white-dark/10 flex items-center justify-between text-[9px] font-bold">
+                                <span class="text-gray-400" x-text="kpi.hasComparison ? 'vs ' + (kpi.prevLabel || 'Periode Lalu') : 'Baseline'"></span>
+                                <template x-if="kpi.hasComparison">
+                                    <span class="flex items-center gap-1 font-black"
+                                        :class="kpi.deltaTrend === 'up' ? 'text-emerald-500' : (kpi.deltaTrend === 'down' ? 'text-rose-500' : 'text-slate-400')">
+                                        <span x-text="kpi.deltaTrend === 'up' ? '▲ +' : (kpi.deltaTrend === 'down' ? '▼ ' : '■ ')"></span>
+                                        <span x-text="kpi.delta + (kpi.deltaUnit ? ' ' + kpi.deltaUnit : '')"></span>
+                                        <span class="opacity-75" x-text="'(' + (kpi.deltaPercent !== null ? (kpi.deltaPercent > 0 ? '+' : '') + kpi.deltaPercent + '%' : 'N/A') + ')'"></span>
+                                    </span>
+                                </template>
+                                <template x-if="!kpi.hasComparison">
+                                    <span class="text-slate-400 italic font-semibold">Periode Awal</span>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </template>
@@ -239,6 +256,17 @@
                                     Pelepah)</span>
                                 <span class="text-[9px] text-gray-400 font-bold">Sensor Pertumbuhan
                                     Biometrik</span>
+                                <template x-if="temporalDelta && temporalDelta.has_comparison">
+                                    <div class="mt-1 flex items-center gap-1 text-[9px] font-bold"
+                                        :class="temporalDelta.kpi.vigor_index.trend === 'up' ? 'text-emerald-500' : (temporalDelta.kpi.vigor_index.trend === 'down' ? 'text-rose-500' : 'text-slate-400')">
+                                        <span x-text="temporalDelta.kpi.vigor_index.trend === 'up' ? '▲ +' : (temporalDelta.kpi.vigor_index.trend === 'down' ? '▼ ' : '■ ')"></span>
+                                        <span x-text="temporalDelta.kpi.vigor_index.delta_abs + ' poin'"></span>
+                                        <span class="opacity-75" x-text="'(' + (temporalDelta.kpi.vigor_index.delta_percent !== null ? (temporalDelta.kpi.vigor_index.delta_percent > 0 ? '+' : '') + temporalDelta.kpi.vigor_index.delta_percent + '%' : 'N/A') + ') vs ' + (temporalDelta.previous_label || 'P.Lalu')"></span>
+                                    </div>
+                                </template>
+                                <template x-if="temporalDelta && !temporalDelta.has_comparison">
+                                    <div class="mt-1 text-[9px] text-slate-400 italic font-semibold">Baseline</div>
+                                </template>
                             </td>
                             <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
                                 <span x-text="agregat.vigor_index"></span> <span
@@ -263,6 +291,17 @@
                                     Piringan)</span>
                                 <span class="text-[9px] text-gray-400 font-bold">Kualitas Perawatan
                                     Lapangan</span>
+                                <template x-if="temporalDelta && temporalDelta.has_comparison">
+                                    <div class="mt-1 flex items-center gap-1 text-[9px] font-bold"
+                                        :class="temporalDelta.kpi.maintenance_score.trend === 'up' ? 'text-emerald-500' : (temporalDelta.kpi.maintenance_score.trend === 'down' ? 'text-rose-500' : 'text-slate-400')">
+                                        <span x-text="temporalDelta.kpi.maintenance_score.trend === 'up' ? '▲ +' : (temporalDelta.kpi.maintenance_score.trend === 'down' ? '▼ ' : '■ ')"></span>
+                                        <span x-text="temporalDelta.kpi.maintenance_score.delta_abs + ' poin'"></span>
+                                        <span class="opacity-75" x-text="'(' + (temporalDelta.kpi.maintenance_score.delta_percent !== null ? (temporalDelta.kpi.maintenance_score.delta_percent > 0 ? '+' : '') + temporalDelta.kpi.maintenance_score.delta_percent + '%' : 'N/A') + ') vs ' + (temporalDelta.previous_label || 'P.Lalu')"></span>
+                                    </div>
+                                </template>
+                                <template x-if="temporalDelta && !temporalDelta.has_comparison">
+                                    <div class="mt-1 text-[9px] text-slate-400 italic font-semibold">Baseline</div>
+                                </template>
                             </td>
                             <td class="py-5 px-4 text-center font-black text-gray-900 dark:text-white text-lg">
                                 <span x-text="agregat.maintenance_score"></span> <span
@@ -467,6 +506,7 @@
                     analysisMode: 'multimodal',
                     aiInferenceText: "{{ $hasData ? 'Sinkronisasi Integrasi Data Terpadu...' : 'Sistem Standby: Dataset untuk periode ini belum tersedia di database.' }}",
                     agregat: @json($agregat ?? []),
+                    temporalDelta: @json($temporalDelta ?? null),
 
                     kpiCards: [{
                             label: 'Cakupan Areal Total',
@@ -476,10 +516,15 @@
                             color: 'text-blue-500',
                             border: 'border-blue-500/30',
                             compliance: '100.0', // Luas selalu 100% terhadap dirinya sendiri
-                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>'
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>',
+                            delta: null,
+                            deltaPercent: null,
+                            deltaTrend: 'none',
+                            hasComparison: false,
+                            prevLabel: null
                         },
                         {
-                            label: 'Populasi Aktif',
+                            label: 'Populasi Aktif (SPH)',
                             value: '{{ number_format($total_pokok ?? 0) }}',
                             unit: 'Pkk',
                             bg: 'bg-indigo-500/10',
@@ -487,10 +532,16 @@
                             border: 'border-indigo-500/30',
                             // AMBIL VARIABEL YANG SUDAH DIHITUNG DI CONTROLLER
                             compliance: '{{ $populasi_compliance }}',
-                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>'
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>',
+                            delta: @json($temporalDelta['kpi']['sph_actual']['delta_abs'] ?? null),
+                            deltaPercent: @json($temporalDelta['kpi']['sph_actual']['delta_percent'] ?? null),
+                            deltaTrend: @json($temporalDelta['kpi']['sph_actual']['trend'] ?? 'none'),
+                            deltaUnit: 'Pkk/Ha',
+                            hasComparison: @json($temporalDelta['has_comparison'] ?? false),
+                            prevLabel: @json($temporalDelta['previous_label'] ?? null)
                         },
                         {
-                            label: 'Indeks Kesehatan',
+                            label: 'Survival Rate',
                             value: '{{ $avg_health }}',
                             unit: '%',
                             bg: 'bg-emerald-500/10',
@@ -498,7 +549,13 @@
                             border: 'border-emerald-500/30',
                             // AMBIL VARIABEL YANG SUDAH DIHITUNG DI CONTROLLER
                             compliance: '{{ $health_compliance }}',
-                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>'
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>',
+                            delta: @json($temporalDelta['kpi']['survival_rate']['delta_abs'] ?? null),
+                            deltaPercent: @json($temporalDelta['kpi']['survival_rate']['delta_percent'] ?? null),
+                            deltaTrend: @json($temporalDelta['kpi']['survival_rate']['trend'] ?? 'none'),
+                            deltaUnit: '%-pts',
+                            hasComparison: @json($temporalDelta['has_comparison'] ?? false),
+                            prevLabel: @json($temporalDelta['previous_label'] ?? null)
                         },
                         {
                             label: 'Agronomy Compliance',
@@ -508,7 +565,12 @@
                             color: 'text-purple-500',
                             border: 'border-purple-500/30',
                             compliance: '{{ $agregat['compliance_rate'] }}',
-                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                            icon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                            delta: null,
+                            deltaPercent: null,
+                            deltaTrend: 'none',
+                            hasComparison: false,
+                            prevLabel: null
                         }
                     ],
 

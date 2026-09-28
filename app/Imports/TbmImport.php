@@ -42,8 +42,11 @@ class TbmImport implements WithMultipleSheets, SkipsUnknownSheets
             'SEPOKTNOVDES2025REKAP',
         ];
 
-        // LOGIKA 1: JIKA USER MEMILIH TAHUNAN (AMBIL SEMUA)
-        if ($this->selectedPeriode === 'Tahun 2025') {
+        // Normalisasi input periode untuk perbandingan (tahan terhadap whitespace dan case)
+        $normalizedPeriod = trim(strtoupper((string) $this->selectedPeriode));
+
+        // LOGIKA 1: JIKA USER MEMILIH TAHUNAN (AMBIL SEMUA 3 SHEET)
+        if ($normalizedPeriod === 'TAHUN 2025') {
             foreach ($mapSheet as $sheetName) {
                 $sheets[$sheetName] = new DetailRekapImport(
                     $this->simtanFormId,
@@ -54,12 +57,15 @@ class TbmImport implements WithMultipleSheets, SkipsUnknownSheets
         }
         // LOGIKA 2: JIKA USER MEMILIH PERIODE SPESIFIK (P1, P2, atau P3)
         else {
-            if (in_array($this->selectedPeriode, $mapSheet)) {
-                $sheets[$this->selectedPeriode] = new DetailRekapImport(
-                    $this->simtanFormId,
-                    $this->kodeUpload,
-                    $this->selectedPeriode
-                );
+            foreach ($mapSheet as $sheetName) {
+                if (strtoupper($sheetName) === $normalizedPeriod) {
+                    $sheets[$sheetName] = new DetailRekapImport(
+                        $this->simtanFormId,
+                        $this->kodeUpload,
+                        $sheetName
+                    );
+                    break;
+                }
             }
         }
 
