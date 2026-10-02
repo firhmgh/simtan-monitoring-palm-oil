@@ -195,10 +195,10 @@
                                         class="form-select rounded-xl py-3 font-bold text-xs shadow-sm dark:bg-[#1b2e4b] dark:border-none dark:text-white">
                                         <option value="gemini"
                                             {{ ($aiConfig->provider_primary ?? '') == 'gemini' ? 'selected' : '' }}>
-                                            Gemini 1.5 Flash (Google)</option>
+                                            Google Gemini (Multimodal Engine)</option>
                                         <option value="groq"
-                                            {{ ($aiConfig->provider_primary ?? '') == 'groq' ? 'selected' : '' }}>Llama
-                                            3 - Groq API</option>
+                                            {{ ($aiConfig->provider_primary ?? '') == 'groq' ? 'selected' : '' }}>
+                                            Groq Neural API (Fast Inference)</option>
                                     </select>
                                     <input type="password" name="api_key_primary"
                                         class="form-input rounded-xl py-3 shadow-inner font-mono text-xs dark:bg-[#1b2e4b] dark:border-none dark:text-white"
@@ -216,11 +216,11 @@
                                     <select name="api_backup"
                                         class="form-select rounded-xl py-3 font-bold text-xs shadow-sm dark:bg-[#1b2e4b] dark:border-none dark:text-white">
                                         <option value="groq"
-                                            {{ ($aiConfig->provider_backup ?? '') == 'groq' ? 'selected' : '' }}>Llama
-                                            3 - Groq API</option>
+                                            {{ ($aiConfig->provider_backup ?? '') == 'groq' ? 'selected' : '' }}>
+                                            Groq Neural API (Fast Inference)</option>
                                         <option value="gemini"
                                             {{ ($aiConfig->provider_backup ?? '') == 'gemini' ? 'selected' : '' }}>
-                                            Gemini 1.5 Flash (Google)</option>
+                                            Google Gemini (Multimodal Engine)</option>
                                     </select>
                                     <input type="password" name="api_key_backup"
                                         class="form-input rounded-xl py-3 shadow-inner font-mono text-xs dark:bg-[#1b2e4b] dark:border-none dark:text-white"

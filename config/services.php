@@ -45,4 +45,18 @@ return [
         'key' => env('OPENAI_API_KEY'),
     ],
 
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'model' => env('GROQ_MODEL', 'qwen/qwen3.8-27b'),
+        'timeout' => env('GROQ_TIMEOUT', 15),
+        'max_tokens' => env('GROQ_MAX_TOKENS', 450),
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+        'timeout' => env('GEMINI_TIMEOUT', 15),
+        'max_tokens' => env('GEMINI_MAX_TOKENS', 1000),
+    ],
+
 ];

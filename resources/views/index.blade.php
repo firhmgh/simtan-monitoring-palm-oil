@@ -196,9 +196,9 @@
                     <div class="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-4/6 animate-pulse"></div>
                 </div>
 
-                <div x-show="!isThinking" class="max-w-none prose prose-slate dark:prose-invert">
-                    <!-- Konten hasil AI yang sudah di-format -->
-                    <div class="ai-content-wrapper text-slate-900 dark:text-gray-300 leading-[1.8] font-medium text-base md:text-lg italic tracking-tight"
+                <div x-show="!isThinking" class="w-full">
+                    <!-- Konten hasil AI yang sudah di-format rapi dan profesional -->
+                    <div class="ai-content-wrapper text-slate-800 dark:text-slate-200"
                          x-html="formatAiOutput(aiInferenceText)">
                     </div>
                 </div>
@@ -604,45 +604,14 @@
                     },
 
                     /**
-                     * FUNGSI PARSER UNTUK MEMBERSIHKAN TEKS AI
+                     * FUNGSI PARSER UNTUK MEMBERSIHKAN TEKS AI (INTEGRASI ENTERPRISE UI)
                      */
                     formatAiOutput(text) {
+                        if (typeof window.formatAiOutput === 'function') {
+                            return window.formatAiOutput(text);
+                        }
                         if (!text) return "Memproses narasi...";
-
-                        let cleanText = text.replace(/\*\*(.*?)\*\*/g,
-                            '<strong class="text-slate-900 dark:text-white font-extrabold">$1</strong>');
-
-                        let lines = cleanText.split('\n');
-                        let html = '';
-
-                        lines.forEach(line => {
-                            let trimmed = line.trim();
-                            if (!trimmed) return;
-
-                            let isListItem = false;
-                            let content = trimmed;
-
-                            if (trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-                                isListItem = true;
-                                content = trimmed.replace(/^[\+\-\*]\s*/, '').trim();
-                            }
-
-                            if (isListItem) {
-                                html += `
-                                    <div class="bg-slate-50/50 dark:bg-white/5 shadow-sm border-l-4 border-emerald-500 p-3 mb-2 rounded-r-xl flex items-start gap-3 transition-all hover:bg-slate-100/50 dark:hover:bg-white/10">
-                                        <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div class="text-slate-700 dark:text-gray-300 text-xs md:text-sm font-medium leading-relaxed">${content}</div>
-                                    </div>`;
-                            } else if (trimmed.endsWith(':')) {
-                                html += `<h5 class="text-xs md:text-sm font-extrabold text-slate-950 dark:text-white uppercase tracking-wider mt-4 mb-2 border-b border-gray-100 dark:border-white-dark/5 pb-1">${trimmed}</h5>`;
-                            } else {
-                                html += `<p class="text-xs md:text-sm text-slate-700 dark:text-gray-300 leading-relaxed mb-3">${trimmed}</p>`;
-                            }
-                        });
-
-                        return html;
+                        return text;
                     },
 
                     initDashboard() {

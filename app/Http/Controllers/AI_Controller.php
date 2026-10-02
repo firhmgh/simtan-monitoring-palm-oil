@@ -36,9 +36,12 @@ class AI_Controller extends Controller
             $kebun = $request->query('kebun'); // Tangkap parameter kebun dari frontend
             $refresh = $request->has('refresh');
 
-            // Logika penentuan mode otomatis: 
-            // Jika ada parameter kebun -> kebun_summary, jika tidak -> integrasi terpadu (Global)
-            $mode = $kebun ? 'kebun_summary' : 'multimodal';
+            // Logika penentuan mode: prioritaskan query param 'mode' dari dropdown frontend jika ada
+            if ($request->has('mode') && in_array($request->query('mode'), ['multimodal', 'growth', 'survival', 'kebun_summary'])) {
+                $mode = $request->query('mode');
+            } else {
+                $mode = $kebun ? 'kebun_summary' : 'multimodal';
+            }
 
             $dbKey = config("simtan.map_periode.{$selectedSlug}.db_key") ?? $selectedSlug;
 

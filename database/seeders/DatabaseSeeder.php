@@ -32,34 +32,48 @@ class DatabaseSeeder extends Seeder
 
         // 2. Seed Superadmin (System Owner)
         User::updateOrCreate(
-            ['email' => 'superadmin.regional1@ptpn4.co.id'],
+            ['email' => 'demo.superadmin@simtan.test'],
             [
                 'role_id'  => $superadminRole->id,
-                'name'     => 'Maghfirah',
-                'username' => 'superadmin.regional1',
+                'name'     => 'Demo Superadmin',
+                'username' => 'demo.superadmin',
                 'password' => Hash::make('password123'),
             ]
         );
 
         // 3. Seed Admin (Data Controller)
         User::updateOrCreate(
-            ['email' => 'admin.regional1@ptpn4.co.id'],
+            ['email' => 'demo.admin@simtan.test'],
             [
                 'role_id'  => $adminRole->id,
-                'name'     => 'Asisten Investasi Pemetaan',
-                'username' => 'admin.regional1',
+                'name'     => 'Demo Admin Pemetaan',
+                'username' => 'demo.admin',
                 'password' => Hash::make('password123'),
             ]
         );
 
         // 4. Seed User (Decision Maker)
         User::updateOrCreate(
-            ['email' => 'user.regional1@ptpn4.co.id'],
+            ['email' => 'demo.user@simtan.test'],
             [
                 'role_id'  => $userRole->id,
-                'name'     => 'Pimpinan Manajemen',
-                'username' => 'user.regional1',
+                'name'     => 'Demo User Manajemen',
+                'username' => 'demo.user',
                 'password' => Hash::make('password123'),
+            ]
+        );
+
+        // 5. Seed Default AI Engine Configuration (Failsafe & Database-Driven)
+        \Illuminate\Support\Facades\DB::table('ai_configs')->updateOrInsert(
+            ['id' => 1],
+            [
+                'provider_primary' => 'gemini',
+                'key_primary'      => env('GEMINI_API_KEY', config('services.gemini.key')),
+                'provider_backup'  => 'groq',
+                'key_backup'       => env('GROQ_API_KEY', config('services.groq.key')),
+                'threshold_yellow' => 85,
+                'threshold_red'    => 75,
+                'updated_at'       => now(),
             ]
         );
     }

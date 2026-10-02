@@ -20,3 +20,10 @@ yarn-error.log
 LAMPIRAN_KODE_SKRIPSI.md
 database/db_simtan.sql
 *.sql
+*.py
+*.png
+!docs/assets/images/*.png
+!public/assets/images/*.png
+recordings/
+screenshots/
+docs/.DS_Store

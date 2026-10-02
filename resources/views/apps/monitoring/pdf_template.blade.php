@@ -242,15 +242,36 @@
         <div class="section-header">II. Analisis Kausalitas & Rekomendasi AI</div>
         <div class="ai-box">
             @php
-                $cleanText = str_replace('**', '', $ai_narrative);
+                $cleanText = $ai_narrative ?? '';
+                // Hapus triple/double asterisks bold & italic
+                $cleanText = preg_replace('/\*\*\*(.*?)\*\*\*/', '<b><i>$1</i></b>', $cleanText);
+                $cleanText = preg_replace('/\*\*(.*?)\*\*/', '<b>$1</b>', $cleanText);
+                $cleanText = preg_replace('/`([^`]+)`/', '<code>$1</code>', $cleanText);
                 $lines = explode("\n", $cleanText);
             @endphp
 
             @foreach ($lines as $line)
-                @if (trim($line) != '')
-                    <div class="{{ preg_match('/^\d+\./', trim($line)) ? 'ai-item' : 'ai-paragraph' }}">
-                        {{ trim($line) }}
-                    </div>
+                @php $trimmed = trim($line); @endphp
+                @if ($trimmed != '')
+                    @if (preg_match('/^#{1,6}\s+(.*)$/', $trimmed, $m))
+                        <div style="font-size: 11px; font-weight: bold; color: #00a76f; margin-top: 10px; margin-bottom: 4px; text-transform: uppercase;">
+                            {!! $m[1] !!}
+                        </div>
+                    @elseif (preg_match('/^[\*\-\+]\s+(.*)$/', $trimmed, $m))
+                        <div class="ai-item" style="padding: 6px 10px; margin-bottom: 5px;">
+                            • {!! $m[1] !!}
+                        </div>
+                    @elseif (preg_match('/^\d+\.\s+(.*)$/', $trimmed, $m))
+                        <div class="ai-item" style="padding: 6px 10px; margin-bottom: 5px;">
+                            {!! $trimmed !!}
+                        </div>
+                    @elseif (preg_match('/^(\-{3,}|\*{3,}|_{3,})$/', $trimmed))
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 10px 0;" />
+                    @else
+                        <div class="ai-paragraph">
+                            {!! $trimmed !!}
+                        </div>
+                    @endif
                 @endif
             @endforeach
         </div>

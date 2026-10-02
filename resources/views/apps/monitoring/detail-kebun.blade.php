@@ -97,8 +97,12 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
+            background: #cbd5e1;
             border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
         }
 
         @keyframes pulse-soft {
@@ -323,33 +327,46 @@
 
                 <!-- AI ENGINE -->
                 <div
-                    class="panel p-0 rounded-[3rem] border-none shadow-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 relative text-left">
-                    <div class="p-6 relative z-10">
-                        <div class="flex flex-col md:flex-row md:items-center gap-8 mb-6">
-                            <div
-                                class="w-20 h-20 bg-primary rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/40 animate-pulse-soft">
-                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
+                    class="panel p-0 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden bg-white dark:bg-[#0e1726] relative text-left transition-colors duration-300">
+                    <div class="p-6 sm:p-8 relative z-10">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6">
+                            <div class="flex items-center gap-5">
+                                <div
+                                    class="w-16 h-16 sm:w-20 sm:h-20 bg-primary rounded-[1.8rem] flex items-center justify-center shadow-2xl shadow-primary/30 animate-pulse-soft shrink-0">
+                                    <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                </div>
+                                <div class="space-y-1">
+                                    <h4
+                                        class="text-xl sm:text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter leading-none">
+                                        Autonomous Prescriptive Engine</h4>
+                                    <p
+                                        class="text-[10px] sm:text-xs text-primary dark:text-emerald-400 font-bold tracking-[0.25em] mt-2 font-mono">
+                                        Node: DSS-SistemPakar-StandarEnterprise</p>
+                                </div>
                             </div>
-                            <div class="space-y-1">
-                                <h4
-                                    class="text-xl font-black italic text-slate-100 dark:text-white tracking-tighter leading-none">
-                                    Autonomous Prescriptive Engine</h4>
-                                <p
-                                    class="text-[10px] text-indigo-500 font-bold tracking-[0.3em] opacity-70 mt-2 font-mono">
-                                    Node: DSS-SistemPakar-StandarEnterprise</p>
+                            <div class="flex items-center gap-3">
+                                <template x-if="selectedBlock">
+                                    <button @click="analyzeBlock(selectedBlock, true)" :disabled="isThinkingBlok"
+                                        class="btn btn-primary btn-sm rounded-xl px-5 font-black text-[10px] italic tracking-[0.2em] flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95">
+                                        <svg class="w-3.5 h-3.5" :class="isThinkingBlok ? 'animate-spin' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span x-text="isThinkingBlok ? 'Menganalisis...' : 'Refresh AI'"></span>
+                                    </button>
+                                </template>
                             </div>
                         </div>
                         <div
-                            class="min-h-[160px] rounded-[2.2rem] bg-white/5 dark:bg-black/40 border border-white/10 p-10 flex flex-col justify-center">
+                            class="min-h-[160px] rounded-[2rem] bg-slate-50/70 dark:bg-black/30 border border-gray-200/70 dark:border-white/5 p-6 sm:p-8 flex flex-col justify-center transition-colors duration-300">
                             <template x-if="isThinkingBlok">
-                                <div class="flex flex-col items-center gap-4 animate-pulse">
+                                <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
                                     <div
-                                        class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin">
+                                        class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin">
                                     </div>
-                                    <p class="text-[10px] font-black text-slate-400 tracking-[0.4em] italic">
+                                    <p class="text-xs font-black text-slate-500 dark:text-slate-400 tracking-[0.3em] uppercase italic">
                                         Logika Pemrosesan AI...</p>
                                 </div>
                             </template>
@@ -357,19 +374,25 @@
                                 <div class="animate__animated animate__fadeInUp space-y-4">
                                     <!-- Label Status -->
                                     <div
-                                        class="inline-block px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black tracking-widest">
+                                        class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] sm:text-xs font-black tracking-widest uppercase">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                                         High Confidence Recommendation
                                     </div>
 
-                                    <!-- HASIL AI (Gunakan x-html di sini) -->
-                                    <div class="prose prose-invert max-w-none"
+                                    <!-- HASIL AI (Komponen Enterprise UI) -->
+                                    <div class="ai-content-wrapper text-slate-800 dark:text-slate-200"
                                         x-html="formatAiOutput(inferenceResult.recommendation)">
                                     </div>
                                 </div>
                             </template>
-                            <div x-show="!inferenceResult && !isThinkingBlok" class="text-center opacity-40">
-                                <p class="text-slate-400 text-[10px] font-black tracking-widest">Pilih unit
-                                    blok pada peta untuk analisis preskriptif</p>
+                            <div x-show="!inferenceResult && !isThinkingBlok" class="text-center py-10">
+                                <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                    </svg>
+                                </div>
+                                <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-bold tracking-wide">Pilih unit blok pada peta untuk mengaktifkan analisis preskriptif</p>
+                                <p class="text-slate-400 dark:text-slate-500 text-[11px] font-medium mt-1">Sistem pakar agronomi akan menganalisis kondisi tanaman & memberikan rekomendasi tindakan spesifik</p>
                             </div>
                         </div>
                     </div>
@@ -417,6 +440,7 @@
                 geoLayers: {},
                 masterBounds: null,
                 inferenceResult: null,
+                selectedBlock: null,
                 totalBlocks: 0,
                 selectedPeriode: '{{ $activeSlug }}',
                 categorizedBlocks: {
@@ -691,8 +715,9 @@
                     }
                 },
 
-                async analyzeBlock(bid) {
+                async analyzeBlock(bid, forceRefresh = false) {
                     if (!bid || this.isThinkingBlok) return;
+                    this.selectedBlock = bid;
                     this.inferenceResult = null;
                     this.isThinkingBlok = true;
 
@@ -706,7 +731,8 @@
                             body: JSON.stringify({
                                 kebun: '{{ $kebun->kebun }}',
                                 blok_id: bid,
-                                periode: this.selectedPeriode
+                                periode: this.selectedPeriode,
+                                refresh: forceRefresh
                             })
                         });
 
@@ -742,70 +768,11 @@
                 },
 
                 formatAiOutput(text) {
+                    if (typeof window.formatAiOutput === 'function') {
+                        return window.formatAiOutput(text);
+                    }
                     if (!text) return "Memproses narasi...";
-
-                    let cleanText = text.trim();
-
-                    // 1. Markdown Bold ke Class Native Vristo
-                    cleanText = cleanText.replace(/\*\*(.*?)\*\*/g,
-                        '<b class="text-slate-800 dark:text-white-light font-bold">$1</b>');
-
-                    // 2. Deteksi baris "Label: Value" (seperti Unit: AFD04) agar lebih rapi
-                    cleanText = cleanText.replace(/^([^:\n]+):/gm,
-                        '<span class="text-primary font-bold text-[10px] tracking-widest block mb-1">$1</span>'
-                    );
-
-                    let lines = cleanText.split('\n');
-                    let html = '';
-                    let inList = false;
-
-                    lines.forEach(line => {
-                        let trimmed = line.trim();
-                        if (!trimmed) return;
-
-                        // Jika baris adalah list bullet
-                        if (trimmed.startsWith('*') || trimmed.startsWith('-')) {
-                            if (!inList) {
-                                html += '<ul class="space-y-2 my-3 list-disc list-inside text-sm">';
-                                inList = true;
-                            }
-                            html +=
-                                `<li class="text-white-dark dark:text-white-light/80">${trimmed.substring(1).trim()}</li>`;
-                        }
-                        // Jika baris adalah penomoran (1. 2. 3.)
-                        else if (/^\d+\./.test(trimmed)) {
-                            if (inList) {
-                                html += '</ul>';
-                                inList = false;
-                            }
-                            let num = trimmed.split('.')[0];
-                            let content = trimmed.split('.').slice(1).join('.').trim();
-                            // Desain gelembung nomor yang lebih kecil dan nyambung dengan tema
-                            html += `
-                <div class="flex gap-3 mb-4 mt-4">
-                    <span class="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black">${num}</span>
-                    <div class="text-white-dark dark:text-white-light/90 text-sm leading-relaxed">${content}</div>
-                </div>`;
-                        }
-                        // Paragraf biasa atau Judul Laporan
-                        else {
-                            if (inList) {
-                                html += '</ul>';
-                                inList = false;
-                            }
-                            // Jika teks diawali "Laporan Audit", buat jadi Heading kecil
-                            if (trimmed.includes('Laporan Audit')) {
-                                html +=
-                                    `<h5 class="text-lg font-black text-slate-800 dark:text-white mb-4 border-b border-white/10 pb-2 italic">${trimmed}</h5>`;
-                            } else {
-                                html +=
-                                    `<p class="mb-3 text-sm text-white-dark dark:text-white-light/70">${trimmed}</p>`;
-                            }
-                        }
-                    });
-
-                    if (inList) html += '</ul>';
-                    return html;
+                    return text;
                 },
 
                 zoomToBlock(bid) {

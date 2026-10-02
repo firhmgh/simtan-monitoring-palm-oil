@@ -123,7 +123,7 @@
                             </svg>
                         </div>
                         <input id="email" name="email" type="email" value="{{ old('email') }}"
-                            placeholder="nama@ptpn4.co.id"
+                            placeholder="demo.superadmin@simtan.test"
                             class="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 focus:bg-white dark:bg-slate-900/50 dark:focus:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all duration-200 @error('email') border-rose-500 dark:border-rose-500 @enderror"
                             required autocomplete="email" autofocus>
                     </div>
@@ -163,6 +163,50 @@
                     Masuk ke Sistem
                 </button>
             </form>
+
+            <!-- 1-Click Demo Accounts Selector for Recruiter / Reviewer -->
+            <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                <div class="flex items-center justify-between mb-2.5">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        ⚡ Akses Cepat Demo (1-Click Login)
+                    </span>
+                    <span class="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">
+                        Demo Sandbox
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2" x-data="{
+                    fillDemo(email, pass) {
+                        const emailInput = document.getElementById('email');
+                        const passInput = document.getElementById('password');
+                        if (emailInput && passInput) {
+                            emailInput.value = email;
+                            passInput.value = pass;
+                        }
+                    }
+                }">
+                    <button type="button"
+                        @click="fillDemo('demo.superadmin@simtan.test', 'password123')"
+                        class="px-2 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 dark:bg-slate-900/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 text-left transition-all group">
+                        <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600">Superadmin</p>
+                        <p class="text-[8px] text-slate-400 dark:text-slate-500 truncate">System Owner</p>
+                    </button>
+                    <button type="button"
+                        @click="fillDemo('demo.admin@simtan.test', 'password123')"
+                        class="px-2 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 dark:bg-slate-900/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 text-left transition-all group">
+                        <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600">Admin</p>
+                        <p class="text-[8px] text-slate-400 dark:text-slate-500 truncate">Data Controller</p>
+                    </button>
+                    <button type="button"
+                        @click="fillDemo('demo.user@simtan.test', 'password123')"
+                        class="px-2 py-2 rounded-xl bg-slate-50 hover:bg-emerald-50 dark:bg-slate-900/60 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 text-left transition-all group">
+                        <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600">User</p>
+                        <p class="text-[8px] text-slate-400 dark:text-slate-500 truncate">Decision Maker</p>
+                    </button>
+                </div>
+                <p class="text-[9px] text-center text-slate-400 dark:text-slate-500 mt-2">
+                    Password default seluruh akun demo: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold">password123</code>
+                </p>
+            </div>
 
         </div>
 

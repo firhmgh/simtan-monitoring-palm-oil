@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMTAN - Executive Precision Agriculture & Monitoring System (PTPN IV Regional I)</title>
+    <!-- Google Fonts & Tailwind Play CDN for Standalone Portfolio Deployment -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .gradient-border {
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white min-h-screen relative overflow-x-hidden">
+
+    <!-- Background Glow Elements -->
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Navigation Header -->
+    <header class="border-b border-slate-800/80 sticky top-0 bg-slate-950/80 backdrop-blur-md z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs font-black tracking-widest text-emerald-400 uppercase">Case Study & Demo Portfolio</span>
+                    <h1 class="text-lg font-black tracking-tight text-white leading-none">SIMTAN — PTPN IV Regional I</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="#credentials" class="hidden sm:inline-flex text-xs font-bold text-slate-300 hover:text-white px-3 py-2 transition-colors">
+                    Akun Demo
+                </a>
+                <a href="#features" class="hidden sm:inline-flex text-xs font-bold text-slate-300 hover:text-white px-3 py-2 transition-colors">
+                    Arsitektur
+                </a>
+                <a href="https://github.com/firhmgh/simtan-monitoring-palm-oil" target="_blank" rel="noopener noreferrer" 
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition-all">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub Repo
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div class="text-center max-w-3xl mx-auto space-y-6">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black tracking-widest uppercase">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                Enterprise Decision Support System (DSS)
+            </div>
+            
+            <h2 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+                Monitoring Areal Tanaman Sawit Berbasis <span class="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Spasial & Dual Neural Engine</span>
+            </h2>
+
+            <p class="text-sm sm:text-base text-slate-400 leading-relaxed max-w-2xl mx-auto">
+                Sistem Enterprise terintegrasi untuk pemantauan kesehatan TBM III di PTPN IV Regional I. Dilengkapi analisis biometrik allometrik PPKS, audit spasial GeoJSON per blok kebun, dan inferensi preskriptif otomatis via Google Gemini & Groq Cloud.
+            </p>
+
+            <!-- Action CTAs -->
+            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a id="liveDemoBtn" href="demo.html"
+                   class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm tracking-wide shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 group cursor-pointer">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                    <span>Buka Demo Interaktif SIMTAN</span>
+                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
+                <a href="#credentials"
+                   class="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-sm border border-slate-800 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                    </svg>
+                    Pilih Role Demo (Superadmin / Admin / User)
+                </a>
+            </div>
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Mode Demo Statis Aktif 100% di GitHub Pages — Bebas dependensi server lokal!</span>
+            </div>
+        </div>
+
+        <!-- System Architecture Highlights -->
+        <div id="features" class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/30 transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-3l5.447 2.724a1 1 0 010.553 0.894v10.764a1 1 0 01-1.447 0.894L15 17m-6 3l6-3m-6 0V7m6 10V4"/>
+                    </svg>
+                </div>
+                <h3 class="text-base font-black text-white mb-2">GIS Spasial Interaktif</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Visualisasi poligonal batas kebun dan blok TBM III menggunakan Leaflet.js dengan layer GeoJSON aman, heatmap kesehatan tanaman (IPHI), serta transparansi canvas orthophoto.
+                </p>
+            </div>
+
+            <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/30 transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center mb-6">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h3 class="text-base font-black text-white mb-2">Dual Neural Engine (L1 & L2)</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Sistem audit agronomi preskriptif dengan failover cerdas: Google Gemini (L1) sebagai mesin multimodal & Groq Qwen 27B (L2) sebagai high-speed failsafe tanpa menampilkan error ke user.
+                </p>
+            </div>
+
+            <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/30 transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-6">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                </div>
+                <h3 class="text-base font-black text-white mb-2">Role-Based Access & Audit Trail</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Hierarki hak akses berjenjang (Superadmin, Admin, User/Manager) dengan pelacakan riwayat unggah data Excel sensus, impersonation mode, serta ekspor laporan PDF formal.
+                </p>
+            </div>
+        </div>
+
+        <!-- Recruiter Try Demo Role Selector Card -->
+        <div id="credentials" class="mt-20 p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-emerald-500/30 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="max-w-2xl mb-8">
+                <span class="text-xs font-black tracking-widest text-emerald-400 uppercase">Akses Demonstrasi Penguji & Recruiter</span>
+                <h3 class="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">Eksplorasi Demo Berdasarkan Role (Tanpa Password)</h3>
+                <p class="text-xs text-slate-400 mt-2">
+                    Sistem demo SIMTAN di GitHub Pages dirancang 100% <em>frictionless</em>. Pilih peran kerja di bawah ini untuk langsung mencoba sistem dengan hak akses (RBAC) yang sesuai tanpa perlu memasukkan password:
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="demo.html?role=superadmin" class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900 transition-all group block">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-wider">Superadmin</span>
+                        <span class="text-xs font-black text-emerald-400 group-hover:translate-x-1 transition-transform">&rarr;</span>
+                    </div>
+                    <p class="text-sm font-bold text-white mt-2">Try Demo as Superadmin</p>
+                    <p class="text-xs text-slate-400 mt-1">Hak akses penuh: DSS, WebGIS, Kelola Akun RBAC, Unggah Data, dan Konfigurasi AI.</p>
+                    <div class="mt-3 pt-3 border-t border-slate-800 text-[11px] text-emerald-400 font-bold flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Akses Instan 1-Klik
+                    </div>
+                </a>
+
+                <a href="demo.html?role=admin" class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900 transition-all group block">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-wider">Admin</span>
+                        <span class="text-xs font-black text-blue-400 group-hover:translate-x-1 transition-transform">&rarr;</span>
+                    </div>
+                    <p class="text-sm font-bold text-white mt-2">Try Demo as Admin</p>
+                    <p class="text-xs text-slate-400 mt-1">Kontrol data lapangan: WebGIS Spasial, Import Dataset Excel, dan Audit Trail Log.</p>
+                    <div class="mt-3 pt-3 border-t border-slate-800 text-[11px] text-blue-400 font-bold flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                        Akses Instan 1-Klik
+                    </div>
+                </a>
+
+                <a href="demo.html?role=user" class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 hover:bg-slate-900 transition-all group block">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-black uppercase tracking-wider">User (Executive)</span>
+                        <span class="text-xs font-black text-purple-400 group-hover:translate-x-1 transition-transform">&rarr;</span>
+                    </div>
+                    <p class="text-sm font-bold text-white mt-2">Try Demo as Executive</p>
+                    <p class="text-xs text-slate-400 mt-1">Pengambilan keputusan: Executive KPI Cards, Peta Kesehatan Blok, dan Ekspor Laporan.</p>
+                    <div class="mt-3 pt-3 border-t border-slate-800 text-[11px] text-purple-400 font-bold flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+                        Akses Instan 1-Klik
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+        <p>&copy; 2026 SIMTAN — PT. Perkebunan Nusantara IV (Regional I). Dikembangkan untuk Portofolio & Keperluan Evaluasi Teknis.</p>
+    </footer>
+
+    <!-- Interactive Live Demo Modal Dialog -->
+    <div id="demoModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h4 class="text-lg font-black text-white">Status Live Demo SIMTAN</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                Aplikasi dinamis SIMTAN (Laravel, MySQL, WebGIS Leaflet, dan Dual AI Engine) sedang dalam tahap persiapan deployment ke hosting/VPS publik.
+            </p>
+            <div class="mt-4 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-1.5">
+                <p class="font-bold text-emerald-400 flex items-center gap-1.5">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Source Code & Arsitektur Lengkap
+                </p>
+                <p class="text-[11px] text-slate-400">
+                    Dapat dijalankan secara mandiri dengan mengikuti panduan deployment pada <a href="https://github.com/firhmgh/simtan-monitoring-palm-oil#readme" target="_blank" class="text-emerald-400 underline font-bold">README.md</a> repositori resmi.
+                </p>
+            </div>
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" onclick="closeDemoModal()"
+                    class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors">
+                    Tutup
+                </button>
+                <a href="https://github.com/firhmgh/simtan-monitoring-palm-oil" target="_blank"
+                    class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-colors">
+                    Kunjungi Repositori
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openDemoModal() {
+            const modal = document.getElementById('demoModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+        function closeDemoModal() {
+            const modal = document.getElementById('demoModal');
+            if (modal) {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

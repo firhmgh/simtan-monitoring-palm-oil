@@ -11,16 +11,15 @@
         class="sidebar fixed min-h-screen h-full top-0 bottom-0 shadow-[5px_0_25px_0_rgba(0,0,0,0.05)] z-[1000] transition-all duration-300 bg-white/80 dark:bg-[#0e1726]/80 backdrop-blur-xl border-r border-gray-200/40 dark:border-white/5"
         :class="$store.app.sidebar ? 'w-[260px]' : 'w-[80px]'">
 
-        <!-- Floating Interactive Toggle Button (HCI Compliance & Fitts's Law)
-             Selalu terlihat di tepi kanan sidebar (-right-[14px]) tanpa x-show, mendukung rotasi transisi 180 derajat -->
-        <button type="button" @click="$store.app.toggleSidebar()"
-            class="absolute top-[26px] -right-[14px] z-[1001] w-[28px] h-[28px] bg-white dark:bg-[#0e1726] border border-gray-200/80 dark:border-white/10 rounded-full flex items-center justify-center text-slate-900 dark:text-white hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 cursor-pointer"
-            :class="{ 'rotate-180': !$store.app.sidebar }"
+        <!-- Interactive Collapsible Toggle Tab (Sesuai Gaya Handle Tab theme-customiser.blade.php)
+             Pill tab handle di tepi luar sidebar dengan transisi halus, warna primary/emerald korporat & ikon transisi -->
+        <a href="javascript:;" @click="$store.app.toggleSidebar()"
+            class="bg-primary ltr:rounded-tr-full rtl:rounded-tl-full ltr:rounded-br-full rtl:rounded-bl-full absolute ltr:-right-10 rtl:-left-10 top-0 bottom-0 my-auto w-10 h-10 flex justify-center items-center text-white cursor-pointer shadow-[2px_0_12px_rgba(0,0,0,0.12)] hover:scale-105 transition-all duration-300 z-[1001]"
             :title="$store.app.sidebar ? 'Sembunyikan Navigasi' : 'Tampilkan Navigasi'">
-            <svg class="w-3.5 h-3.5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': !$store.app.sidebar }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-        </button>
+        </a>
 
         <!-- Wrapper Konten Internal dengan Overflow Hidden untuk Mencegah Kebocoran Layout saat Mode Mini -->
         <div class="h-full flex flex-col overflow-hidden">
@@ -30,8 +29,8 @@
                 :class="$store.app.sidebar ? 'px-4 justify-between' : 'px-[18px] justify-center'">
                 <a href="{{ route('index') }}" class="flex items-center gap-3.5 group shrink-0">
                     <!-- Logo Utama PT Perkebunan Nusantara IV (PTPN 4) -->
-                    <div class="w-[44px] h-[44px] bg-[#00a76f] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-emerald-200/50 dark:shadow-none transition-transform group-hover:scale-105">
-                        <img class="w-8 h-8 object-contain" src="{{ asset('assets/images/logo-ptpn4.png') }}" alt="Logo PTPN4" />
+                    <div class="w-[44px] h-[44px] bg-white dark:bg-white/10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-emerald-500/20 dark:border-white/10 p-1.5 transition-transform group-hover:scale-105">
+                        <img class="w-full h-full object-contain filter drop-shadow-sm" src="{{ asset('assets/images/logo-ptpn4.png') }}" alt="Logo PTPN IV" />
                     </div>
 
                     <!-- Judul & Subjudul: Disembunyikan pada Mini Mode dengan Transisi Opacity Halus -->
@@ -215,8 +214,8 @@
                 @if(auth()->user()->role->name === 'superadmin' || session()->has('original_user_id'))
                     @php
                         $demoUsers = \App\Models\User::whereIn('email', [
-                            'admin.regional1@ptpn4.co.id',
-                            'user.regional1@ptpn4.co.id'
+                            'demo.admin@simtan.test',
+                            'demo.user@simtan.test'
                         ])->get();
                     @endphp
                     <div class="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800/60 font-jakarta" x-data="{ openSwitcher: false }">

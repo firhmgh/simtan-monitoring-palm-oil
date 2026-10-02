@@ -1,8 +1,18 @@
 <header
     class="h-16 bg-white dark:bg-[#0e1726] border-b border-gray-200 dark:border-[#191e3a] flex items-center justify-between px-6 sticky top-0 z-40 transition-all duration-300">
 
+    <!-- MOBILE BRAND LOGO (Shown when sidebar is collapsed/mobile) -->
+    <div class="flex items-center gap-2.5 lg:hidden mr-3 shrink-0">
+        <a href="{{ route('index') }}" class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-white dark:bg-white/10 rounded-lg flex items-center justify-center p-1 border border-emerald-500/20 shadow-sm">
+                <img class="w-full h-full object-contain" src="{{ asset('assets/images/logo-ptpn4.png') }}" alt="Logo PTPN IV" />
+            </div>
+            <span class="font-extrabold text-slate-900 dark:text-white text-sm tracking-tight hidden sm:inline">PTPN IV</span>
+        </a>
+    </div>
+
     <!-- IMPERSONATION INDICATOR (God Mode - Skripsi HCI Standard) -->
-    <div class="flex-1 flex items-center pl-3 md:pl-4 min-w-0 mr-4">
+    <div class="flex-1 flex items-center pl-1 md:pl-2 min-w-0 mr-4">
         @if(session()->has('original_user_id'))
             <div class="flex items-center gap-2 px-3 py-1 rounded-full transition-all duration-300 shrink min-w-0"
                  style="background-color: rgba(225, 29, 72, 0.08) !important; border: 1px solid rgba(225, 29, 72, 0.25) !important;">
@@ -64,9 +74,9 @@
 
                 <div class="px-4 py-3 border-b border-gray-100 dark:border-[#191e3a]">
                     <p class="text-sm font-bold text-gray-900 dark:text-white-light">
-                        {{ auth()->user()->name ?? 'Admin PTPN' }}</p>
+                        {{ auth()->user()->name ?? 'Demo User' }}</p>
                     <p class="text-xs text-gray-500 dark:text-white-dark truncate">
-                        {{ auth()->user()->email ?? 'admin@ptpn4.co.id' }}</p>
+                        {{ auth()->user()->email ?? 'demo.admin@simtan.test' }}</p>
                 </div>
 
                 <!-- UPDATE DISINI: Menggunakan route named 'settings.index' -->

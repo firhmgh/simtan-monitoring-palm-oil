@@ -31,7 +31,7 @@
                     sidebar: window.innerWidth > 1024,
                     theme: localStorage.getItem('theme') || 'light',
                     isDarkMode: localStorage.getItem('theme') === 'dark',
-                    menu: 'vertical',
+                    menu: 'collapsible-vertical',
                     layout: 'full',
                     rtlClass: 'ltr',
                     animation: '',
@@ -217,6 +217,7 @@
     <script defer src="{{ asset('assets/js/alpine-focus.min.js') }}"></script>
     <script defer src="{{ asset('assets/js/custom.js') }}"></script>
     <script defer src="{{ asset('assets/js/alpine-colorthemes.js') }}"></script>
+    <script defer src="{{ asset('assets/js/ai-renderer.js') }}"></script>
     <script defer src="{{ asset('assets/js/app.js') }}"></script>
     <script defer src="{{ asset('assets/js/alpine.min.js') }}"></script>
 </body>
